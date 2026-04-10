@@ -1,0 +1,61 @@
+{
+  "name": "pss-api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/pss-api/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/pss-api",
+        "main": "apps/pss-api/src/main.ts",
+        "tsConfig": "apps/pss-api/tsconfig.app.json",
+        "assets": []
+      },
+      "configurations": {
+        "development": {
+          "optimization": false
+        },
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "pss-api:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "pss-api:build:development"
+        },
+        "production": {
+          "buildTarget": "pss-api:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/pss-api/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/pss-api/jest.config.ts"
+      }
+    }
+  },
+  "tags": ["scope:pss", "type:app"]
+}
