@@ -15,16 +15,19 @@
  * @returns Plaintext key — must be hashed before storing, returned once to admin
  */
 export function generatePlatformKey(platformId: string): string {
-  // TODO: Implement using crypto.randomBytes
-  void platformId;
-  return '';
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const crypto = require('crypto') as typeof import('crypto');
+  const random = crypto.randomBytes(24).toString('hex');
+  return `pk_${platformId}_${random}`;
 }
 
 /**
  * Generates a webhook signing secret for a platform.
- * PSS signs webhook calls with this secret; platforms verify with it.
+ * PSS signs webhook calls with HMAC-SHA256 using this secret.
+ * Platforms verify incoming PSS requests against it.
  */
 export function generateWebhookSecret(): string {
-  // TODO: Implement using crypto.randomBytes
-  return '';
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const crypto = require('crypto') as typeof import('crypto');
+  return `whsec_${crypto.randomBytes(32).toString('hex')}`;
 }

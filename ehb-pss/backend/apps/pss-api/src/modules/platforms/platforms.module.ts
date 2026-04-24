@@ -1,23 +1,32 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { PlatformsController } from './platforms.controller';
+import { PlatformsService } from './platforms.service';
+import { Platform, PlatformSchema } from './platform.schema';
 
 /**
  * Platforms Module
  *
- * Responsibility: Sub-company registration and management.
- * Handles: POST /platforms/register, platform API key issuance,
- * webhook URL storage, entity_type definitions per platform.
+ * Manages platform registration, API key issuance, and webhook config.
  *
- * Collections used: platforms
+ * MongoDB collection: platforms
  *
- * API endpoints (from pss-api-contract.md):
- *   POST /api/platforms/register  — register a new sub-platform (admin only)
+ * Exports PlatformsService so:
+ *   AuthModule (PlatformKeyGuard) → validatePlatformKey(platform_id, api_key)
+ *   WebhookModule (future)        → getWebhookConfig(platform_id)
+ *   Other modules                 → getPlatform(platform_id)
  *
- * Status: SCAFFOLD — logic to be implemented in Phase 1
+ * No events emitted. No dependencies on other PSS modules.
+ * All controller endpoints protected by AdminKeyGuard (applied at controller level).
  */
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  imports: [
+    MongooseModule.forFeature([
+      { name: Platform.name, schema: PlatformSchema },
+    ]),
+  ],
+  controllers: [PlatformsController],
+  providers: [PlatformsService],
+  exports: [PlatformsService],
 })
 export class PlatformsModule {}

@@ -4,6 +4,7 @@ import { RuleEngineController } from './rule-engine.controller';
 import { RuleEngineService } from './rule-engine.service';
 import { PlatformRule, PlatformRuleSchema } from './platform-rule.schema';
 import { SqEngineModule } from '../sq-engine/sq-engine.module';
+import { AuthModule } from '../auth/auth.module';
 
 /**
  * Rule Engine Module
@@ -37,8 +38,8 @@ import { SqEngineModule } from '../sq-engine/sq-engine.module';
     MongooseModule.forFeature([
       { name: PlatformRule.name, schema: PlatformRuleSchema },
     ]),
-    // Import SqEngineModule to access SqEngineService (exported by that module)
     SqEngineModule,
+    AuthModule,
   ],
   controllers: [RuleEngineController],
   providers: [RuleEngineService],

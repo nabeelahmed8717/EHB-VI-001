@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>EHB — Complete User Journey (Mind Map)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --bg: #0a1424;
+    --panel: #0f1d35;
+    --ink: #eef3ff;
+    --ink-soft: #9fb0d0;
+    --accent: #7dd3fc;
+    --discover: #fbbf24;
+    --register: #34d399;
+    --onboard: #60a5fa;
+    --use: #a78bfa;
+    --sq: #f472b6;
+    --review: #fb923c;
+    --outcome: #4ade80;
+    --reject: #ef4444;
+    --edge: rgba(255,255,255,0.18);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--ink); font: 14px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    background: linear-gradient(180deg, rgba(10,20,36,0.95) 0%, rgba(10,20,36,0.75) 80%, rgba(10,20,36,0) 100%);
+    padding: 16px 20px 28px; pointer-events: none;
+  }
+  header h1 { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+  header p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+  header .hint { pointer-events: auto; display: inline-block; margin-top: 8px; padding: 4px 10px; background: rgba(125,211,252,0.12); color: var(--accent); border: 1px solid rgba(125,211,252,0.35); border-radius: 999px; font-size: 12px; }
+  #controls {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 10;
+    display: flex; gap: 8px; padding: 8px 10px; background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  #controls button {
+    background: transparent; color: var(--ink); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 12px;
+  }
+  #controls button:hover { background: rgba(125,211,252,0.1); border-color: var(--accent); color: var(--accent); }
+  #legend {
+    position: fixed; top: 16px; right: 16px; z-index: 10;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 10px 12px; font-size: 12px; min-width: 210px;
+  }
+  #legend h3 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--ink-soft); font-weight: 600; }
+  #legend .row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  #legend .swatch { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 auto; }
+
+  svg { width: 100vw; height: 100vh; display: block; cursor: grab; }
+  svg.panning { cursor: grabbing; }
+
+  .node-group { cursor: pointer; }
+  .node-rect {
+    stroke: rgba(255,255,255,0.18); stroke-width: 1.2;
+    transition: filter .15s, stroke .15s, stroke-width .15s;
+  }
+  .node-group:hover .node-rect { stroke: var(--accent); stroke-width: 2; filter: drop-shadow(0 0 14px rgba(125,211,252,0.35)); }
+  .node-label { fill: var(--ink); font-size: 13px; font-weight: 600; pointer-events: none; }
+  .node-sublabel { fill: var(--ink-soft); font-size: 11px; pointer-events: none; }
+  .node-collapse-ind { fill: var(--ink-soft); font-size: 10px; font-weight: 700; pointer-events: none; }
+
+  .edge { fill: none; stroke: var(--edge); stroke-width: 1.5; transition: stroke .15s, stroke-width .15s; }
+
+  #detail {
+    position: fixed; top: 80px; right: 16px; z-index: 11;
+    width: 360px; max-width: calc(100vw - 32px); max-height: calc(100vh - 120px);
+    overflow-y: auto; padding: 16px 18px;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    transform: translateX(calc(100% + 32px)); transition: transform .25s ease;
+  }
+  #detail.open { transform: translateX(0); }
+  #detail h2 { margin: 0 0 4px; font-size: 16px; }
+  #detail .tag { display: inline-block; padding: 2px 8px; font-size: 11px; font-weight: 600; border-radius: 999px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .5px; color: #0a1424; }
+  #detail p { margin: 0 0 10px; color: var(--ink-soft); font-size: 13px; }
+  #detail ul { margin: 0 0 10px; padding-left: 20px; color: var(--ink-soft); font-size: 13px; }
+  #detail li { margin: 3px 0; }
+  #detail code { background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); }
+  #detail .close { position: absolute; top: 10px; right: 10px; background: transparent; border: 0; color: var(--ink-soft); font-size: 18px; cursor: pointer; }
+  #detail .close:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>EHB — Complete User Journey</h1>
+  <p>From first visit → registration → using a sub-platform → SQ verification → transaction</p>
+  <span class="hint">Tip: click any node to expand / collapse · click for details · drag to pan · scroll to zoom</span>
+</header>
+
+<div id="legend">
+  <h3>Journey stages</h3>
+  <div class="row"><span class="swatch" style="background:var(--discover)"></span>1 · Discover EHB</div>
+  <div class="row"><span class="swatch" style="background:var(--register)"></span>2 · Register / sign in</div>
+  <div class="row"><span class="swatch" style="background:var(--onboard)"></span>3 · Pick a sub-platform</div>
+  <div class="row"><span class="swatch" style="background:var(--use)"></span>4 · Use the platform</div>
+  <div class="row"><span class="swatch" style="background:var(--sq)"></span>5 · Request SQ approval</div>
+  <div class="row"><span class="swatch" style="background:var(--review)"></span>6 · Review (franchise/EDR)</div>
+  <div class="row"><span class="swatch" style="background:var(--outcome)"></span>7 · Approved & live</div>
+</div>
+
+<div id="controls">
+  <button data-act="expand">Expand all</button>
+  <button data-act="collapse">Collapse all</button>
+  <button data-act="reset">Reset view</button>
+  <button data-act="fit">Fit to screen</button>
+</div>
+
+<svg id="map" viewBox="0 0 1800 1100" preserveAspectRatio="xMidYMid meet">
+  <g id="world">
+    <g id="edges"></g>
+    <g id="nodes"></g>
+  </g>
+</svg>
+
+<aside id="detail">
+  <button class="close" onclick="closeDetail()">×</button>
+  <span id="detailTag" class="tag"></span>
+  <h2 id="detailTitle"></h2>
+  <div id="detailBody"></div>
+</aside>
+
+<script>
+const TREE = {
+  id: 'user',
+  label: 'User',
+  sublabel: 'Starts anywhere',
+  layer: 'discover',
+  detail: { title: 'The user', body: `<p>Everything below is one user's full journey through EHB. The user may be a buyer, seller, doctor, lawyer, job-seeker, employer, hospital, or reviewer — the skeleton is the same.</p>` },
+  children: [
+    {
+      id: 'discover', label: '1 · Discover EHB', sublabel: 'How the user arrives', layer: 'discover',
+      detail: { title: 'Discover EHB', body: `<p>Three entry points. All roads lead to the same shared identity.</p>` },
+      children: [
+        { id: 'landing', label: 'Visits ehb-landing', sublabel: 'Marketing site', layer: 'discover',
+          detail: { title: 'Arrives on ehb-landing', body: `<p>Public marketing site. Reads what EHB is and what sub-platforms exist. No account yet.</p><ul><li>CTA: Join EHB → ehb-main</li><li>CTA: Jump to a specific platform (e.g. Start selling on GoSellr)</li></ul>`}},
+        { id: 'direct-main', label: 'Goes to ehb-main', sublabel: 'Central portal', layer: 'discover',
+          detail: { title: 'Goes directly to ehb-main', body: `<p>User already heard about EHB and wants the generic signup. From here they can see all sub-platforms and choose.</p>`}},
+        { id: 'direct-sub', label: 'Goes directly to a sub-platform', sublabel: 'e.g. ehb-gosellr', layer: 'discover',
+          detail: { title: 'Skips straight to a sub-platform', body: `<p>User knows exactly what they want. They register on that sub-platform directly. A shared identity is still created in <code>pss_db.users</code> behind the scenes — no difference in the back-end model.</p>`}}
+      ]
+    },
+    {
+      id: 'register', label: '2 · Register or sign in', sublabel: 'Identity is created once', layer: 'register',
+      detail: { title: 'Registration — the one-time step', body: `<p>Regardless of entry point, the result is a single record in <code>pss_db.users</code>. Every sub-platform recognises this user from then on.</p>` },
+      children: [
+        { id: 'reg-main', label: 'Signup on ehb-main', sublabel: 'One account for everything', layer: 'register',
+          detail: { title: 'Signup via ehb-main', body: `<p>Email, phone, password, basic profile. Creates <code>pss_db.users</code>. User receives a confirmation email.</p>`}},
+        { id: 'reg-sub', label: 'Signup on a sub-platform', sublabel: 'Same shared identity', layer: 'register',
+          detail: { title: 'Signup on any sub-platform', body: `<p>If a user signs up first on GoSellr, the GoSellr backend still calls PSS to create the shared <code>users</code> record. Platform-specific fields stay in <code>gosellr_db</code>.</p>`}},
+        { id: 'login', label: 'Logs in anywhere', sublabel: 'JWT from that platform', layer: 'register',
+          detail: { title: 'Logging in', body: `<p>Every sub-platform has its own login screen, its own JWT. But the user record it authenticates against is the shared PSS record.</p>`}},
+        { id: 'identity-verified', label: 'Identity verified by PSS', sublabel: 'Gives you SQ1 baseline', layer: 'register',
+          detail: { title: 'Base identity verification', body: `<p>After signup, PSS may request basic identity proof (phone OTP, email). Passing this gives the user an SQ1 baseline usable everywhere.</p>`}}
+      ]
+    },
+    {
+      id: 'pick', label: '3 · Pick a sub-platform', sublabel: 'Enter the product', layer: 'onboard',
+      detail: { title: 'Pick a sub-platform', body: `<p>The user now decides what they actually came to do.</p>` },
+      children: [
+        { id: 'go-gosellr', label: 'GoSellr', sublabel: 'Buy or sell products', layer: 'onboard',
+          detail: { title: 'GoSellr', body: `<ul><li>As <b>buyer</b> — browse products, see SQ badges, buy.</li><li>As <b>seller</b> — list products, each product needs its own SQ approval.</li></ul>`}},
+        { id: 'go-ols', label: 'OLS', sublabel: 'Legal services', layer: 'onboard',
+          detail: { title: 'OLS', body: `<ul><li>As <b>client</b> — search lawyers.</li><li>As <b>lawyer</b> — create a lawyer profile that must pass SQ review.</li></ul>`}},
+        { id: 'go-hps', label: 'HPS', sublabel: 'Healthcare', layer: 'onboard',
+          detail: { title: 'HPS', body: `<ul><li>As <b>patient</b> — find doctors.</li><li>As <b>doctor</b> — create a doctor profile that requires SQ verification of credentials.</li></ul>`}},
+        { id: 'go-jps', label: 'JPS', sublabel: 'Jobs', layer: 'onboard',
+          detail: { title: 'JPS', body: `<ul><li>As <b>candidate</b> — build a job profile.</li><li>As <b>employer</b> — post jobs.</li></ul>`}},
+        { id: 'go-wms', label: 'WMS', sublabel: 'Hospital / clinic', layer: 'onboard',
+          detail: { title: 'WMS', body: `<p>Hospitals / clinics register their services for listing and management.</p>`}},
+        { id: 'go-obs', label: 'OBS', sublabel: 'Books', layer: 'onboard',
+          detail: { title: 'OBS', body: `<p>Book retail.</p>`}}
+      ]
+    },
+    {
+      id: 'use', label: '4 · Use the platform', sublabel: 'Day-to-day activity', layer: 'use',
+      detail: { title: 'Using the platform', body: `<p>For most users the day-to-day is familiar: browse, search, message, check out. Then eventually the trust step appears.</p>` },
+      children: [
+        { id: 'use-browse', label: 'Browse / search', sublabel: 'See SQ badges on listings', layer: 'use',
+          detail: { title: 'Browse / search', body: `<p>Every product / profile / listing shows an SQ badge (SQ1 … SQ10). The badge is the visible trust layer that ties everything together.</p>`}},
+        { id: 'use-create', label: 'Create an entity', sublabel: 'product · profile · posting', layer: 'use',
+          detail: { title: 'Create an entity', body: `<p>Sellers list products. Lawyers / doctors create professional profiles. Employers post jobs. Until SQ approval, the entity is a draft — not visible to the public.</p>`}},
+        { id: 'use-transact', label: 'Transact', sublabel: 'Buy · book · apply · message', layer: 'use',
+          detail: { title: 'Transact', body: `<p>Once an entity has an SQ, it's live. Buyers buy, patients book, employers receive applications — each platform handles its own money / booking / messaging.</p>`}}
+      ]
+    },
+    {
+      id: 'sq', label: '5 · Send for SQ approval', sublabel: 'The trust step', layer: 'sq',
+      detail: { title: 'Request SQ approval', body: `<p>The user clicks a "Send for Approval" button on the entity they created. From this point, the platform hands off to PSS. The user waits for a webhook-driven update.</p>` },
+      children: [
+        { id: 'sq-submit', label: 'Click Send for Approval', sublabel: 'Frontend → own backend', layer: 'sq',
+          detail: { title: 'User clicks Send for Approval', body: `<p>The sub-platform frontend calls its own backend. The backend's <code>pss-client</code> module then forwards the submission to PSS via <code>POST /sq/submit</code>.</p>`}},
+        { id: 'sq-wait', label: 'Status: Pending', sublabel: 'UI shows in-review banner', layer: 'sq',
+          detail: { title: 'Pending review', body: `<p>The entity now shows a "Under review" state on the user's dashboard. PSS is running criteria checks and applying the platform's routing rules.</p>`}},
+        { id: 'sq-criteria', label: 'PSS checks criteria', sublabel: 'per platform rule set', layer: 'sq',
+          detail: { title: 'PSS checks criteria', body: `<p>PSS loads this platform's criteria set (e.g. "Product title present", "At least 3 images", "Seller ID verified") and scores the entity.</p>`}},
+        { id: 'sq-score', label: 'SQ score calculated', sublabel: 'SQ1 · SQ2 · SQ3 · SQ5 · SQ7 · SQ10', layer: 'sq',
+          detail: { title: 'SQ score', body: `<p>Score is the highest SQ level for which all required criteria are satisfied. Anything above SQ2 generally needs more verification.</p>`}},
+        { id: 'sq-route', label: 'Rule engine routes', sublabel: 'auto / franchise / EDR', layer: 'sq',
+          detail: { title: 'Rule engine', body: `<p>Platform-specific rules decide the path:</p><ul><li><b>auto-approve</b> — confident case, no human review</li><li><b>franchise</b> — regional manual review</li><li><b>EDR</b> — central oversight</li></ul>`}}
+      ]
+    },
+    {
+      id: 'review', label: '6 · Review (if needed)', sublabel: 'Human reviewers step in', layer: 'review',
+      detail: { title: 'Review lane', body: `<p>Only taken if the rule engine doesn't auto-approve. The user sees their entity move to "Under franchise review" or "Under EDR review" in the dashboard.</p>` },
+      children: [
+        { id: 'rev-auto', label: 'Auto path', sublabel: 'No human needed', layer: 'review',
+          detail: { title: 'Auto-approved', body: `<p>Entity clears every rule. PSS writes the final SQ record immediately and pushes a webhook to the platform.</p>`}},
+        { id: 'rev-fr', label: 'Franchise path', sublabel: 'Regional reviewer', layer: 'review',
+          detail: { title: 'Franchise review', body: `<p>A regional franchise reviewer looks at the entity via the PSS Franchise console and decides Approve / Conditional / Reject.</p>`}},
+        { id: 'rev-fr-cond', label: 'Conditional verdict', sublabel: 'Fix-ups required', layer: 'review',
+          detail: { title: 'Conditional', body: `<p>User is asked to fix specific items (e.g. add clearer photos). After edits, the entity re-enters scoring.</p>`}},
+        { id: 'rev-edr', label: 'EDR path', sublabel: 'Central oversight', layer: 'review',
+          detail: { title: 'EDR review', body: `<p>EDR reviewers can approve, reject, or override any earlier decision. EDR is final.</p>`}},
+        { id: 'rev-reject', label: 'Rejected', sublabel: 'User sees reason', layer: 'reject',
+          detail: { title: 'Rejected', body: `<p>Every rejection has a logged reason the user can see. The user may fix and resubmit unless the rejection is marked non-retryable.</p>`}}
+      ]
+    },
+    {
+      id: 'outcome', label: '7 · Decision arrives', sublabel: 'Webhook + UI update', layer: 'outcome',
+      detail: { title: 'Decision returns to the platform', body: `<p>PSS signs and POSTs the decision to the sub-platform's webhook. The platform updates its own DB and pushes a toast / email to the user.</p>` },
+      children: [
+        { id: 'out-badge', label: 'SQ badge appears', sublabel: 'Entity is now live', layer: 'outcome',
+          detail: { title: 'SQ badge appears', body: `<p>The entity now carries an SQ level visible to every visitor. It becomes fully discoverable / purchasable on the platform.</p>`}},
+        { id: 'out-notify', label: 'User is notified', sublabel: 'Email · toast · in-app', layer: 'outcome',
+          detail: { title: 'User notified', body: `<p>The platform pushes a notification. The user can now invite customers / take bookings / accept applications.</p>`}},
+        { id: 'out-transact', label: 'Transactions flow', sublabel: 'Business-as-usual on that platform', layer: 'outcome',
+          detail: { title: 'Transactions', body: `<p>All transactions are handled by the sub-platform itself — PSS is not in the checkout path.</p>`}},
+        { id: 'out-cross', label: 'Reputation carries across EHB', sublabel: 'Shared SQ history', layer: 'outcome',
+          detail: { title: 'Cross-platform reputation', body: `<p>The user's SQ history (list of entities with their levels) is visible to any other sub-platform via <code>POST /users/verify</code>. A verified doctor on HPS can prove it to a pharmacy seller on GoSellr without direct platform-to-platform calls.</p>`}}
+      ]
+    }
+  ]
+};
+
+/* ---------- Layout — horizontal tree ---------- */
+
+const svg = document.getElementById('map');
+const gWorld = document.getElementById('world');
+const gEdges = document.getElementById('edges');
+const gNodes = document.getElementById('nodes');
+
+const NODE_W = 200, NODE_H = 54;
+const X_STEP = 260, Y_STEP = 84;
+
+function walk(n, fn, d=0) { fn(n,d); (n.children||[]).forEach(c => walk(c, fn, d+1)); }
+
+function initCollapsed(node, depth = 0) {
+  node._collapsed = depth >= 2; // only root + stage nodes open by default
+  (node.children || []).forEach(c => initCollapsed(c, depth + 1));
+}
+initCollapsed(TREE);
+
+/* Tidy tree layout — horizontal */
+function layout(node, depth = 0) {
+  node._depth = depth;
+  const kids = (!node._collapsed && node.children) ? node.children : [];
+  if (!kids.length) {
+    node._leafSpan = 1;
+    return 1;
+  }
+  let span = 0;
+  for (const c of kids) span += layout(c, depth + 1);
+  node._leafSpan = Math.max(1, span);
+  return node._leafSpan;
+}
+
+function assignY(node, top = 0) {
+  const kids = (!node._collapsed && node.children) ? node.children : [];
+  if (!kids.length) {
+    node._y = top * Y_STEP + Y_STEP/2;
+    return 1;
+  }
+  let used = 0;
+  let childYs = [];
+  for (const c of kids) {
+    const span = assignY(c, top + used);
+    childYs.push(c._y);
+    used += span;
+  }
+  node._y = (childYs[0] + childYs[childYs.length - 1]) / 2;
+  return used;
+}
+
+function assignX(node) {
+  node._x = 80 + node._depth * X_STEP;
+  (node.children || []).forEach(assignX);
+}
+
+function render() {
+  layout(TREE);
+  assignY(TREE);
+  assignX(TREE);
+  gEdges.innerHTML = '';
+  gNodes.innerHTML = '';
+  drawTree(TREE);
+}
+
+function drawTree(node) {
+  drawNode(node);
+  if (!node._collapsed && node.children) {
+    for (const c of node.children) {
+      drawEdge(node, c);
+      drawTree(c);
+    }
+  }
+}
+
+function drawEdge(a, b) {
+  const x1 = a._x + NODE_W, y1 = a._y;
+  const x2 = b._x,          y2 = b._y;
+  const mx = (x1 + x2) / 2;
+  const d = `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+  const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d', d);
+  p.setAttribute('class', 'edge');
+  gEdges.appendChild(p);
+}
+
+const LAYER_VAR = {
+  discover: 'var(--discover)',
+  register: 'var(--register)',
+  onboard: 'var(--onboard)',
+  use: 'var(--use)',
+  sq: 'var(--sq)',
+  review: 'var(--review)',
+  reject: 'var(--reject)',
+  outcome: 'var(--outcome)'
+};
+
+function drawNode(node) {
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('class', 'node-group');
+  g.setAttribute('transform', `translate(${node._x}, ${node._y - NODE_H/2})`);
+  g.dataset.id = node.id;
+
+  const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  r.setAttribute('class','node-rect');
+  r.setAttribute('width', NODE_W);
+  r.setAttribute('height', NODE_H);
+  r.setAttribute('rx', 10); r.setAttribute('ry', 10);
+  r.setAttribute('fill', LAYER_VAR[node.layer] || 'var(--panel)');
+  r.setAttribute('fill-opacity', node === TREE ? '0.95' : '0.18');
+  if (node === TREE) { r.setAttribute('stroke', LAYER_VAR[node.layer]); r.setAttribute('stroke-width','2'); }
+  g.appendChild(r);
+
+  const accent = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  accent.setAttribute('width', 4); accent.setAttribute('height', NODE_H);
+  accent.setAttribute('rx', 2); accent.setAttribute('ry', 2);
+  accent.setAttribute('fill', LAYER_VAR[node.layer] || '#fff');
+  g.appendChild(accent);
+
+  const lab = document.createElementNS('http://www.w3.org/2000/svg','text');
+  lab.setAttribute('class','node-label');
+  lab.setAttribute('x', 14); lab.setAttribute('y', 22);
+  lab.textContent = node.label;
+  g.appendChild(lab);
+
+  if (node.sublabel) {
+    const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
+    sub.setAttribute('class','node-sublabel');
+    sub.setAttribute('x', 14); sub.setAttribute('y', 40);
+    sub.textContent = node.sublabel.length > 36 ? node.sublabel.slice(0,35) + '…' : node.sublabel;
+    g.appendChild(sub);
+  }
+
+  if (node.children && node.children.length) {
+    const ind = document.createElementNS('http://www.w3.org/2000/svg','text');
+    ind.setAttribute('class','node-collapse-ind');
+    ind.setAttribute('x', NODE_W - 14); ind.setAttribute('y', 22);
+    ind.setAttribute('text-anchor','end');
+    ind.textContent = node._collapsed ? '▸' : '▾';
+    g.appendChild(ind);
+  }
+
+  g.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (node.children && node.children.length) {
+      node._collapsed = !node._collapsed;
+      render();
+    }
+    showDetail(node);
+  });
+
+  gNodes.appendChild(g);
+}
+
+render();
+
+/* Pan + zoom */
+let view = { x: 0, y: 0, k: 1 };
+function applyView() { gWorld.setAttribute('transform', `translate(${view.x}, ${view.y}) scale(${view.k})`); }
+let dragging = false, last = null;
+svg.addEventListener('mousedown', e => {
+  if (e.target.closest('.node-group')) return;
+  dragging = true; last = { x: e.clientX, y: e.clientY };
+  svg.classList.add('panning');
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  view.x += e.clientX - last.x;
+  view.y += e.clientY - last.y;
+  last = { x: e.clientX, y: e.clientY };
+  applyView();
+});
+window.addEventListener('mouseup', () => { dragging = false; svg.classList.remove('panning'); });
+
+svg.addEventListener('wheel', e => {
+  e.preventDefault();
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  const ctm = svg.getScreenCTM().inverse();
+  const worldPt = pt.matrixTransform(ctm);
+  const factor = e.deltaY < 0 ? 1.12 : 0.89;
+  const nextK = Math.min(3, Math.max(0.3, view.k * factor));
+  view.x = worldPt.x - (worldPt.x - view.x) * (nextK / view.k);
+  view.y = worldPt.y - (worldPt.y - view.y) * (nextK / view.k);
+  view.k = nextK;
+  applyView();
+}, { passive: false });
+
+document.querySelectorAll('#controls button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const act = btn.dataset.act;
+    if (act === 'expand') { walk(TREE, n => n._collapsed = false); render(); }
+    if (act === 'collapse') { walk(TREE, (n,d) => { if (d>=2) n._collapsed = true; }); render(); }
+    if (act === 'reset') { view = { x:0, y:0, k:1 }; applyView(); }
+    if (act === 'fit') { fitToScreen(); }
+  });
+});
+function fitToScreen() {
+  const bb = gNodes.getBBox();
+  const pad = 60;
+  const vw = svg.clientWidth, vh = svg.clientHeight;
+  const k = Math.min((vw - 2*pad)/bb.width, (vh - 2*pad)/bb.height, 2);
+  view.k = k;
+  view.x = (vw - bb.width*k)/2 - bb.x*k;
+  view.y = (vh - bb.height*k)/2 - bb.y*k;
+  applyView();
+}
+
+const detail = document.getElementById('detail');
+function showDetail(node) {
+  document.getElementById('detailTag').textContent = node.layer;
+  document.getElementById('detailTag').style.background = LAYER_VAR[node.layer];
+  document.getElementById('detailTitle').textContent = node.detail?.title || node.label;
+  document.getElementById('detailBody').innerHTML = node.detail?.body || `<p>${node.sublabel || ''}</p>`;
+  detail.classList.add('open');
+}
+function closeDetail() { detail.classList.remove('open'); }
+svg.addEventListener('click', () => closeDetail());
+
+window.addEventListener('load', () => setTimeout(fitToScreen, 50));
+window.addEventListener('resize', fitToScreen);
+</script>
+</body>
+</html>

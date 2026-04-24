@@ -1,24 +1,42 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { AuditController } from './audit.controller';
+import { AuditService } from './audit.service';
+import { AuditLog, AuditLogSchema } from './audit-log.schema';
 
 /**
  * Audit Module
  *
- * Responsibility: Full audit trail for ALL SQ decisions across all platforms.
- * Every approve / reject / conditional result writes a record here.
- * No silent rejections — every decision has a logged reason.
+ * Responsibility: Persist and query the PSS-wide immutable audit trail.
  *
- * Collections used: audit_logs
+ * MongoDB collection: audit_logs
  *
- * Rules (from architecture.md):
- *   - Every SQ decision writes to audit_logs (Rule 8 — non-negotiable)
- *   - No silent auto-rejections — every rejection has a logged reason
+ * Event consumed:
+ *   audit.write  ← emitted by every module (sq-engine, rule-engine,
+ *                  franchise, edr) on every significant state change.
+ *                  AuditService subscribes globally and persists each event.
  *
- * Status: SCAFFOLD — logic to be implemented in Phase 1
+ * Events emitted: NONE — audit module never emits events.
+ *
+ * Dependencies: NONE — audit module never calls another module's service.
+ *   It only writes to its own collection and reads from it.
+ *
+ * Exports AuditService so EdrModule (and any future consumers) can call
+ * AuditService.getLogsForRequest(sq_request_id) directly.
+ *
+ * Architecture rules (architecture.md Rule 4 + Rule 8):
+ *   "Audit every SQ decision" — no silent decisions, no silent rejections.
+ *   Audit records are IMMUTABLE — no update or delete endpoints.
+ *   writeLog failures are caught and logged but NEVER thrown.
  */
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  imports: [
+    MongooseModule.forFeature([
+      { name: AuditLog.name, schema: AuditLogSchema },
+    ]),
+  ],
+  controllers: [AuditController],
+  providers: [AuditService],
+  exports: [AuditService],
 })
 export class AuditModule {}

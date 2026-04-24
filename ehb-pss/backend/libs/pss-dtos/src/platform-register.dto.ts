@@ -36,7 +36,7 @@ export class PlatformRegisterRequestDto {
     description: 'URL where PSS will POST SQ decision webhooks',
     example: 'https://gosellr-api.railway.app/webhooks/pss',
   })
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   webhook_url: string;
 
   @ApiProperty({

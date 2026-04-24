@@ -126,11 +126,12 @@ export class RuleEngineService {
       sq_level_calculated,
       criteria_met,
       total_criteria,
+      sq_score,
     } = event;
 
     this.logger.log(
       `Rule evaluation: sq_request=${sq_request_id} platform=${platform_id} ` +
-      `criteria_met=${criteria_met}/${total_criteria}`,
+      `criteria_met=${criteria_met}/${total_criteria} sq_score=${sq_score}`,
     );
 
     try {
@@ -159,12 +160,14 @@ export class RuleEngineService {
       }
 
       // ── 2. Evaluate rules in priority order — first match wins ────────
-      const result = this.evaluateRules(rules, criteria_met);
+      // Rules are threshold-checked against sq_score (0–100 percentage),
+      // NOT the raw criteria_met count, so thresholds like 80 / 50 / 0 work intuitively.
+      const result = this.evaluateRules(rules, sq_score);
 
       if (!result.matched) {
         this.logger.warn(
           `No rule matched for sq_request=${sq_request_id} ` +
-          `platform=${platform_id} criteria_met=${criteria_met}. Stays pending.`,
+          `platform=${platform_id} sq_score=${sq_score}. Stays pending.`,
         );
         this.emitAuditWrite({
           sq_request_id,
@@ -174,8 +177,8 @@ export class RuleEngineService {
           platform_id,
           action: 'no_rule_matched',
           reason:
-            `No rule matched criteria_met=${criteria_met} against ` +
-            `${rules.length} active rule(s) for platform ${platform_id}. ` +
+            `No rule matched sq_score=${sq_score}% (${criteria_met}/${total_criteria} criteria) ` +
+            `against ${rules.length} active rule(s) for platform ${platform_id}. ` +
             `Request remains pending.`,
           performed_by: 'system',
         });
@@ -213,15 +216,15 @@ export class RuleEngineService {
   // ── Rule Evaluation ────────────────────────────────────────────────────
 
   /**
-   * Evaluates an ordered list of rules against criteria_met.
+   * Evaluates an ordered list of rules against sq_score (0–100 percentage).
    * Returns the first matching rule or { matched: false }.
    */
   private evaluateRules(
     rules: PlatformRuleDocument[],
-    criteria_met: number,
+    sq_score: number,
   ): EvaluationResult {
     for (const rule of rules) {
-      if (this.ruleMatches(rule, criteria_met)) {
+      if (this.ruleMatches(rule, sq_score)) {
         return { matched: true, rule, action: rule.action };
       }
     }
@@ -230,25 +233,26 @@ export class RuleEngineService {
 
   /**
    * Tests whether a single rule's threshold condition is satisfied.
+   * The score parameter is sq_score (0–100 percentage).
    *
-   *   gte     → criteria_met >= criteria_threshold
-   *   lte     → criteria_met <= criteria_threshold
-   *   eq      → criteria_met === criteria_threshold
-   *   between → criteria_threshold <= criteria_met <= threshold_max
+   *   gte     → sq_score >= criteria_threshold
+   *   lte     → sq_score <= criteria_threshold
+   *   eq      → sq_score === criteria_threshold
+   *   between → criteria_threshold <= sq_score <= threshold_max
    */
   private ruleMatches(
     rule: PlatformRuleDocument,
-    criteria_met: number,
+    sq_score: number,
   ): boolean {
     const { criteria_threshold, operator, threshold_max } = rule;
 
     switch (operator as RuleOperator) {
       case 'gte':
-        return criteria_met >= criteria_threshold;
+        return sq_score >= criteria_threshold;
       case 'lte':
-        return criteria_met <= criteria_threshold;
+        return sq_score <= criteria_threshold;
       case 'eq':
-        return criteria_met === criteria_threshold;
+        return sq_score === criteria_threshold;
       case 'between': {
         if (threshold_max === null || threshold_max === undefined) {
           this.logger.warn(
@@ -257,8 +261,8 @@ export class RuleEngineService {
           return false;
         }
         return (
-          criteria_met >= criteria_threshold &&
-          criteria_met <= threshold_max
+          sq_score >= criteria_threshold &&
+          sq_score <= threshold_max
         );
       }
       default:

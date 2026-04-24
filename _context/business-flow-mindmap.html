@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>EHB — Business & System Flow (Mind Map)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #10172b;
+    --ink: #e8ecf8;
+    --ink-soft: #a8b3d1;
+    --accent: #7aa2ff;
+    --umbrella: #f2b544;
+    --entry: #6fd6c2;
+    --trust: #ff8a65;
+    --industry: #b794f4;
+    --franchise: #f687b3;
+    --edr: #fc8181;
+    --edge: rgba(255,255,255,0.18);
+    --edge-hover: #7aa2ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--ink); font: 14px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    background: linear-gradient(180deg, rgba(11,16,32,0.95) 0%, rgba(11,16,32,0.75) 80%, rgba(11,16,32,0) 100%);
+    padding: 16px 20px 28px; pointer-events: none;
+  }
+  header h1 { margin: 0 0 4px; font-size: 18px; font-weight: 600; letter-spacing: .2px; }
+  header p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+  header .hint { pointer-events: auto; display: inline-block; margin-top: 8px; padding: 4px 10px; background: rgba(122,162,255,0.12); color: var(--accent); border: 1px solid rgba(122,162,255,0.35); border-radius: 999px; font-size: 12px; }
+  #controls {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 10;
+    display: flex; gap: 8px; padding: 8px 10px; background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  #controls button {
+    background: transparent; color: var(--ink); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 12px;
+  }
+  #controls button:hover { background: rgba(122,162,255,0.1); border-color: var(--accent); color: var(--accent); }
+  #legend {
+    position: fixed; top: 16px; right: 16px; z-index: 10;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 10px 12px; font-size: 12px; min-width: 190px;
+  }
+  #legend h3 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--ink-soft); font-weight: 600; }
+  #legend .row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  #legend .swatch { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 auto; }
+
+  svg { width: 100vw; height: 100vh; display: block; cursor: grab; }
+  svg.panning { cursor: grabbing; }
+
+  .node-group { cursor: pointer; }
+  .node-rect {
+    stroke: rgba(255,255,255,0.18); stroke-width: 1.2;
+    transition: filter .15s, stroke .15s, stroke-width .15s;
+  }
+  .node-group:hover .node-rect { stroke: var(--accent); stroke-width: 2; filter: drop-shadow(0 0 14px rgba(122,162,255,0.35)); }
+  .node-label { fill: var(--ink); font-size: 13px; font-weight: 600; pointer-events: none; }
+  .node-sublabel { fill: var(--ink-soft); font-size: 11px; pointer-events: none; }
+  .node-collapse-ind { fill: var(--ink-soft); font-size: 10px; font-weight: 700; pointer-events: none; }
+
+  .edge { fill: none; stroke: var(--edge); stroke-width: 1.5; transition: stroke .15s, stroke-width .15s; }
+  .edge.highlight { stroke: var(--edge-hover); stroke-width: 2.5; }
+
+  /* Detail panel */
+  #detail {
+    position: fixed; top: 80px; right: 16px; z-index: 11;
+    width: 340px; max-width: calc(100vw - 32px); max-height: calc(100vh - 120px);
+    overflow-y: auto; padding: 16px 18px;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    transform: translateX(calc(100% + 32px)); transition: transform .25s ease;
+  }
+  #detail.open { transform: translateX(0); }
+  #detail h2 { margin: 0 0 4px; font-size: 16px; }
+  #detail .tag { display: inline-block; padding: 2px 8px; font-size: 11px; font-weight: 600; border-radius: 999px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .5px; }
+  #detail p { margin: 0 0 10px; color: var(--ink-soft); font-size: 13px; }
+  #detail ul { margin: 0 0 10px; padding-left: 20px; color: var(--ink-soft); font-size: 13px; }
+  #detail li { margin: 3px 0; }
+  #detail .close { position: absolute; top: 10px; right: 10px; background: transparent; border: 0; color: var(--ink-soft); font-size: 18px; cursor: pointer; }
+  #detail .close:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>EHB — Business & System Flow</h1>
+  <p>Umbrella · Sub-companies · How PSS verifies · How they communicate</p>
+  <span class="hint">Tip: click any node to expand / collapse · click the ⓘ for details · drag to pan · scroll to zoom</span>
+</header>
+
+<div id="legend">
+  <h3>Layers</h3>
+  <div class="row"><span class="swatch" style="background:var(--umbrella)"></span>EHB Umbrella</div>
+  <div class="row"><span class="swatch" style="background:var(--entry)"></span>Entry layer</div>
+  <div class="row"><span class="swatch" style="background:var(--trust)"></span>Trust layer (PSS)</div>
+  <div class="row"><span class="swatch" style="background:var(--industry)"></span>Industry sub-platforms</div>
+  <div class="row"><span class="swatch" style="background:var(--franchise)"></span>Franchise review</div>
+  <div class="row"><span class="swatch" style="background:var(--edr)"></span>EDR oversight</div>
+</div>
+
+<div id="controls">
+  <button data-act="expand">Expand all</button>
+  <button data-act="collapse">Collapse all</button>
+  <button data-act="reset">Reset view</button>
+  <button data-act="fit">Fit to screen</button>
+</div>
+
+<svg id="map" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)" />
+    </marker>
+  </defs>
+  <g id="world">
+    <g id="edges"></g>
+    <g id="nodes"></g>
+  </g>
+</svg>
+
+<aside id="detail">
+  <button class="close" onclick="closeDetail()">×</button>
+  <span id="detailTag" class="tag"></span>
+  <h2 id="detailTitle"></h2>
+  <div id="detailBody"></div>
+</aside>
+
+<script>
+/* ---------- Mind-map data ----------
+   Each node: { id, label, sublabel, layer, detail, children[] }
+*/
+const TREE = {
+  id: 'ehb',
+  label: 'EHB',
+  sublabel: 'Education · Health · Business',
+  layer: 'umbrella',
+  detail: {
+    title: 'EHB — the umbrella',
+    body: `
+      <p>EHB is the holding / governance layer over several independent industry platforms.
+      It does not sell anything itself — its value is in the shared trust system that
+      every sub-company inherits.</p>
+      <ul>
+        <li>One shared identity across every sub-platform</li>
+        <li>One shared SQ trust level for every product/profile</li>
+        <li>One shared oversight path (Franchise + EDR)</li>
+        <li>One shared audit ledger</li>
+      </ul>`
+  },
+  children: [
+    {
+      id: 'entry', label: 'Entry layer', sublabel: 'How users arrive', layer: 'entry',
+      detail: { title: 'Entry layer', body: `<p>The public-facing front door of EHB. Two products:</p>
+        <ul><li><b>ehb-landing</b> — marketing site (no auth).</li>
+        <li><b>ehb-main</b> — central portal where a user can register for EHB itself, then discover sub-platforms.</li></ul>
+        <p>A user can also skip this layer and register directly on any sub-platform — either path creates the same shared identity.</p>`},
+      children: [
+        { id: 'landing', label: 'ehb-landing', sublabel: 'Public marketing site', layer: 'entry',
+          detail: { title: 'ehb-landing', body: `<p>Pure marketing. No auth, no database. Its only jobs:</p>
+            <ul><li>Explain what EHB is</li><li>Drive visitors to ehb-main or a specific sub-platform</li></ul>`}},
+        { id: 'main', label: 'ehb-main', sublabel: 'Central EHB portal + shared signup', layer: 'entry',
+          detail: { title: 'ehb-main', body: `<p>The shared EHB front door.</p>
+            <ul><li>Signup / login that creates the master user in <code>pss_db.users</code></li>
+            <li>Directory of sub-platforms so a user can jump into any of them</li>
+            <li>Unified dashboard showing the user's SQ history across every sub-platform</li></ul>`}}
+      ]
+    },
+    {
+      id: 'trust', label: 'Trust layer', sublabel: 'PSS + Franchise + EDR', layer: 'trust',
+      detail: { title: 'Trust layer', body: `<p>The control plane that turns eight unrelated products into one coherent ecosystem.</p>
+        <p>PSS is the only system that holds cross-platform identity, SQ records, routing rules, and audit logs. Franchise and EDR are human-review lanes inside PSS.</p>`},
+      children: [
+        { id: 'pss', label: 'PSS', sublabel: 'Central verification engine', layer: 'trust',
+          detail: { title: 'PSS — Professional Security System', body: `<p>Single source of truth for trust.</p>
+            <ul><li><b>sq-engine</b> — scores submissions against criteria</li>
+            <li><b>rule-engine</b> — routes each submission: auto / franchise / EDR</li>
+            <li><b>criteria</b> — per-platform criteria sets that define SQ levels</li>
+            <li><b>platforms</b> — registry of every sub-company + API keys</li>
+            <li><b>webhook</b> — pushes final decisions back to platforms</li>
+            <li><b>audit</b> — append-only log of every trust decision</li></ul>`}},
+        { id: 'franchise', label: 'Franchise', sublabel: 'Regional manual review', layer: 'franchise',
+          detail: { title: 'Franchise review', body: `<p>Regional reviewers who manually approve submissions routed to them by PSS's rule engine. Auto-created for new regions.</p>
+            <p>Outcome: Approve / Conditional / Reject — written back to PSS, which finalises the SQ.</p>`}},
+        { id: 'edr', label: 'EDR', sublabel: 'EHB Dept. of Review — oversight', layer: 'edr',
+          detail: { title: 'EDR — final oversight', body: `<p>EHB-internal reviewers. Highest authority.</p>
+            <ul><li>Reviews items explicitly routed to EDR</li>
+            <li>Can override any franchise decision</li>
+            <li>Can override any auto-approval</li>
+            <li>EDR decisions are final</li></ul>`}}
+      ]
+    },
+    {
+      id: 'industry', label: 'Industry platforms', sublabel: 'The actual products', layer: 'industry',
+      detail: { title: 'Industry sub-platforms', body: `<p>Each is its own standalone product — separate repo, separate DB, separate deploy. They never call each other. All cross-platform communication goes through PSS.</p>`},
+      children: [
+        { id: 'gosellr', label: 'GoSellr', sublabel: 'E-commerce', layer: 'industry',
+          detail: { title: 'GoSellr', body: `<p>Marketplace for products. Entities: <code>product</code>, <code>seller_profile</code>.</p>
+            <p>SQ badge on each product tells buyers how verified the listing is.</p>`}},
+        { id: 'ols', label: 'OLS', sublabel: 'Legal professionals', layer: 'industry',
+          detail: { title: 'OLS — Online Law Services', body: `<p>Marketplace of lawyers. Entities: <code>lawyer_profile</code>, <code>case_listing</code>.</p>`}},
+        { id: 'hps', label: 'HPS', sublabel: 'Healthcare professionals', layer: 'industry',
+          detail: { title: 'HPS — Health Professional Services', body: `<p>Directory of doctors / specialists. Entities: <code>doctor_profile</code>.</p>`}},
+        { id: 'jps', label: 'JPS', sublabel: 'Jobs / workforce', layer: 'industry',
+          detail: { title: 'JPS — Job Placement Services', body: `<p>Employment platform. Entities: <code>job_profile</code>, <code>job_posting</code>.</p>`}},
+        { id: 'wms', label: 'WMS', sublabel: 'Hospital & clinic mgmt', layer: 'industry',
+          detail: { title: 'WMS — Wellness Management System', body: `<p>Hospital / clinic service listings and management.</p>`}},
+        { id: 'obs', label: 'OBS', sublabel: 'Book retail', layer: 'industry',
+          detail: { title: 'OBS — Online Book Store', body: `<p>Books retail platform. Entities: <code>book</code>, <code>seller_profile</code>.</p>`}}
+      ]
+    },
+    {
+      id: 'how', label: 'How it talks', sublabel: 'Inter-platform communication', layer: 'umbrella',
+      detail: { title: 'Inter-platform communication', body: `<p>One rule: platforms never call each other. All cross-platform traffic passes through PSS.</p>`},
+      children: [
+        { id: 'rule1', label: 'Rule: no lateral calls', sublabel: 'GoSellr ✗ OLS. HPS ✗ WMS. Never.', layer: 'trust',
+          detail: { title: 'No sub-platform talks to another sub-platform', body: `<p>No lateral API calls — ever. Every cross-platform need is expressed as a call to PSS.</p>`}},
+        { id: 'rule2', label: 'pss-client module', sublabel: 'Only integration point', layer: 'trust',
+          detail: { title: 'pss-client is the only bridge', body: `<p>Every sub-platform backend has one <code>pss-client/</code> module. It reads <code>PSS_API_URL</code> from <code>.env</code>. That module is the only place that knows PSS exists.</p>`}},
+        { id: 'rule3', label: 'Push via webhooks', sublabel: 'PSS → platform', layer: 'trust',
+          detail: { title: 'Webhooks push decisions back', body: `<p>When PSS finishes a decision, it POSTs to the platform's <code>/webhooks/pss</code> endpoint, signed with <code>PSS_WEBHOOK_SECRET</code>. The platform updates its own DB and notifies the user.</p>`}},
+        { id: 'rule4', label: 'Shared identity', sublabel: 'pss_db.users', layer: 'trust',
+          detail: { title: 'One identity, everywhere', body: `<p>A user record is created once in <code>pss_db.users</code> — whether they sign up on ehb-main or directly on a sub-platform. Sub-platforms only store platform-specific profile fields in their own DB.</p>`}}
+      ]
+    },
+    {
+      id: 'verify', label: 'How PSS verifies', sublabel: '9-step pipeline', layer: 'trust',
+      detail: { title: 'PSS verification pipeline', body: `<p>Nine steps, emitted as events between PSS modules. Every step writes to the audit log.</p>`},
+      children: [
+        { id: 'v1', label: '1 · Submit', sublabel: 'platform → POST /sq/submit', layer: 'trust',
+          detail: { title: 'Step 1 — Submit', body: `<p>Sub-platform's <code>pss-client</code> posts the entity and its data to PSS. PSS creates an <code>sq_requests</code> row with status <code>pending</code>.</p>`}},
+        { id: 'v2', label: '2 · Load criteria', sublabel: 'per-platform rule set', layer: 'trust',
+          detail: { title: 'Step 2 — Load criteria', body: `<p>PSS loads the criteria defined by that platform's admin. Each criterion has a required level and a machine-checkable rule.</p>`}},
+        { id: 'v3', label: '3 · Check criteria', sublabel: 'how many passed?', layer: 'trust',
+          detail: { title: 'Step 3 — Check', body: `<p>PSS evaluates the entity data against every criterion. Result: <code>criteria_met / total</code>.</p>`}},
+        { id: 'v4', label: '4 · Score SQ level', sublabel: 'SQ1 … SQ10', layer: 'trust',
+          detail: { title: 'Step 4 — Score', body: `<p>PSS calculates the highest SQ level for which all required criteria are met. Emits <code>sq.scored</code>.</p>`}},
+        { id: 'v5', label: '5 · Route', sublabel: 'rule-engine picks', layer: 'trust',
+          detail: { title: 'Step 5 — Rule engine routes', body: `<p>Platform-specific rules decide one of: auto-approve · forward to franchise · forward to EDR.</p>`}},
+        { id: 'v6', label: '6 · Franchise review', sublabel: 'if routed here', layer: 'franchise',
+          detail: { title: 'Step 6 — Franchise', body: `<p>A franchise reviewer approves / conditionals / rejects. Decision writes back to PSS.</p>`}},
+        { id: 'v7', label: '7 · EDR review', sublabel: 'if routed here', layer: 'edr',
+          detail: { title: 'Step 7 — EDR', body: `<p>EDR has final say — can also override any earlier decision.</p>`}},
+        { id: 'v8', label: '8 · Final SQ + audit', sublabel: 'writes sq_records', layer: 'trust',
+          detail: { title: 'Step 8 — Finalise', body: `<p>The decision is written to <code>sq_records</code> and <code>audit_logs</code>. SQ level is now official.</p>`}},
+        { id: 'v9', label: '9 · Webhook push', sublabel: 'PSS → platform', layer: 'trust',
+          detail: { title: 'Step 9 — Webhook', body: `<p>PSS signs and POSTs the decision to the originating platform's webhook. Platform updates its own DB and notifies the user via email / WebSocket.</p>`}}
+      ]
+    }
+  ]
+};
+
+/* ---------- Layout — radial mind-map ---------- */
+
+const svg = document.getElementById('map');
+const gWorld = document.getElementById('world');
+const gEdges = document.getElementById('edges');
+const gNodes = document.getElementById('nodes');
+
+const CENTER_X = 800, CENTER_Y = 500;
+const LEVEL_GAP = 230;       // radial distance per level
+const NODE_W = 170, NODE_H = 52;
+
+function assignDepth(node, depth = 0) {
+  node._depth = depth;
+  (node.children || []).forEach(c => assignDepth(c, depth + 1));
+}
+assignDepth(TREE);
+
+function initCollapsed(node, depth = 0) {
+  // root + layer nodes open; anything deeper starts collapsed
+  node._collapsed = depth >= 2;
+  (node.children || []).forEach(c => initCollapsed(c, depth + 1));
+}
+initCollapsed(TREE);
+
+/* Position tree with an angular sweep per subtree. */
+function layout(node, angleStart, angleEnd, depth = 0) {
+  if (depth === 0) {
+    node._x = CENTER_X; node._y = CENTER_Y;
+    const kids = (node.children || []);
+    const sweep = Math.PI * 2;
+    const step = sweep / kids.length;
+    kids.forEach((c, i) => {
+      const aStart = -Math.PI / 2 + step * i;
+      const aEnd = aStart + step;
+      layout(c, aStart, aEnd, 1);
+    });
+    return;
+  }
+  const angle = (angleStart + angleEnd) / 2;
+  const r = depth * LEVEL_GAP;
+  node._x = CENTER_X + Math.cos(angle) * r;
+  node._y = CENTER_Y + Math.sin(angle) * r;
+  node._angle = angle;
+  if (!node._collapsed && node.children && node.children.length) {
+    const kids = node.children;
+    const span = (angleEnd - angleStart);
+    const step = span / kids.length;
+    kids.forEach((c, i) => {
+      const aStart = angleStart + step * i;
+      const aEnd = aStart + step;
+      layout(c, aStart, aEnd, depth + 1);
+    });
+  }
+}
+
+function render() {
+  layout(TREE);
+  gEdges.innerHTML = '';
+  gNodes.innerHTML = '';
+  drawTree(TREE);
+}
+
+function drawTree(node) {
+  drawNode(node);
+  if (!node._collapsed && node.children) {
+    for (const c of node.children) {
+      drawEdge(node, c);
+      drawTree(c);
+    }
+  }
+}
+
+function drawEdge(a, b) {
+  // cubic bezier along the radial direction
+  const mx1 = a._x + (b._x - a._x) * 0.5;
+  const my1 = a._y;
+  const mx2 = a._x + (b._x - a._x) * 0.5;
+  const my2 = b._y;
+  const d = `M ${a._x} ${a._y} C ${mx1} ${my1}, ${mx2} ${my2}, ${b._x} ${b._y}`;
+  const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d', d);
+  p.setAttribute('class', 'edge');
+  p.dataset.from = a.id;
+  p.dataset.to = b.id;
+  gEdges.appendChild(p);
+}
+
+const LAYER_VAR = {
+  umbrella: 'var(--umbrella)',
+  entry: 'var(--entry)',
+  trust: 'var(--trust)',
+  industry: 'var(--industry)',
+  franchise: 'var(--franchise)',
+  edr: 'var(--edr)'
+};
+
+function drawNode(node) {
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('class', 'node-group');
+  g.setAttribute('transform', `translate(${node._x - NODE_W/2}, ${node._y - NODE_H/2})`);
+  g.dataset.id = node.id;
+
+  const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  r.setAttribute('class','node-rect');
+  r.setAttribute('width', NODE_W);
+  r.setAttribute('height', NODE_H);
+  r.setAttribute('rx', 10); r.setAttribute('ry', 10);
+  r.setAttribute('fill', LAYER_VAR[node.layer] || 'var(--panel)');
+  r.setAttribute('fill-opacity', node === TREE ? '0.95' : '0.18');
+  if (node === TREE) { r.setAttribute('stroke', LAYER_VAR[node.layer]); r.setAttribute('stroke-width','2'); }
+  g.appendChild(r);
+
+  // colored accent bar on the left
+  const accent = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  accent.setAttribute('width', 4); accent.setAttribute('height', NODE_H);
+  accent.setAttribute('x', 0); accent.setAttribute('y', 0);
+  accent.setAttribute('rx', 2); accent.setAttribute('ry', 2);
+  accent.setAttribute('fill', LAYER_VAR[node.layer] || '#fff');
+  g.appendChild(accent);
+
+  const lab = document.createElementNS('http://www.w3.org/2000/svg','text');
+  lab.setAttribute('class','node-label');
+  lab.setAttribute('x', 14); lab.setAttribute('y', 22);
+  lab.textContent = node.label;
+  g.appendChild(lab);
+
+  if (node.sublabel) {
+    const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
+    sub.setAttribute('class','node-sublabel');
+    sub.setAttribute('x', 14); sub.setAttribute('y', 40);
+    sub.textContent = node.sublabel.length > 30 ? node.sublabel.slice(0,29) + '…' : node.sublabel;
+    g.appendChild(sub);
+  }
+
+  if (node.children && node.children.length) {
+    const ind = document.createElementNS('http://www.w3.org/2000/svg','text');
+    ind.setAttribute('class','node-collapse-ind');
+    ind.setAttribute('x', NODE_W - 14); ind.setAttribute('y', 22);
+    ind.setAttribute('text-anchor','end');
+    ind.textContent = node._collapsed ? '▸' : '▾';
+    g.appendChild(ind);
+  }
+
+  g.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (node.children && node.children.length) {
+      node._collapsed = !node._collapsed;
+      render();
+    }
+    showDetail(node);
+  });
+
+  gNodes.appendChild(g);
+}
+
+render();
+
+/* ---------- Pan + zoom ---------- */
+let view = { x: 0, y: 0, k: 1 };
+function applyView() {
+  gWorld.setAttribute('transform', `translate(${view.x}, ${view.y}) scale(${view.k})`);
+}
+let dragging = false, last = null;
+svg.addEventListener('mousedown', e => {
+  if (e.target.closest('.node-group')) return;
+  dragging = true; last = { x: e.clientX, y: e.clientY };
+  svg.classList.add('panning');
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  view.x += e.clientX - last.x;
+  view.y += e.clientY - last.y;
+  last = { x: e.clientX, y: e.clientY };
+  applyView();
+});
+window.addEventListener('mouseup', () => { dragging = false; svg.classList.remove('panning'); });
+
+svg.addEventListener('wheel', e => {
+  e.preventDefault();
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  const ctm = svg.getScreenCTM().inverse();
+  const worldPt = pt.matrixTransform(ctm);
+  const factor = e.deltaY < 0 ? 1.12 : 0.89;
+  const nextK = Math.min(3, Math.max(0.3, view.k * factor));
+  // zoom around cursor
+  view.x = worldPt.x - (worldPt.x - view.x) * (nextK / view.k);
+  view.y = worldPt.y - (worldPt.y - view.y) * (nextK / view.k);
+  view.k = nextK;
+  applyView();
+}, { passive: false });
+
+/* ---------- Buttons ---------- */
+document.querySelectorAll('#controls button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const act = btn.dataset.act;
+    if (act === 'expand') { walk(TREE, n => n._collapsed = false); render(); }
+    if (act === 'collapse') { walk(TREE, (n,d) => { if (d>=2) n._collapsed = true; }); render(); }
+    if (act === 'reset') { view = { x:0, y:0, k:1 }; applyView(); }
+    if (act === 'fit') { fitToScreen(); }
+  });
+});
+function walk(n, fn, d=0) { fn(n,d); (n.children||[]).forEach(c => walk(c, fn, d+1)); }
+function fitToScreen() {
+  const bb = gNodes.getBBox();
+  const pad = 60;
+  const vw = svg.clientWidth, vh = svg.clientHeight;
+  const k = Math.min((vw - 2*pad)/bb.width, (vh - 2*pad)/bb.height, 2);
+  view.k = k;
+  view.x = (vw - bb.width*k)/2 - bb.x*k;
+  view.y = (vh - bb.height*k)/2 - bb.y*k;
+  applyView();
+}
+
+/* ---------- Detail panel ---------- */
+const detail = document.getElementById('detail');
+function showDetail(node) {
+  document.getElementById('detailTag').textContent = node.layer;
+  document.getElementById('detailTag').style.background = LAYER_VAR[node.layer];
+  document.getElementById('detailTag').style.color = '#0b1020';
+  document.getElementById('detailTitle').textContent = node.detail?.title || node.label;
+  document.getElementById('detailBody').innerHTML = node.detail?.body || `<p>${node.sublabel || ''}</p>`;
+  detail.classList.add('open');
+}
+function closeDetail() { detail.classList.remove('open'); }
+svg.addEventListener('click', () => closeDetail());
+
+/* ---------- Initial fit ---------- */
+window.addEventListener('load', () => setTimeout(fitToScreen, 50));
+window.addEventListener('resize', fitToScreen);
+</script>
+</body>
+</html>

@@ -1,23 +1,33 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { CriteriaController } from './criteria.controller';
+import { CriteriaService } from './criteria.service';
+import { CriteriaSet, CriteriaSetSchema } from './criteria-set.schema';
 
 /**
  * Criteria Module
  *
- * Responsibility: Per-platform criteria set management.
- * Each platform has its own set of criteria that entities must satisfy
- * for each SQ level. Admins configure these criteria per platform.
+ * Manages per-platform criteria sets used by sq-engine to score entities.
  *
- * Collections used: criteria_sets
+ * MongoDB collection: criteria_sets
+ *   One document per (platform_id, entity_type).
+ *   Compound unique index enforces no duplicate sets.
  *
- * API endpoints (from pss-api-contract.md):
- *   GET /api/criteria/:platform_id — return criteria for a platform (public)
+ * Exports CriteriaService so SqEngineModule can:
+ *   - call getCriteriaSet(platform_id, entity_type) at submit time
+ *   - call evaluateCriteria(criteriaSet, entityData) for scoring
  *
- * Status: SCAFFOLD — logic to be implemented in Phase 1
+ * No events emitted. No dependencies on other modules.
+ * Auth is applied at the controller level via AdminKeyGuard directly.
  */
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  imports: [
+    MongooseModule.forFeature([
+      { name: CriteriaSet.name, schema: CriteriaSetSchema },
+    ]),
+  ],
+  controllers: [CriteriaController],
+  providers: [CriteriaService],
+  exports: [CriteriaService],
 })
 export class CriteriaModule {}

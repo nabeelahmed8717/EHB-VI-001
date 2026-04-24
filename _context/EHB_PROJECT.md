@@ -11,27 +11,62 @@
 ## 1. What is EHB?
 
 EHB (Education Health Business) is a centralized multi-industry trust infrastructure.
-It is a parent platform that governs multiple independent service platforms through one
-unified verification and trust system called PSS.
+It is a parent (umbrella) company that governs multiple independent service platforms
+through one unified verification and trust system called **PSS**.
 
 Every service, product, profile, or listing on any EHB platform gets a verified trust
-score called an SQ Level — assigned by PSS, governed by admin-configured rules, and
+score called an **SQ Level** — assigned by PSS, governed by admin-configured rules, and
 auditable across all platforms.
+
+EHB is composed of three layers:
+1. **Front door layer** — `ehb-landing` (public marketing site) + `ehb-main`
+   (central EHB portal where users can register once for the whole ecosystem).
+2. **Sub-company layer** — independent industry platforms (GoSellr, OLS, HPS, JPS,
+   WMS, OBS). Each one is its own product, its own repo, its own user-facing app.
+3. **Trust & governance layer** — PSS (verification engine) + EDR (oversight) +
+   Franchise network (regional manual review). This layer is what makes the whole
+   umbrella coherent.
+
+> See `_context/ehb-ecosystem.md` for how these layers communicate with each other,
+> and `_context/pss-verification-flow.md` for the end-to-end verification pipeline.
 
 ---
 
 ## 2. Platforms (Sub-Companies)
 
-| Repo | Platform | Service |
-|------|----------|---------|
-| ehb-pss | PSS | Central verification & SQ engine |
-| ehb-gosellr | GoSellr | E-commerce platform |
+### 2.1 Public / entry platforms
+
+| Repo | Platform | Role |
+|------|----------|------|
+| ehb-landing | EHB Landing | Public marketing site — explains what EHB is, drives traffic to `ehb-main` and to individual sub-platforms. No user data, no auth. |
+| ehb-main | EHB Main | Central EHB portal. Users can register for "EHB" itself here (creates the shared `pss_db.users` record used by every sub-platform). From ehb-main they can discover and jump into any sub-platform. |
+
+### 2.2 Trust & governance
+
+| Repo | Platform | Role |
+|------|----------|------|
+| ehb-pss | PSS | Central verification & SQ engine. Owns cross-platform user identity, SQ records, routing rules, franchises, EDR reviews, audit logs. |
+
+### 2.3 Industry sub-platforms
+
+| Repo | Platform | Industry |
+|------|----------|----------|
+| ehb-gosellr | GoSellr | E-commerce marketplace |
 | ehb-ols | OLS | Legal professional marketplace |
 | ehb-hps | HPS | Healthcare professional listings |
 | ehb-jps | JPS | Workforce & employment platform |
 | ehb-wms | WMS | Hospital & clinic management |
 | ehb-obs | OBS | Book retail |
-| ehb-edr | EDR | EHB dept. of review (internal) |
+| ehb-edr | EDR | EHB department of review (internal — reviewer console for PSS oversight) |
+
+### 2.4 Registration rule
+
+A user can enter the EHB ecosystem via **either**:
+- `ehb-main` → one signup that creates the master EHB identity, then jump into any sub-platform; **or**
+- any sub-platform directly (e.g. `ehb-gosellr/register`) → that sub-platform still writes the user into `pss_db.users` via PSS, so the identity is unified regardless of entry point.
+
+Either way, **identity lives in `pss_db.users`**. Per-platform DBs only store
+platform-specific profile fields (e.g. seller storefront, doctor specialty).
 
 ---
 
@@ -269,6 +304,7 @@ Steps to migrate any backend:
 
 | Phase | Deliverable | Status |
 |-------|------------|--------|
+| 0 | ehb-landing (marketing) + ehb-main (shared signup/portal) | In progress |
 | 1 | PSS: sq-engine, rule-engine, franchise, EDR, audit | Current |
 | 2 | GoSellr: full platform + entity SQ flow end-to-end | Next |
 | 3 | Franchise portal + auto-creation live | - |
@@ -277,6 +313,15 @@ Steps to migrate any backend:
 | 6 | WMS + OBS platforms | - |
 | 7 | Kubernetes migration | - |
 | 8 | AI risk scoring + cross-platform reputation | - |
+
+### Current code state (as of this file)
+
+| Repo | Backend modules present | Frontend routes present |
+|------|------------------------|-------------------------|
+| ehb-pss | auth, sq-engine, rule-engine, franchise, edr, criteria, audit, platforms, webhook, dev-seed | (auth)/login, (dashboard)/overview, sq-requests, platforms, criteria, rule-engine, franchise, edr, audit |
+| ehb-gosellr | auth, users, products, pss-client, webhooks | (auth)/login,register,callback · (buyer)/browse,settings · (seller)/dashboard |
+| ehb-main | auth, users | /login, /register, /callback |
+| ehb-landing | — (marketing only) | public marketing pages |
 
 ---
 
@@ -347,6 +392,9 @@ If this feature needs SQ approval: call pss-client service, do not call PSS dire
 
 | Thing | Lives in |
 |-------|----------|
+| Public marketing | ehb-landing/ |
+| EHB master portal | ehb-main/ |
+| Cross-platform user identity | pss_db.users (owned by PSS) |
 | SQ records | pss_db.sq_records |
 | Routing rules | pss_db.platform_rules |
 | Franchise data | pss_db.franchises |

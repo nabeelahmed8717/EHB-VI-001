@@ -20,11 +20,7 @@ import {
 import { calculateSqLevel, getSqBadgeLabel } from '@ehb-pss/utils';
 import { SqRequest, SqRequestDocument } from './sq-request.schema';
 import { SqRecord, SqRecordDocument } from './sq-record.schema';
-import {
-  CriteriaSetRef,
-  CriteriaSetRefDocument,
-  CriterionRef,
-} from './criteria-set-ref.schema';
+import { CriteriaService } from '../criteria/criteria.service';
 
 // ── Internal Event Contracts ────────────────────────────────────────────────
 // These are the events sq-engine emits. Other modules subscribe to them.
@@ -55,6 +51,11 @@ export interface SqScoredEvent {
 /**
  * Payload emitted on 'audit.write'.
  * audit module writes this to pss_db.audit_logs.
+ *
+ * Top-level fields map 1:1 to audit_log schema fields.
+ * sq_level_before, sq_level_after, decided_by are folded into
+ * the schema's `metadata` Mixed field by AuditService.writeLog().
+ * Callers may also pass arbitrary extra context via `metadata`.
  */
 export interface AuditWriteEvent {
   sq_request_id: string;
@@ -65,9 +66,11 @@ export interface AuditWriteEvent {
   action: string;
   reason: string;
   performed_by: string;   // userId or 'system'
+  // Optional structured context — folded into metadata on persist
   sq_level_before?: SqLevel | null;
   sq_level_after?: SqLevel | null;
   decided_by?: string;
+  metadata?: Record<string, unknown>;
 }
 
 // ── Service ──────────────────────────────────────────────────────────────────
@@ -83,9 +86,7 @@ export class SqEngineService {
     @InjectModel(SqRecord.name)
     private readonly sqRecordModel: Model<SqRecordDocument>,
 
-    @InjectModel(CriteriaSetRef.name)
-    private readonly criteriaSetModel: Model<CriteriaSetRefDocument>,
-
+    private readonly criteriaService: CriteriaService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -145,23 +146,21 @@ export class SqEngineService {
     }
 
     // ── 3. Load criteria set for this platform + entity_type ────────────
-    const criteriaSet = await this.criteriaSetModel.findOne({
+    const criteriaSet = await this.criteriaService.getCriteriaSet(
       platform_id,
       entity_type,
-    });
+    );
 
-    const criteria: CriterionRef[] = criteriaSet?.criteria ?? [];
-
-    if (criteria.length === 0) {
+    if (!criteriaSet || criteriaSet.criteria.length === 0) {
       this.logger.warn(
-        `No criteria set found for platform=${platform_id} entity_type=${entity_type}. ` +
+        `No active criteria set found for platform=${platform_id} entity_type=${entity_type}. ` +
         `Scoring with 0 criteria — entity will receive null SQ level.`,
       );
     }
 
-    // ── 4. Evaluate criteria against entity_data ────────────────────────
+    // ── 4. Evaluate criteria against entity_data (full check_type support) ─
     const { criteria_met, total_criteria, sq_score } =
-      this.evaluateCriteria(criteria, entity_data);
+      this.criteriaService.evaluateCriteria(criteriaSet, entity_data);
 
     // ── 5. Calculate SQ level from score ────────────────────────────────
     const sq_level_calculated = calculateSqLevel(sq_score);
@@ -303,58 +302,11 @@ export class SqEngineService {
 
   // ── Private Helpers ────────────────────────────────────────────────────
 
-  /**
-   * Evaluates entity_data against the platform criteria set.
-   *
-   * Criterion satisfaction logic:
-   *   - Uses criterion.field_key if present, otherwise criterion.id as the key
-   *   - A criterion is satisfied if entity_data[key] is non-null, non-empty
-   *   - Arrays are satisfied if length > 0
-   *   - Numbers are satisfied if > 0
-   *
-   * NOTE: This is intentionally simple for phase 1. Complex checks
-   * (e.g. minimum 3 images, regex patterns) will be handled by a
-   * criterion.check_type field added in the criteria module phase.
-   */
-  private evaluateCriteria(
-    criteria: CriterionRef[],
-    entityData: Record<string, unknown>,
-  ): { criteria_met: number; total_criteria: number; sq_score: number } {
-    const total_criteria = criteria.length;
-
-    if (total_criteria === 0) {
-      return { criteria_met: 0, total_criteria: 0, sq_score: 0 };
-    }
-
-    let criteria_met = 0;
-
-    for (const criterion of criteria) {
-      // Use field_key if defined, fall back to criterion id
-      const lookupKey = criterion.field_key ?? criterion.id;
-      const value = entityData[lookupKey];
-
-      if (this.isCriterionSatisfied(value)) {
-        criteria_met++;
-      }
-    }
-
-    const sq_score = Math.round((criteria_met / total_criteria) * 100);
-    return { criteria_met, total_criteria, sq_score };
-  }
-
-  /**
-   * Checks if a single criterion value is "satisfied".
-   * Handles string, number, array, boolean, and object values.
-   */
-  private isCriterionSatisfied(value: unknown): boolean {
-    if (value === undefined || value === null || value === '') return false;
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'number') return value > 0;
-    if (Array.isArray(value)) return value.length > 0;
-    if (typeof value === 'string') return value.trim().length > 0;
-    if (typeof value === 'object') return Object.keys(value).length > 0;
-    return false;
-  }
+  // evaluateCriteria and isCriterionSatisfied have been moved to CriteriaService.
+  // SqEngineService now delegates scoring to:
+  //   criteriaService.getCriteriaSet(platform_id, entity_type)
+  //   criteriaService.evaluateCriteria(criteriaSet, entity_data)
+  // This enables full check_type support (presence | min_length | min_value | regex).
 
   /** Builds a SqStatusResponseDto from a final sq_record */
   private buildStatusResponseFromRecord(
@@ -420,6 +372,89 @@ export class SqEngineService {
     sq_request_id: string,
   ): Promise<SqRequestDocument | null> {
     return this.sqRequestModel.findById(sq_request_id).exec();
+  }
+
+  /**
+   * Retrieves the SqRecord (trust ledger entry) for a given entity + platform.
+   * EDR uses this to confirm a record exists before attempting an override.
+   * Also useful for the full-detail view endpoint.
+   */
+  async getRecordByEntity(
+    entity_id: string,
+    platform_id: string,
+  ): Promise<SqRecordDocument | null> {
+    return this.sqRecordModel
+      .findOne({ entity_id, platform_id })
+      .exec();
+  }
+
+  // ── Admin Queries (PSS Dashboard) ─────────────────────────────────────────
+
+  /**
+   * Lists SQ requests with optional filters and pagination.
+   * Used by the PSS admin dashboard to view all submitted requests.
+   */
+  async listRequests(filters: {
+    status?: string;
+    platform_id?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: Record<string, unknown>[];
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+  }> {
+    const { status, platform_id, page = 1, limit = 20 } = filters;
+    const query: Record<string, unknown> = {};
+    if (status) query['status'] = status;
+    if (platform_id) query['platform_id'] = platform_id;
+
+    const [data, total] = await Promise.all([
+      this.sqRequestModel
+        .find(query)
+        .sort({ created_at: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.sqRequestModel.countDocuments(query),
+    ]);
+
+    return {
+      data: (data as Record<string, unknown>[]).map(this.normaliseRequest),
+      total,
+      page,
+      limit,
+      total_pages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * Returns full details for a single SQ request by its MongoDB _id.
+   * Used by PSS admin dashboard detail view.
+   */
+  async getRequestDetail(sq_request_id: string): Promise<Record<string, unknown>> {
+    const req = await this.sqRequestModel.findById(sq_request_id).lean().exec();
+    if (!req) {
+      throw new NotFoundException(`SQ request "${sq_request_id}" not found`);
+    }
+    return this.normaliseRequest(req as Record<string, unknown>);
+  }
+
+  /**
+   * Adds frontend-expected aliases to a lean SqRequest document:
+   *   sq_request_id  → _id.toString()   (frontend type uses this as the row key)
+   *   submitted_at   → created_at        (frontend type uses this for display)
+   */
+  private normaliseRequest(doc: Record<string, unknown>): Record<string, unknown> {
+    const id = doc['_id'];
+    return {
+      ...doc,
+      sq_request_id: id ? String(id) : undefined,
+      submitted_at: doc['created_at'],
+    };
   }
 
   /**

@@ -7,6 +7,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
   Logger,
 } from '@nestjs/common';
 import {
@@ -27,17 +28,17 @@ import {
   SqBulkStatusResponseDto,
 } from '@ehb-pss/dtos';
 import { SqEngineService } from './sq-engine.service';
+import { PlatformKeyGuard } from '../auth/platform-key.guard';
 
 /**
  * SQ Engine Controller
  *
  * Exposes the three SQ endpoints defined in pss-api-contract.md.
  * All routes are called by platform backends via their pss-client module.
- * Platform identity is authenticated via x-platform-key + x-platform-id headers.
- *
- * NOTE: Auth guard (@UseGuards(PlatformKeyGuard)) will be added when
- * the auth module is built. Swagger security annotations are already
- * applied so the contract is visible in /api/docs now.
+ * Platform identity is authenticated via PlatformKeyGuard:
+ *   reads x-platform-key + x-platform-id headers
+ *   validates via PlatformsService.validatePlatformKey()
+ *   attaches request.platform = { platform_id, platform_name }
  */
 @ApiTags('SQ Engine')
 @ApiSecurity('platform-key')
@@ -51,6 +52,7 @@ import { SqEngineService } from './sq-engine.service';
   description: 'Platform ID (e.g. gosellr, ols, hps)',
   required: true,
 })
+@UseGuards(PlatformKeyGuard)
 @Controller('sq')
 export class SqEngineController {
   private readonly logger = new Logger(SqEngineController.name);
@@ -184,4 +186,5 @@ export class SqEngineController {
     );
     return this.sqEngineService.getBulkSqStatus(dto);
   }
+
 }

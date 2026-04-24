@@ -14,6 +14,7 @@
         "outputPath": "dist/apps/pss-api",
         "main": "apps/pss-api/src/main.ts",
         "tsConfig": "apps/pss-api/tsconfig.app.json",
+        "isolatedConfig": false,
         "assets": []
       },
       "configurations": {

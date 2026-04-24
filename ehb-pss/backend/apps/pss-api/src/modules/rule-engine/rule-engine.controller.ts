@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  UseGuards,
   Logger,
 } from '@nestjs/common';
 import {
@@ -33,6 +34,7 @@ import {
 import { PartialType } from '@nestjs/swagger';
 import { RuleEngineService } from './rule-engine.service';
 import { RuleAction, RuleOperator } from './platform-rule.schema';
+import { AdminKeyGuard } from '../auth/admin-key.guard';
 
 // ── Local DTOs ───────────────────────────────────────────────────────────────
 // These are rule-engine-specific and not shared with other platforms,
@@ -127,9 +129,8 @@ export class UpdatePlatformRuleDto extends PartialType(CreatePlatformRuleDto) {}
  *
  * These endpoints are called by PSS admins to configure how entities
  * are routed after scoring: auto-approve, franchise, EDR, or reject.
- *
  * Each platform configures its own rules — no global rules.
- * Requires PSS admin authentication (auth module — coming in next phase).
+ * Protected by AdminKeyGuard (x-ehb-admin-key header).
  */
 @ApiTags('Rule Engine — Admin')
 @ApiSecurity('admin-key')
@@ -138,7 +139,8 @@ export class UpdatePlatformRuleDto extends PartialType(CreatePlatformRuleDto) {}
   description: 'EHB master admin key — required for all rule management endpoints',
   required: true,
 })
-@Controller('rules')
+@UseGuards(AdminKeyGuard)
+@Controller('rule-engine/rules')
 export class RuleEngineController {
   private readonly logger = new Logger(RuleEngineController.name);
 

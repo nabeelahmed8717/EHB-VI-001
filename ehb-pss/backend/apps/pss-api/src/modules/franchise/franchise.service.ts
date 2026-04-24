@@ -403,6 +403,20 @@ export class FranchiseService {
     return this.franchiseReviewModel.findById(franchise_review_id).exec();
   }
 
+  /**
+   * Returns the FranchiseReview linked to a given SqRequest.
+   * Used by EdrService when building the full-detail view for EDR staff
+   * (GET /edr/review/:sq_request_id shows franchise context if escalated).
+   */
+  async getReviewBySqRequestId(
+    sq_request_id: string,
+  ): Promise<FranchiseReviewDocument | null> {
+    return this.franchiseReviewModel
+      .findOne({ sq_request_id })
+      .sort({ created_at: -1 })  // Most recent if somehow multiple exist
+      .exec();
+  }
+
   /** Update franchise contact info (name, email, phone) — admin operation */
   async updateFranchise(
     franchise_id: string,

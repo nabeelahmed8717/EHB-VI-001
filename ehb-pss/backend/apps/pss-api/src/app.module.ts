@@ -6,12 +6,14 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 // PSS Feature Modules — each scaffolded, logic built per phase
 import { AuthModule } from './modules/auth/auth.module';
 import { PlatformsModule } from './modules/platforms/platforms.module';
+import { DevSeedModule } from './modules/dev-seed/dev-seed.module';
 import { CriteriaModule } from './modules/criteria/criteria.module';
 import { SqEngineModule } from './modules/sq-engine/sq-engine.module';
 import { RuleEngineModule } from './modules/rule-engine/rule-engine.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { FranchiseModule } from './modules/franchise/franchise.module';
 import { EdrModule } from './modules/edr/edr.module';
+import { WebhookModule } from './modules/webhook/webhook.module';
 
 @Module({
   imports: [
@@ -46,15 +48,17 @@ import { EdrModule } from './modules/edr/edr.module';
 
     // ── PSS Feature Modules ──────────────────────────────────────────────────
     // Build order: auth → platforms → criteria → sq-engine → rule-engine
-    //              → audit → franchise → edr
+    //              → audit → franchise → edr → webhook
     AuthModule,
     PlatformsModule,
+    DevSeedModule,
     CriteriaModule,
     SqEngineModule,
     RuleEngineModule,
     AuditModule,
     FranchiseModule,
     EdrModule,
+    WebhookModule,
   ],
 })
 export class AppModule {}
