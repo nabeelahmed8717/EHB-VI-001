@@ -62,11 +62,15 @@ EHB is composed of three layers:
 ### 2.4 Registration rule
 
 A user can enter the EHB ecosystem via **either**:
-- `ehb-main` → one signup that creates the master EHB identity, then jump into any sub-platform; **or**
-- any sub-platform directly (e.g. `ehb-gosellr/register`) → that sub-platform still writes the user into `pss_db.users` via PSS, so the identity is unified regardless of entry point.
+- `ehb-main` → signup creates the EHB identity in `ehb_main_db.users`, then SSO into any sub-platform; **or**
+- any sub-platform directly (e.g. `ehb-gosellr/register`) — creates a local account in that platform's own DB.
 
-Either way, **identity lives in `pss_db.users`**. Per-platform DBs only store
-platform-specific profile fields (e.g. seller storefront, doctor specialty).
+EHB SSO links the two: "Login with EHB" on a sub-platform verifies the EHB JWT
+with EHB Main backend (port 5000) and finds-or-creates a local user record.
+
+**Database ownership: each service has its own database.**
+EHB Main identity lives in `ehb_main_db`, NOT `pss_db`. Sub-platform business
+data lives in each platform's own DB (e.g. `gosellr_db`). Never share DBs.
 
 ---
 
@@ -230,24 +234,44 @@ SQ is assigned per entity (product, listing, profile, service).
 
 ## 8. Local Development Setup
 
+Port assignments (authoritative — never change these without updating all .env files):
+
+| Service | Port |
+|---------|------|
+| PSS backend | 3001 |
+| GoSellr backend | 3002 |
+| EHB Main backend | 5000 |
+| EHB Main frontend | 4000 |
+| PSS frontend | 4001 |
+| GoSellr frontend | 4002 |
+
 ```
-# Terminal 1 — run PSS backend locally
+# Terminal 1 — EHB Main backend (identity provider, port 5000)
+cd ehb-main/backend
+nx serve ehb-main-api
+
+# Terminal 2 — EHB Main frontend (port 4000)
+cd ehb-main/frontend
+npm run dev
+
+# Terminal 3 — PSS backend (port 3001)
 cd ehb-pss/backend
 nx serve pss-api
 
-# Terminal 2 — run PSS frontend locally
+# Terminal 4 — PSS frontend (port 4001)
 cd ehb-pss/frontend
 npm run dev
 
-# Terminal 3 — run GoSellr backend (points to local PSS)
+# Terminal 5 — GoSellr backend (port 3002, calls EHB Main at 5000)
 cd ehb-gosellr/backend
-# .env: PSS_API_URL=http://localhost:3001
 nx serve gosellr-api
 
-# Terminal 4 — run GoSellr frontend
+# Terminal 6 — GoSellr frontend (port 4002)
 cd ehb-gosellr/frontend
 npm run dev
 ```
+
+Start order: EHB Main backend first, then PSS, then sub-platforms.
 
 Or use deployed PSS URL for easier local dev:
 ```

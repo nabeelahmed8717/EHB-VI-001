@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Noto_Sans, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({
+const notoSans = Noto_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-noto-sans',
   display: 'swap',
 });
 
@@ -52,7 +53,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={`${notoSans.variable} ${spaceGrotesk.variable}`}>
       <body className="font-sans antialiased">{children}</body>
     </html>
   );

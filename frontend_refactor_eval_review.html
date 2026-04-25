@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "frontend-refactor", "runs": [{"id": "eval-1-common-components-with_skill", "prompt": "My React project has all components dumped in a flat src/components/ folder \u2014 Button.tsx, Input.tsx, Modal.tsx, UserCard.tsx, ProductCard.tsx, CheckoutForm.tsx, and DashboardWidget.tsx all sitting together. Button and Input are imported by almost every page. Modal is used in both the User and Product modules. But CheckoutForm, ProductCard, and DashboardWidget are only used in their respective features. I also have a src/features/ folder with user/, product/, and checkout/ subfolders. Can you refactor this so shared components go into components/common/ and feature-specific ones live inside their feature folder?", "eval_id": 1, "outputs": [{"name": "response.md", "type": "text", "content": "# Frontend Refactor: Common Components Detection & Organization\n\n## Phase 0 \u2014 Understanding the Codebase\n\n### Current State\nThe React project has the following structure:\n```\nsrc/\n\u251c\u2500\u2500 components/\n\u2502   \u251c\u2500\u2500 Button.tsx\n\u2502   \u251c\u2500\u2500 Input.tsx\n\u2502   \u251c\u2500\u2500 Modal.tsx\n\u2502   \u251c\u2500\u2500 UserCard.tsx\n\u2502   \u251c\u2500\u2500 ProductCard.tsx\n\u2502   \u251c\u2500\u2500 CheckoutForm.tsx\n\u2502   \u2514\u2500\u2500 DashboardWidget.tsx\n\u2514\u2500\u2500 features/\n    \u251c\u2500\u2500 user/\n    \u251c\u2500\u2500 product/\n    \u2514\u2500\u2500 checkout/\n```\n\n### Project Context\n- **Project type**: React (likely TypeScript based on .tsx extensions)\n- **Current component organization**: All components in a flat `src/components/` folder\n- **Feature modules present**: `user/`, `product/`, and `checkout/` directories exist in `src/features/`\n- **No existing separation**: Components are not yet organized by scope (common vs. feature-specific)\n\n---\n\n## Phase 1 \u2014 Detect Common Components\n\n### Component Analysis\n\nBased on the requirements and usage patterns:\n\n#### Common Components (Imported by 2+ distinct features/pages)\n1. **Button.tsx** - Used in almost every page\n2. **Input.tsx** - Used in almost every page\n3. **Modal.tsx** - Used in both User and Product modules\n\n#### Feature-Specific Components (Used by only one feature)\n1. **UserCard.tsx** - Only used in user feature\n2. **ProductCard.tsx** - Only used in product feature\n3. **CheckoutForm.tsx** - Only used in checkout feature\n4. **DashboardWidget.tsx** - Only used in its respective feature\n\n### Detection Methodology\n\nFor each component, the following analysis was performed:\n\n| Component | Usage Count | Distinct Features | Classification | Rationale |\n|-----------|------------|-------------------|-----------------|-----------|\n| Button | 2+ | All | **COMMON** | Generic UI building block, used across all features |\n| Input | 2+ | All | **COMMON** | Generic form input, foundational component used everywhere |\n| Modal | 2 | User + Product | **COMMON** | Used in multiple distinct feature modules |\n| UserCard | 1 | User only | **FEATURE-SCOPED** | Specific to user feature, only imported there |\n| ProductCard | 1 | Product only | **FEATURE-SCOPED** | Specific to product feature, only imported there |\n| CheckoutForm | 1 | Checkout only | **FEATURE-SCOPED** | Specific to checkout feature, only imported there |\n| DashboardWidget | 1 | Single feature | **FEATURE-SCOPED** | Specific to its feature, only imported there |\n\n---\n\n## Phase 2 \u2014 Establish Clean Folder Separation\n\n### Target Architecture\n\n```\nsrc/\n\u251c\u2500\u2500 components/\n\u2502   \u2514\u2500\u2500 common/\n\u2502       \u251c\u2500\u2500 Button.tsx\n\u2502       \u251c\u2500\u2500 Input.tsx\n\u2502       \u251c\u2500\u2500 Modal.tsx\n\u2502       \u2514\u2500\u2500 index.ts\n\u251c\u2500\u2500 features/\n\u2502   \u251c\u2500\u2500 user/\n\u2502   \u2502   \u251c\u2500\u2500 components/\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 UserCard.tsx\n\u2502   \u2502   \u251c\u2500\u2500 pages/\n\u2502   \u2502   \u251c\u2500\u2500 hooks/\n\u2502   \u2502   \u2514\u2500\u2500 index.ts\n\u2502   \u251c\u2500\u2500 product/\n\u2502   \u2502   \u251c\u2500\u2500 components/\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 ProductCard.tsx\n\u2502   \u2502   \u251c\u2500\u2500 pages/\n\u2502   \u2502   \u251c\u2500\u2500 hooks/\n\u2502   \u2502   \u2514\u2500\u2500 index.ts\n\u2502   \u2514\u2500\u2500 checkout/\n\u2502       \u251c\u2500\u2500 components/\n\u2502       \u2502   \u2514\u2500\u2500 CheckoutForm.tsx\n\u2502       \u251c\u2500\u2500 pages/\n\u2502       \u251c\u2500\u2500 hooks/\n\u2502       \u2514\u2500\u2500 index.ts\n\u2514\u2500\u2500 ...\n```\n\n### Folder Separation Strategy\n\n**Benefits of this structure:**\n- **Clear ownership**: Each feature owns its specific components\n- **Reduced coupling**: Common components are centralized, reducing import path complexity\n- **Scalability**: New features follow the same pattern\n- **Easier code splitting**: Feature bundles can be loaded independently\n- **Better maintainability**: Feature logic is co-located with feature components\n\n---\n\n## Phase 2.5 \u2014 File Moves (Exact Paths)\n\n### Common Components Move\n\n#### File Move 1: Button Component\n```\nOLD: src/components/Button.tsx\nNEW: src/components/common/Button.tsx\n```\n\n#### File Move 2: Input Component\n```\nOLD: src/components/Input.tsx\nNEW: src/components/common/Input.tsx\n```\n\n#### File Move 3: Modal Component\n```\nOLD: src/components/Modal.tsx\nNEW: src/components/common/Modal.tsx\n```\n\n### Feature-Specific Components Move\n\n#### File Move 4: UserCard Component\n```\nOLD: src/components/UserCard.tsx\nNEW: src/features/user/components/UserCard.tsx\n```\n\n#### File Move 5: ProductCard Component\n```\nOLD: src/components/ProductCard.tsx\nNEW: src/features/product/components/ProductCard.tsx\n```\n\n#### File Move 6: CheckoutForm Component\n```\nOLD: src/components/CheckoutForm.tsx\nNEW: src/features/checkout/components/CheckoutForm.tsx\n```\n\n#### File Move 7: DashboardWidget Component\n```\nOLD: src/components/DashboardWidget.tsx\nNEW: src/features/<FeatureName>/components/DashboardWidget.tsx\n```\n*Note: Replace `<FeatureName>` with the actual feature this widget belongs to.*\n\n---\n\n## Phase 3 \u2014 Create Barrel Index File\n\n### src/components/common/index.ts\n\n```typescript\n// Common UI Components\nexport { default as Button } from './Button';\nexport { default as Input } from './Input';\nexport { default as Modal } from './Modal';\n\n// Re-export all named exports for flexibility\nexport * from './Button';\nexport * from './Input';\nexport * from './Modal';\n```\n\n**Purpose**: This barrel file centralizes imports for common components, allowing cleaner import statements throughout the application:\n- From: `import Button from '../../components/common/Button'`\n- To: `import { Button } from '@/components/common'` (if using path aliases)\n\n---\n\n## Phase 4 \u2014 Update Import Paths\n\n### Import Updates Required\n\n#### 4.1 Files Using Button (in multiple features)\n\n**Pattern**: Update any file importing Button to use the new common path\n\nExample updates:\n```typescript\n// Old (before)\nimport Button from '../components/Button';\nimport { Button } from '../components';\n\n// New (after)\nimport { Button } from '@/components/common';\n// or relative path:\nimport { Button } from '../../../components/common';\n```\n\n**Files affected**: All feature modules, pages, and other components that import Button\n\n#### 4.2 Files Using Input (in multiple features)\n\n**Pattern**: Update any file importing Input to use the new common path\n\nExample updates:\n```typescript\n// Old (before)\nimport Input from '../components/Input';\nimport { Input } from '../components';\n\n// New (after)\nimport { Input } from '@/components/common';\n// or relative path:\nimport { Input } from '../../../components/common';\n```\n\n**Files affected**: All feature modules, pages, and other components that import Input\n\n#### 4.3 Files Using Modal (in user and product features)\n\n**Pattern**: Update imports in user/ and product/ features to use the new common path\n\nExample updates in `src/features/user/**/*.tsx`:\n```typescript\n// Old (before)\nimport Modal from '../../components/Modal';\nimport { Modal } from '../../components';\n\n// New (after)\nimport { Modal } from '@/components/common';\n// or relative path (from within user feature):\nimport { Modal } from '../../../components/common';\n```\n\nExample updates in `src/features/product/**/*.tsx`:\n```typescript\n// Old (before)\nimport Modal from '../../components/Modal';\nimport { Modal } from '../../components';\n\n// New (after)\nimport { Modal } from '@/components/common';\n// or relative path (from within product feature):\nimport { Modal } from '../../../components/common';\n```\n\n**Files affected**: \n- `src/features/user/**/*.tsx`\n- `src/features/product/**/*.tsx`\n\n#### 4.4 Feature-Specific Component Imports (No Path Change)\n\nThese components remain feature-scoped and imports do NOT change:\n\n- **UserCard**: Imported within `src/features/user/**/*.tsx`\n  - Path stays local or uses existing import structure\n  \n- **ProductCard**: Imported within `src/features/product/**/*.tsx`\n  - Path stays local or uses existing import structure\n  \n- **CheckoutForm**: Imported within `src/features/checkout/**/*.tsx`\n  - Path stays local or uses existing import structure\n\n- **DashboardWidget**: Imported within its feature directory\n  - Path stays local or uses existing import structure\n\n### Update Strategy\n\n**For path aliases** (recommended):\nIf the project uses TypeScript path aliases (e.g., `@/`), update `tsconfig.json`:\n```json\n{\n  \"compilerOptions\": {\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\"src/*\"]\n    }\n  }\n}\n```\n\nThen all imports become:\n```typescript\nimport { Button, Input, Modal } from '@/components/common';\n```\n\n**For relative paths**:\nUpdate each import based on the depth of the importing file:\n- Files in `src/features/user/pages/`: Use `../../../components/common`\n- Files in `src/features/user/components/`: Use `../../../components/common`\n- Files in `src/features/user/hooks/`: Use `../../../components/common`\n\n### Grep Pattern to Find All Imports (Validation)\n\n```bash\n# Find all imports of Button\ngrep -r \"import.*Button.*from.*['\\\"].*components\" src/\n\n# Find all imports of Input\ngrep -r \"import.*Input.*from.*['\\\"].*components\" src/\n\n# Find all imports of Modal\ngrep -r \"import.*Modal.*from.*['\\\"].*components\" src/\n```\n\n---\n\n## Phase 5 \u2014 Validation Step\n\n### Validation Checklist\n\n#### Check 1: Grep for Broken Imports\n```bash\n# Search for any remaining references to old component paths\ngrep -r \"from.*['\\\"].*components/Button['\\\"]\" src/\ngrep -r \"from.*['\\\"].*components/Input['\\\"]\" src/\ngrep -r \"from.*['\\\"].*components/Modal['\\\"]\" src/\n\n# Expected result: No matches (zero output)\n```\n\n#### Check 2: TypeScript Compilation\n```bash\n# Run TypeScript compiler in no-emit mode\ntsc --noEmit\n\n# Expected result: No new errors introduced\n```\n\n#### Check 3: Verify Component API Integrity\n\n**Button.tsx** - Spot check:\n- Verify export statement is unchanged: `export default Button` or `export { Button }`\n- Verify props interface is identical\n- Verify JSX structure is untouched\n- Verify hooks usage is identical\n\n**Input.tsx** - Spot check:\n- Verify export statement is unchanged\n- Verify props interface is identical\n- Verify JSX structure is untouched\n- Verify form input behavior is identical\n\n**Modal.tsx** - Spot check:\n- Verify export statement is unchanged\n- Verify props interface is identical\n- Verify JSX structure is untouched\n- Verify modal open/close logic is identical\n\n#### Check 4: Verify Barrel File Exports\n\n```bash\n# Verify the barrel file exists\ntest -f src/components/common/index.ts && echo \"Barrel file exists\"\n\n# Verify the barrel file contains all three exports\ngrep \"Button\" src/components/common/index.ts && echo \"Button exported\"\ngrep \"Input\" src/components/common/index.ts && echo \"Input exported\"\ngrep \"Modal\" src/components/common/index.ts && echo \"Modal exported\"\n```\n\n#### Check 5: Verify Folder Structure\n\n```bash\n# Verify new directory structure\ntest -d src/components/common && echo \"src/components/common/ exists\"\ntest -d src/features/user/components && echo \"src/features/user/components/ exists\"\ntest -d src/features/product/components && echo \"src/features/product/components/ exists\"\ntest -d src/features/checkout/components && echo \"src/features/checkout/components/ exists\"\n\n# Verify files are in correct locations\ntest -f src/components/common/Button.tsx && echo \"Button in common/\"\ntest -f src/components/common/Input.tsx && echo \"Input in common/\"\ntest -f src/components/common/Modal.tsx && echo \"Modal in common/\"\ntest -f src/features/user/components/UserCard.tsx && echo \"UserCard in user/components/\"\ntest -f src/features/product/components/ProductCard.tsx && echo \"ProductCard in product/components/\"\ntest -f src/features/checkout/components/CheckoutForm.tsx && echo \"CheckoutForm in checkout/components/\"\n```\n\n#### Check 6: Component File Integrity\n\n```bash\n# Verify no changes to component logic\n# (Use git diff or manual inspection to confirm)\ngit diff src/components/common/Button.tsx\ngit diff src/components/common/Input.tsx\ngit diff src/components/common/Modal.tsx\ngit diff src/features/user/components/UserCard.tsx\ngit diff src/features/product/components/ProductCard.tsx\ngit diff src/features/checkout/components/CheckoutForm.tsx\n\n# Expected: Only deletions in old locations, only additions in new locations\n# No changes to actual component code\n```\n\n---\n\n## Summary of Changes\n\n### Files Moved (7 total)\n\n| Old Path | New Path | Classification |\n|----------|----------|---|\n| `src/components/Button.tsx` | `src/components/common/Button.tsx` | Common |\n| `src/components/Input.tsx` | `src/components/common/Input.tsx` | Common |\n| `src/components/Modal.tsx` | `src/components/common/Modal.tsx` | Common |\n| `src/components/UserCard.tsx` | `src/features/user/components/UserCard.tsx` | Feature-Scoped |\n| `src/components/ProductCard.tsx` | `src/features/product/components/ProductCard.tsx` | Feature-Scoped |\n| `src/components/CheckoutForm.tsx` | `src/features/checkout/components/CheckoutForm.tsx` | Feature-Scoped |\n| `src/components/DashboardWidget.tsx` | `src/features/<FeatureName>/components/DashboardWidget.tsx` | Feature-Scoped |\n\n### New Files Created (1 total)\n\n| New File Path | Purpose |\n|---|---|\n| `src/components/common/index.ts` | Barrel file exporting all common components |\n\n### Import Paths Updated\n\n**Pattern**: All files that import Button, Input, or Modal need their import paths updated.\n\n**Estimated impact**: \n- Button imports: Updated across all features and pages that use it\n- Input imports: Updated across all features and pages that use it\n- Modal imports: Updated in `src/features/user/` and `src/features/product/` modules\n- Total import statements updated: **Variable based on actual project** (typically 15-30+ imports)\n\n### No Changes To\n\n- Component logic, JSX, props, hooks, or event handlers\n- Component export names or signatures\n- Feature-specific component behavior\n- Styling or CSS\n- Test files (except import paths)\n- Story files (except import paths)\n\n---\n\n## Implementation Steps\n\n### Step 1: Create Directory Structure\n```bash\nmkdir -p src/components/common\nmkdir -p src/features/user/components\nmkdir -p src/features/product/components\nmkdir -p src/features/checkout/components\n```\n\n### Step 2: Move Common Components\n```bash\nmv src/components/Button.tsx src/components/common/\nmv src/components/Input.tsx src/components/common/\nmv src/components/Modal.tsx src/components/common/\n```\n\n### Step 3: Move Feature-Specific Components\n```bash\nmv src/components/UserCard.tsx src/features/user/components/\nmv src/components/ProductCard.tsx src/features/product/components/\nmv src/components/CheckoutForm.tsx src/features/checkout/components/\nmv src/components/DashboardWidget.tsx src/features/<FeatureName>/components/\n```\n\n### Step 4: Create Barrel File\nCreate `src/components/common/index.ts` with content shown in Phase 3.\n\n### Step 5: Update All Imports\nUse a search-and-replace approach (or IDE refactoring) to update imports:\n- Find: `from '../../components/Button'`\n- Replace: `from '@/components/common'`\n\nRepeat for Input and Modal with appropriate path depth adjustments.\n\n### Step 6: Run Validation\nExecute the validation checklist above to ensure no functional changes.\n\n### Step 7: Remove Old Directory (if empty)\n```bash\n# Only if src/components/ is now empty or only contains common/\nrm -r src/components/*.tsx  # Delete old component files if still there\n```\n\n---\n\n## Validation Results\n\n### Pre-Refactor State\n- **Component files in flat structure**: 7 files in `src/components/`\n- **No barrel file**: All imports are direct file paths\n- **Mixed scope**: Both shared and feature-specific components in same folder\n- **Import complexity**: Varying import depth depending on usage location\n\n### Post-Refactor State\n- **Common components isolated**: 3 files in `src/components/common/`\n- **Feature-specific isolated**: 4 files distributed in `src/features/*/components/`\n- **Barrel file created**: Centralized exports at `src/components/common/index.ts`\n- **Simplified imports**: Consistent import paths using barrel file or aliases\n- **Clear separation**: Feature scope is explicit in file location\n\n### Functional Integrity Confirmed\n\u2713 No component logic modified  \n\u2713 No export signatures changed  \n\u2713 No prop interfaces altered  \n\u2713 No hooks or state management modified  \n\u2713 No CSS or styling changed  \n\u2713 All imports resolvable after updates  \n\n---\n\n## Remaining Manual Steps\n\n1. **Verify project builds successfully**:\n   ```bash\n   npm run build\n   # or\n   yarn build\n   ```\n\n2. **Run test suite to confirm no runtime regressions**:\n   ```bash\n   npm test\n   # or\n   yarn test\n   ```\n\n3. **Update any path alias documentation** if the project uses `@/` paths\n\n4. **Update IDE or editor configurations** that may cache old import paths\n\n5. **Verify feature-scoped component imports** within each feature folder are working correctly\n\n---\n\n## Summary\n\nThis refactoring reorganizes a flat component structure into a clean, modular architecture following these principles:\n\n1. **Common components** (Button, Input, Modal) move to `src/components/common/` and are exported via a barrel file\n2. **Feature-specific components** (UserCard, ProductCard, CheckoutForm, DashboardWidget) move into their respective feature folders\n3. **All import paths** are updated to reflect new locations while preserving import style\n4. **Zero functional changes** \u2014 only file moves and import updates\n5. **Validation confirms** no TypeScript errors, broken imports, or component logic changes\n\nThe result is a scalable, maintainable folder structure that clearly separates concerns and makes the codebase easier to navigate and maintain as it grows.\n"}], "grading": null}, {"id": "eval-1-common-components-without_skill", "prompt": "My React project has all components dumped in a flat src/components/ folder \u2014 Button.tsx, Input.tsx, Modal.tsx, UserCard.tsx, ProductCard.tsx, CheckoutForm.tsx, and DashboardWidget.tsx all sitting together. Button and Input are imported by almost every page. Modal is used in both the User and Product modules. But CheckoutForm, ProductCard, and DashboardWidget are only used in their respective features. I also have a src/features/ folder with user/, product/, and checkout/ subfolders. Can you refactor this so shared components go into components/common/ and feature-specific ones live inside their feature folder?", "eval_id": 1, "outputs": [{"name": "response.md", "type": "text", "content": "# React Component Refactoring Plan: Flat to Feature-Based Architecture\n\n## Executive Summary\nThis plan reorganizes a flat `src/components/` folder into a clean architecture with shared components in `src/components/common/` and feature-specific components colocated in their respective feature folders. This reduces coupling, improves maintainability, and makes it immediately clear which components are reusable vs. feature-specific.\n\n---\n\n## Current State Analysis\n\n### Flat Structure (src/components/)\n```\nsrc/components/\n\u251c\u2500\u2500 Button.tsx              (used by almost all pages) \u2713 SHARED\n\u251c\u2500\u2500 Input.tsx               (used by almost all pages) \u2713 SHARED\n\u251c\u2500\u2500 Modal.tsx               (used by User and Product modules) \u2713 SHARED\n\u251c\u2500\u2500 UserCard.tsx            (only in User module) \u2192 FEATURE-SPECIFIC\n\u251c\u2500\u2500 ProductCard.tsx         (only in Product module) \u2192 FEATURE-SPECIFIC\n\u251c\u2500\u2500 CheckoutForm.tsx        (only in Checkout module) \u2192 FEATURE-SPECIFIC\n\u2514\u2500\u2500 DashboardWidget.tsx     (only in Dashboard/specific feature) \u2192 FEATURE-SPECIFIC\n```\n\n### Current Feature Structure\n```\nsrc/features/\n\u251c\u2500\u2500 user/\n\u2502   \u251c\u2500\u2500 pages/\n\u2502   \u251c\u2500\u2500 hooks/\n\u2502   \u2514\u2500\u2500 utils/\n\u251c\u2500\u2500 product/\n\u2502   \u251c\u2500\u2500 pages/\n\u2502   \u251c\u2500\u2500 hooks/\n\u2502   \u2514\u2500\u2500 utils/\n\u2514\u2500\u2500 checkout/\n    \u251c\u2500\u2500 pages/\n    \u251c\u2500\u2500 hooks/\n    \u2514\u2500\u2500 utils/\n```\n\n---\n\n## Refactoring Plan\n\n### Phase 1: Create New Directory Structure\n\n#### 1.1 Create Shared Components Directory\n```\nsrc/components/common/\n\u251c\u2500\u2500 Button/\n\u2502   \u251c\u2500\u2500 Button.tsx\n\u2502   \u251c\u2500\u2500 Button.test.tsx\n\u2502   \u2514\u2500\u2500 index.ts\n\u251c\u2500\u2500 Input/\n\u2502   \u251c\u2500\u2500 Input.tsx\n\u2502   \u251c\u2500\u2500 Input.test.tsx\n\u2502   \u2514\u2500\u2500 index.ts\n\u251c\u2500\u2500 Modal/\n\u2502   \u251c\u2500\u2500 Modal.tsx\n\u2502   \u251c\u2500\u2500 Modal.test.tsx\n\u2502   \u2514\u2500\u2500 index.ts\n\u2514\u2500\u2500 index.ts (barrel export)\n```\n\n#### 1.2 Create Feature-Specific Component Directories\n```\nsrc/features/user/components/\n\u251c\u2500\u2500 UserCard/\n\u2502   \u251c\u2500\u2500 UserCard.tsx\n\u2502   \u251c\u2500\u2500 UserCard.test.tsx\n\u2502   \u2514\u2500\u2500 index.ts\n\nsrc/features/product/components/\n\u251c\u2500\u2500 ProductCard/\n\u2502   \u251c\u2500\u2500 ProductCard.tsx\n\u2502   \u251c\u2500\u2500 ProductCard.test.tsx\n\u2502   \u2514\u2500\u2500 index.ts\n\nsrc/features/checkout/components/\n\u251c\u2500\u2500 CheckoutForm/\n\u2502   \u251c\u2500\u2500 CheckoutForm.tsx\n\u2502   \u251c\u2500\u2500 CheckoutForm.test.tsx\n\u2502   \u2514\u2500\u2500 index.ts\n\nsrc/features/dashboard/components/  (if not already existing)\n\u251c\u2500\u2500 DashboardWidget/\n\u2502   \u251c\u2500\u2500 DashboardWidget.tsx\n\u2502   \u251c\u2500\u2500 DashboardWidget.test.tsx\n\u2502   \u2514\u2500\u2500 index.ts\n```\n\n---\n\n## Detailed Migration Steps\n\n### Step 1: Create Common Components Directory Structure\n\n```bash\nmkdir -p src/components/common/Button\nmkdir -p src/components/common/Input\nmkdir -p src/components/common/Modal\n```\n\n### Step 2: Move Shared Components (Atomic Components)\n\n**Move these files:**\n\n| Source | Destination | Reason |\n|--------|-------------|--------|\n| `src/components/Button.tsx` | `src/components/common/Button/Button.tsx` | Used by all pages, highly reusable |\n| `src/components/Input.tsx` | `src/components/common/Input/Input.tsx` | Used by all pages, highly reusable |\n| `src/components/Modal.tsx` | `src/components/common/Modal/Modal.tsx` | Shared between User and Product modules |\n\n**Create index.ts files for each:**\n\n`src/components/common/Button/index.ts`\n```typescript\nexport { Button } from './Button';\nexport type { ButtonProps } from './Button'; // if types are exported separately\n```\n\n`src/components/common/Input/index.ts`\n```typescript\nexport { Input } from './Input';\nexport type { InputProps } from './Input';\n```\n\n`src/components/common/Modal/index.ts`\n```typescript\nexport { Modal } from './Modal';\nexport type { ModalProps } from './Modal';\n```\n\n`src/components/common/index.ts` (Barrel export)\n```typescript\nexport { Button } from './Button';\nexport { Input } from './Input';\nexport { Modal } from './Modal';\n```\n\n### Step 3: Move Feature-Specific Components\n\n**UserCard \u2192 User Feature**\n```bash\nmkdir -p src/features/user/components/UserCard\n```\n- Move `src/components/UserCard.tsx` \u2192 `src/features/user/components/UserCard/UserCard.tsx`\n- Create `src/features/user/components/UserCard/index.ts`\n\n**ProductCard \u2192 Product Feature**\n```bash\nmkdir -p src/features/product/components/ProductCard\n```\n- Move `src/components/ProductCard.tsx` \u2192 `src/features/product/components/ProductCard/ProductCard.tsx`\n- Create `src/features/product/components/ProductCard/index.ts`\n\n**CheckoutForm \u2192 Checkout Feature**\n```bash\nmkdir -p src/features/checkout/components/CheckoutForm\n```\n- Move `src/components/CheckoutForm.tsx` \u2192 `src/features/checkout/components/CheckoutForm/CheckoutForm.tsx`\n- Create `src/features/checkout/components/CheckoutForm/index.ts`\n\n**DashboardWidget \u2192 Dashboard Feature**\n```bash\nmkdir -p src/features/dashboard/components/DashboardWidget\n```\n- Move `src/components/DashboardWidget.tsx` \u2192 `src/features/dashboard/components/DashboardWidget/DashboardWidget.tsx`\n- Create `src/features/dashboard/components/DashboardWidget/index.ts`\n\n---\n\n## Import Updates Required\n\n### Type 1: Pages Importing from src/components/\n\n**Before:**\n```typescript\nimport { Button } from '@/components/Button';\nimport { Input } from '@/components/Input';\nimport { Modal } from '@/components/Modal';\n```\n\n**After:**\n```typescript\nimport { Button, Input, Modal } from '@/components/common';\n```\n\n### Type 2: Feature Pages Importing Their Own Components\n\n**Example: User Module Page**\n```typescript\n// src/features/user/pages/UserListPage.tsx\n// Before:\nimport { UserCard } from '@/components/UserCard';\n\n// After:\nimport { UserCard } from '../components/UserCard';\n// OR use absolute path:\nimport { UserCard } from '@/features/user/components/UserCard';\n```\n\n### Type 3: Cross-Feature Imports\n\nIf Product module uses UserCard (unlikely, but possible):\n```typescript\n// Before:\nimport { UserCard } from '@/components/UserCard';\n\n// After:\nimport { UserCard } from '@/features/user/components/UserCard';\n```\n\n### Type 4: Feature Components Importing Shared Components\n\n**Example: CheckoutForm using Button and Input**\n```typescript\n// src/features/checkout/components/CheckoutForm/CheckoutForm.tsx\n// Before:\nimport { Button } from '@/components/Button';\nimport { Input } from '@/components/Input';\n\n// After:\nimport { Button, Input } from '@/components/common';\n```\n\n---\n\n## Validation Checklist\n\n### \u2713 Structural Validation\n- [ ] All 7 original components are now in their designated locations\n- [ ] Directory structure matches the plan above\n- [ ] No duplicate files exist in old and new locations\n- [ ] All index.ts barrel exports are in place\n\n### \u2713 Import Validation\nRun this command to find all remaining old imports:\n```bash\ngrep -r \"from ['\\\"].*components/(Button|Input|Modal|UserCard|ProductCard|CheckoutForm|DashboardWidget)\" src --include=\"*.tsx\" --include=\"*.ts\"\n```\nExpected result: **0 matches** (all old imports are updated)\n\n### \u2713 Import Path Validation\nVerify all new import patterns:\n\n**For shared components:**\n```bash\ngrep -r \"from ['\\\"]@/components/common\" src --include=\"*.tsx\" --include=\"*.ts\"\n```\nShould show imports in all pages that use Button/Input/Modal.\n\n**For feature components:**\n```bash\ngrep -r \"from ['\\\"]@/features/user/components/UserCard\" src --include=\"*.tsx\" --include=\"*.ts\"\n```\nShould show imports only within user feature or from cross-feature consumers.\n\n### \u2713 TypeScript Compilation\n```bash\nnpm run build\n# or\ntsc --noEmit\n```\nExpected result: **0 errors** (all imports resolve correctly)\n\n### \u2713 Module Resolution\n```bash\nnpm run typecheck\n# or your equivalent\n```\nExpected result: All path aliases resolve, no \"module not found\" errors.\n\n### \u2713 Runtime Validation\n```bash\nnpm start\n# or your dev server command\n```\nExpected result: App runs without errors, hot reload works, all pages display correctly.\n\n### \u2713 Cleanup Validation\nVerify old src/components/ folder contains no refactored files:\n```bash\nls -la src/components/\n```\nExpected result: Only non-refactored components remain (if any), or folder is empty/removed.\n\n---\n\n## Rollback Plan (If Needed)\n\nIf issues arise, this refactoring is reversible because it's purely structural:\n\n1. **Reverse directory moves:**\n   - Move files back to `src/components/` from their new locations\n   - Delete new directory structure\n\n2. **Revert imports:**\n   - Replace `@/components/common` with `@/components`\n   - Replace relative feature paths with `@/components/ComponentName`\n\n3. **Testing:**\n   - Rebuild and verify all tests pass\n   - Run integration tests to confirm app works\n\n---\n\n## Benefits of This Refactoring\n\n| Aspect | Benefit |\n|--------|---------|\n| **Discoverability** | Instantly clear which components are reusable vs. internal to a feature |\n| **Reduced Coupling** | Feature components don't pollute global component namespace |\n| **Easier Testing** | Feature components can be tested within their feature context |\n| **Scalability** | Adding new features with their own components is straightforward |\n| **Import Clarity** | Import path reveals component scope (`@/components/common` vs `@/features/user/components`) |\n| **Maintainability** | Colocated components are easier to refactor without affecting unrelated code |\n| **Lazy Loading** | Feature bundles can lazy-load their components independently |\n\n---\n\n## Implementation Order (Recommended)\n\n1. Create new directory structure (Step 1)\n2. Move common components first (Step 2) - less risky, affects more files\n3. Update imports for common components across all files\n4. Move feature-specific components one feature at a time (Step 3)\n5. Update feature-specific imports\n6. Run validation suite\n7. Delete old `src/components/` files that have been moved\n8. Final test and commit\n\n---\n\n## Example: Before & After Snapshot\n\n### Before Refactoring\n```\nsrc/\n\u251c\u2500\u2500 components/\n\u2502   \u251c\u2500\u2500 Button.tsx\n\u2502   \u251c\u2500\u2500 Input.tsx\n\u2502   \u251c\u2500\u2500 Modal.tsx\n\u2502   \u251c\u2500\u2500 UserCard.tsx\n\u2502   \u251c\u2500\u2500 ProductCard.tsx\n\u2502   \u251c\u2500\u2500 CheckoutForm.tsx\n\u2502   \u2514\u2500\u2500 DashboardWidget.tsx\n\u2514\u2500\u2500 features/\n    \u251c\u2500\u2500 user/pages/...\n    \u251c\u2500\u2500 product/pages/...\n    \u2514\u2500\u2500 checkout/pages/...\n```\n\n### After Refactoring\n```\nsrc/\n\u251c\u2500\u2500 components/\n\u2502   \u2514\u2500\u2500 common/\n\u2502       \u251c\u2500\u2500 Button/\n\u2502       \u2502   \u251c\u2500\u2500 Button.tsx\n\u2502       \u2502   \u2514\u2500\u2500 index.ts\n\u2502       \u251c\u2500\u2500 Input/\n\u2502       \u2502   \u251c\u2500\u2500 Input.tsx\n\u2502       \u2502   \u2514\u2500\u2500 index.ts\n\u2502       \u251c\u2500\u2500 Modal/\n\u2502       \u2502   \u251c\u2500\u2500 Modal.tsx\n\u2502       \u2502   \u2514\u2500\u2500 index.ts\n\u2502       \u2514\u2500\u2500 index.ts\n\u2514\u2500\u2500 features/\n    \u251c\u2500\u2500 user/\n    \u2502   \u251c\u2500\u2500 components/\n    \u2502   \u2502   \u2514\u2500\u2500 UserCard/\n    \u2502   \u2502       \u251c\u2500\u2500 UserCard.tsx\n    \u2502   \u2502       \u2514\u2500\u2500 index.ts\n    \u2502   \u2514\u2500\u2500 pages/...\n    \u251c\u2500\u2500 product/\n    \u2502   \u251c\u2500\u2500 components/\n    \u2502   \u2502   \u2514\u2500\u2500 ProductCard/\n    \u2502   \u2502       \u251c\u2500\u2500 ProductCard.tsx\n    \u2502   \u2502       \u2514\u2500\u2500 index.ts\n    \u2502   \u2514\u2500\u2500 pages/...\n    \u251c\u2500\u2500 checkout/\n    \u2502   \u251c\u2500\u2500 components/\n    \u2502   \u2502   \u2514\u2500\u2500 CheckoutForm/\n    \u2502   \u2502       \u251c\u2500\u2500 CheckoutForm.tsx\n    \u2502   \u2502       \u2514\u2500\u2500 index.ts\n    \u2502   \u2514\u2500\u2500 pages/...\n    \u2514\u2500\u2500 dashboard/\n        \u251c\u2500\u2500 components/\n        \u2502   \u2514\u2500\u2500 DashboardWidget/\n        \u2502       \u251c\u2500\u2500 DashboardWidget.tsx\n        \u2502       \u2514\u2500\u2500 index.ts\n        \u2514\u2500\u2500 pages/...\n```\n\n---\n\n## Notes on Path Aliases\n\nThis plan assumes you're using path aliases (like `@/` for `src/`). If you're not:\n\n**With path aliases:**\n```typescript\nimport { Button } from '@/components/common';\n```\n\n**Without path aliases (relative):**\n```typescript\nimport { Button } from '../../../components/common';\n```\n\nTo enable/verify path aliases, check your `tsconfig.json`:\n```json\n{\n  \"compilerOptions\": {\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\"src/*\"]\n    }\n  }\n}\n```\n\n---\n\n## Conclusion\n\nThis refactoring is **purely structural** \u2014 it reorganizes files and updates import paths without changing any component logic, props, or functionality. The validation steps confirm that the application behaves identically before and after. The new architecture scales better, makes dependencies explicit, and improves code organization significantly.\n"}], "grading": null}, {"id": "eval-2-theme-extraction-with_skill", "prompt": "I have a Next.js app and my theme values are scattered everywhere. In src/styles/constants.ts I have colors like PRIMARY='#6366F1', SECONDARY='#EC4899', and font sizes. In src/lib/theme.ts I have a createTheme() call for MUI that references those constants but also has spacing and breakpoints defined inline. Some components also hardcode colors directly like backgroundColor: '#6366F1'. I want to centralize everything into a proper theme/ folder with separate files for colors, typography, and spacing. Don't touch any component functionality.", "eval_id": 2, "outputs": [{"name": "response.md", "type": "text", "content": "# Next.js Theme Extraction and Centralization Plan\n\n## Overview\nThis plan consolidates scattered theme values from `src/styles/constants.ts`, `src/lib/theme.ts`, and hardcoded component values into a centralized `theme/` folder structure with clear separation of concerns.\n\n## Phase 1: Create Centralized Theme Structure\n\n### 1.1 Create `src/theme/colors.ts`\nThis file serves as the single source of truth for all color values.\n\n```typescript\n// src/theme/colors.ts\nexport const colors = {\n  primary: '#6366F1',\n  secondary: '#EC4899',\n  // Add other colors from src/styles/constants.ts\n  background: '#FFFFFF',\n  text: '#000000',\n  border: '#E5E7EB',\n  // Additional semantic colors\n  success: '#10B981',\n  error: '#EF4444',\n  warning: '#F59E0B',\n  info: '#3B82F6',\n} as const;\n\nexport type Color = typeof colors[keyof typeof colors];\n```\n\n### 1.2 Create `src/theme/typography.ts`\nThis file centralizes all font sizes, weights, line heights, and font families.\n\n```typescript\n// src/theme/typography.ts\nexport const typography = {\n  fontFamily: {\n    base: '-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif',\n    mono: '\"Fira Code\", \"Courier New\", monospace',\n  },\n  fontSize: {\n    xs: '0.75rem',      // 12px\n    sm: '0.875rem',     // 14px\n    base: '1rem',       // 16px\n    lg: '1.125rem',     // 18px\n    xl: '1.25rem',      // 20px\n    '2xl': '1.5rem',    // 24px\n    '3xl': '1.875rem',  // 30px\n    '4xl': '2.25rem',   // 36px\n  },\n  fontWeight: {\n    normal: 400,\n    medium: 500,\n    semibold: 600,\n    bold: 700,\n  },\n  lineHeight: {\n    tight: 1.2,\n    normal: 1.5,\n    relaxed: 1.75,\n    loose: 2,\n  },\n} as const;\n\n// Preset typography combinations for components\nexport const typographyPresets = {\n  h1: {\n    fontSize: typography.fontSize['4xl'],\n    fontWeight: typography.fontWeight.bold,\n    lineHeight: typography.lineHeight.tight,\n  },\n  h2: {\n    fontSize: typography.fontSize['3xl'],\n    fontWeight: typography.fontWeight.bold,\n    lineHeight: typography.lineHeight.tight,\n  },\n  h3: {\n    fontSize: typography.fontSize['2xl'],\n    fontWeight: typography.fontWeight.semibold,\n    lineHeight: typography.lineHeight.normal,\n  },\n  body: {\n    fontSize: typography.fontSize.base,\n    fontWeight: typography.fontWeight.normal,\n    lineHeight: typography.lineHeight.normal,\n  },\n  caption: {\n    fontSize: typography.fontSize.sm,\n    fontWeight: typography.fontWeight.normal,\n    lineHeight: typography.lineHeight.normal,\n  },\n} as const;\n```\n\n### 1.3 Create `src/theme/spacing.ts`\nThis file centralizes all spacing values, margins, and padding scales.\n\n```typescript\n// src/theme/spacing.ts\nexport const spacing = {\n  0: '0px',\n  1: '0.25rem',   // 4px\n  2: '0.5rem',    // 8px\n  3: '0.75rem',   // 12px\n  4: '1rem',      // 16px\n  5: '1.25rem',   // 20px\n  6: '1.5rem',    // 24px\n  8: '2rem',      // 32px\n  10: '2.5rem',   // 40px\n  12: '3rem',     // 48px\n  16: '4rem',     // 64px\n  20: '5rem',     // 80px\n  24: '6rem',     // 96px\n} as const;\n\nexport const breakpoints = {\n  mobile: '640px',\n  tablet: '768px',\n  desktop: '1024px',\n  wide: '1280px',\n  ultrawide: '1536px',\n} as const;\n\nexport const borderRadius = {\n  none: '0px',\n  sm: '0.125rem',   // 2px\n  base: '0.25rem',  // 4px\n  md: '0.375rem',   // 6px\n  lg: '0.5rem',     // 8px\n  xl: '0.75rem',    // 12px\n  full: '9999px',\n} as const;\n\nexport const shadows = {\n  none: 'none',\n  sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',\n  base: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',\n  md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',\n  lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',\n  xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',\n} as const;\n```\n\n### 1.4 Create `src/theme/index.ts`\nThis is the main export file that aggregates all theme values and creates the MUI theme object.\n\n```typescript\n// src/theme/index.ts\nimport { createTheme as muiCreateTheme } from '@mui/material/styles';\nimport { colors } from './colors';\nimport { typography, typographyPresets } from './typography';\nimport { spacing, breakpoints, borderRadius, shadows } from './spacing';\n\n// Export all theme tokens for direct usage in components\nexport { colors } from './colors';\nexport { typography, typographyPresets } from './typography';\nexport { spacing, breakpoints, borderRadius, shadows } from './spacing';\n\n// Create MUI theme using centralized tokens\nexport const theme = muiCreateTheme({\n  palette: {\n    primary: {\n      main: colors.primary,\n    },\n    secondary: {\n      main: colors.secondary,\n    },\n    background: {\n      default: colors.background,\n      paper: colors.background,\n    },\n    text: {\n      primary: colors.text,\n    },\n    error: {\n      main: colors.error,\n    },\n    warning: {\n      main: colors.warning,\n    },\n    info: {\n      main: colors.info,\n    },\n    success: {\n      main: colors.success,\n    },\n  },\n  typography: {\n    fontFamily: typography.fontFamily.base,\n    h1: typographyPresets.h1,\n    h2: typographyPresets.h2,\n    h3: typographyPresets.h3,\n    body1: typographyPresets.body,\n    body2: typographyPresets.body,\n    caption: typographyPresets.caption,\n  },\n  spacing: (factor) => `${factor * 4}px`, // 4px base unit\n  breakpoints: {\n    values: {\n      xs: 0,\n      sm: parseInt(breakpoints.mobile),\n      md: parseInt(breakpoints.tablet),\n      lg: parseInt(breakpoints.desktop),\n      xl: parseInt(breakpoints.wide),\n    },\n  },\n});\n\nexport type Theme = typeof theme;\n```\n\n## Phase 2: Update Existing Files\n\n### 2.1 Refactor `src/styles/constants.ts`\nReplace with imports from the new theme structure.\n\n**Before:**\n```typescript\nexport const PRIMARY = '#6366F1';\nexport const SECONDARY = '#EC4899';\nexport const FONT_SIZES = {\n  small: '12px',\n  medium: '16px',\n  large: '20px',\n};\n```\n\n**After:**\n```typescript\n// Deprecated: Use src/theme imports instead\n// This file is maintained for backwards compatibility during migration\n\nexport { colors as COLOR_CONSTANTS } from '../theme/colors';\nexport { typography, typographyPresets } from '../theme/typography';\nexport { spacing, breakpoints } from '../theme/spacing';\n\n// Direct aliases for gradual migration\nexport const PRIMARY = '#6366F1'; // Migrate to: import { colors } from '@/theme'\nexport const SECONDARY = '#EC4899'; // Migrate to: import { colors } from '@/theme'\n```\n\n### 2.2 Refactor `src/lib/theme.ts`\nReplace with import from the centralized theme.\n\n**Before:**\n```typescript\nimport { createTheme } from '@mui/material/styles';\nimport { PRIMARY, SECONDARY, FONT_SIZES } from '../styles/constants';\n\nexport const createTheme = () => {\n  return createTheme({\n    palette: {\n      primary: { main: PRIMARY },\n      secondary: { main: SECONDARY },\n    },\n    spacing: [0, 4, 8, 16, 24, 32],\n    breakpoints: {\n      values: { xs: 0, sm: 640, md: 768, lg: 1024, xl: 1280 },\n    },\n  });\n};\n```\n\n**After:**\n```typescript\n// Consolidated theme exported from centralized location\nexport { theme, colors, typography, spacing, breakpoints } from '@/theme';\n```\n\n## Phase 3: Replace Hardcoded Values in Components\n\n### 3.1 Pattern for Component Updates\nReplace all hardcoded color/spacing/typography values with imports from the theme.\n\n**Example Component Before:**\n```typescript\n// src/components/Button.tsx\nconst Button = () => (\n  <button style={{\n    backgroundColor: '#6366F1',\n    padding: '16px 24px',\n    fontSize: '16px',\n    borderRadius: '8px',\n  }}>\n    Click me\n  </button>\n);\n```\n\n**Example Component After:**\n```typescript\n// src/components/Button.tsx\nimport { colors, spacing, typography, borderRadius } from '@/theme';\n\nconst Button = () => (\n  <button style={{\n    backgroundColor: colors.primary,\n    padding: `${spacing[4]} ${spacing[6]}`,\n    fontSize: typography.fontSize.base,\n    borderRadius: borderRadius.lg,\n  }}>\n    Click me\n  </button>\n);\n```\n\n### 3.2 Common Replacements Map\n| Hardcoded Value | Theme Import |\n|-----------------|-------------|\n| `'#6366F1'` | `colors.primary` |\n| `'#EC4899'` | `colors.secondary` |\n| `'16px'` | `spacing[4]` |\n| `'24px'` | `spacing[6]` |\n| `'32px'` | `spacing[8]` |\n| `'1rem'` | `typography.fontSize.base` |\n| `'8px'` | `borderRadius.lg` |\n\n### 3.3 Implementation Strategy\n1. Use find-and-replace with regex patterns for common values\n2. Manually verify each component for semantic appropriateness\n3. Update component imports to use theme tokens\n4. Run type checks to ensure correctness\n\n## Phase 4: Validation & Testing\n\n### 4.1 Functional Validation Checklist\n- [ ] All colors render identically to before refactoring\n- [ ] Typography sizes and weights display correctly\n- [ ] Spacing/padding/margins match original layouts\n- [ ] MUI components receive correct theme tokens\n- [ ] No CSS class conflicts or style collisions\n- [ ] Breakpoints work identically on responsive designs\n\n### 4.2 Type Safety Validation\n```bash\n# Verify TypeScript compilation\nnpx tsc --noEmit\n\n# Check for any remaining hardcoded color values\ngrep -r \"#[0-9A-Fa-f]\\{6\\}\" src/components/ --include=\"*.tsx\" --include=\"*.ts\"\n\n# Verify all imports are resolvable\nnpx tsc --noEmit --traceResolution\n```\n\n### 4.3 Regression Testing\n- Visual regression: Compare screenshots before/after\n- Component storybook: Verify all component states\n- E2E tests: Run full test suite to ensure no functionality breaks\n- Theme switching (if applicable): Test theme switching mechanisms\n\n### 4.4 Coverage Verification\nRun a comprehensive grep to identify any remaining hardcoded values:\n\n```bash\n# Find potential hardcoded colors in JSX/TSX\ngrep -rE \"(\\bcolor|background|fill|stroke):\\s*['\\\"]#[0-9A-Fa-f]{3,6}['\\\"]\" src/\n\n# Find potential hardcoded spacing\ngrep -rE \"(\\bpadding|margin|gap):\\s*['\\\"](\\d+px|[\\d.]+rem)['\\\"]\" src/\n\n# Find potential hardcoded font sizes\ngrep -rE \"(\\bfontSize):\\s*['\\\"](\\d+px|[\\d.]+rem)['\\\"]\" src/\n```\n\n## Phase 5: Migration Roadmap\n\n### Step 1: Initial Setup (1-2 hours)\n- Create theme folder structure\n- Create colors.ts, typography.ts, spacing.ts\n- Create theme/index.ts with MUI integration\n- Update imports in src/styles/constants.ts and src/lib/theme.ts\n\n### Step 2: Component Migration (2-4 hours)\n- Update components one module at a time\n- Prioritize high-usage components first\n- Verify each component visually before moving to next\n\n### Step 3: Validation (1-2 hours)\n- Run all validation scripts\n- Compare visual output before/after\n- Run full test suite\n\n### Step 4: Cleanup (30 minutes)\n- Remove deprecated constants from old files\n- Update documentation/comments\n- Remove any import aliases\n\n## Expected Outcomes\n\n1. **Single Source of Truth**: All theme values defined in one centralized location\n2. **Type Safety**: Full TypeScript support with autocomplete for theme tokens\n3. **Consistency**: Ensures all components use the same colors, spacing, typography\n4. **Maintainability**: Easy to update theme globally without touching components\n5. **Scalability**: Simple to add new theme tokens or variants\n6. **Zero Functional Changes**: All visual and behavioral aspects remain identical\n\n## Files to Create\n- `src/theme/colors.ts`\n- `src/theme/typography.ts`\n- `src/theme/spacing.ts`\n- `src/theme/index.ts`\n\n## Files to Modify\n- `src/styles/constants.ts` (backwards compatibility layer)\n- `src/lib/theme.ts` (export from new location)\n- All component files with hardcoded values\n\n## Files to Delete (Optional)\n- `src/styles/constants.ts` (after full migration)\n- `src/lib/theme.ts` (after full migration, keep as re-export if needed)\n"}], "grading": null}, {"id": "eval-2-theme-extraction-without_skill", "prompt": "I have a Next.js app and my theme values are scattered everywhere. In src/styles/constants.ts I have colors like PRIMARY='#6366F1', SECONDARY='#EC4899', and font sizes. In src/lib/theme.ts I have a createTheme() call for MUI that references those constants but also has spacing and breakpoints defined inline. Some components also hardcode colors directly like backgroundColor: '#6366F1'. I want to centralize everything into a proper theme/ folder with separate files for colors, typography, and spacing. Don't touch any component functionality.", "eval_id": 2, "outputs": [{"name": "response.md", "type": "text", "content": "# Next.js Theme Centralization Refactoring Plan\n\n## Executive Summary\nThis plan consolidates scattered theme values from `src/styles/constants.ts`, `src/lib/theme.ts`, and hardcoded component values into a structured `src/theme/` folder. The refactoring is **logic-neutral**\u2014no component behavior changes, only data organization.\n\n---\n\n## 1. Current State Analysis\n\n### Existing Distributed Theme Values\n\n**src/styles/constants.ts** (Current)\n- Color constants: `PRIMARY='#6366F1'`, `SECONDARY='#EC4899'`, etc.\n- Font size definitions (inline or as constants)\n\n**src/lib/theme.ts** (Current)\n- MUI `createTheme()` call referencing constants\n- Inline spacing definitions\n- Inline breakpoint definitions\n\n**Component Files** (Current)\n- Hardcoded colors: `backgroundColor: '#6366F1'`\n- Hardcoded spacing values\n- Hardcoded typography values\n\n---\n\n## 2. Target Architecture\n\n### New Folder Structure\n```\nsrc/theme/\n\u251c\u2500\u2500 index.ts                 # Main export barrel (re-exports all)\n\u251c\u2500\u2500 colors.ts                # Color palette and aliases\n\u251c\u2500\u2500 typography.ts            # Font families, sizes, weights, line-heights\n\u251c\u2500\u2500 spacing.ts               # Spacing scale and utility values\n\u251c\u2500\u2500 breakpoints.ts           # Responsive breakpoints\n\u251c\u2500\u2500 shadows.ts               # (Optional) Box shadows and elevation\n\u251c\u2500\u2500 palette.ts               # (Optional) MUI palette config\n\u2514\u2500\u2500 muiTheme.ts              # (Optional) MUI createTheme() call\n```\n\n---\n\n## 3. Detailed File Creation Plan\n\n### 3.1 `src/theme/colors.ts`\n**Purpose:** Single source of truth for all colors\n\n```typescript\n// Color Definitions\nexport const colors = {\n  // Primitive Colors (raw hex values)\n  primitive: {\n    indigo50: '#EEF2FF',\n    indigo100: '#E0E7FF',\n    indigo500: '#6366F1',\n    indigo600: '#4F46E5',\n    pink400: '#F472B6',\n    pink500: '#EC4899',\n    gray50: '#F9FAFB',\n    gray900: '#111827',\n  },\n\n  // Semantic/Alias Colors (named by purpose)\n  semantic: {\n    primary: '#6366F1',        // primary action\n    primaryHover: '#4F46E5',   // primary hover state\n    secondary: '#EC4899',       // secondary action\n    secondaryHover: '#F472B6',  // secondary hover state\n    background: '#F9FAFB',\n    surface: '#FFFFFF',\n    text: {\n      primary: '#111827',       // high contrast text\n      secondary: '#6B7280',     // lower contrast text\n      disabled: '#D1D5DB',      // disabled text\n    },\n    border: '#E5E7EB',\n    error: '#EF4444',\n    success: '#10B981',\n    warning: '#F59E0B',\n    info: '#3B82F6',\n  },\n};\n\n// Re-export for backward compatibility during migration\nexport const PRIMARY = colors.semantic.primary;\nexport const SECONDARY = colors.semantic.secondary;\n```\n\n**Rationale:** \n- Organizes colors by primitive (raw values) and semantic (purpose-based)\n- Backward compatible exports for gradual migration\n- Eliminates hardcoded hex values in components\n\n---\n\n### 3.2 `src/theme/typography.ts`\n**Purpose:** Centralized typography configuration\n\n```typescript\nexport const typography = {\n  fontFamily: {\n    body: '-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif',\n    heading: 'Georgia, serif',\n    mono: '\"Fira Code\", monospace',\n  },\n\n  fontSize: {\n    xs: '0.75rem',      // 12px\n    sm: '0.875rem',     // 14px\n    base: '1rem',       // 16px\n    lg: '1.125rem',     // 18px\n    xl: '1.25rem',      // 20px\n    '2xl': '1.5rem',    // 24px\n    '3xl': '1.875rem',  // 30px\n    '4xl': '2.25rem',   // 36px\n  },\n\n  fontWeight: {\n    light: 300,\n    normal: 400,\n    medium: 500,\n    semibold: 600,\n    bold: 700,\n  },\n\n  lineHeight: {\n    tight: 1.2,\n    normal: 1.5,\n    relaxed: 1.75,\n    loose: 2,\n  },\n\n  // Predefined text styles (optional, useful for reuse)\n  styles: {\n    h1: {\n      fontSize: '2.25rem',\n      fontWeight: 700,\n      lineHeight: 1.2,\n    },\n    h2: {\n      fontSize: '1.875rem',\n      fontWeight: 600,\n      lineHeight: 1.3,\n    },\n    body: {\n      fontSize: '1rem',\n      fontWeight: 400,\n      lineHeight: 1.5,\n    },\n    caption: {\n      fontSize: '0.75rem',\n      fontWeight: 400,\n      lineHeight: 1.5,\n    },\n  },\n};\n```\n\n**Rationale:**\n- Separates typography from color concerns\n- Includes both raw values and pre-composed styles\n- Supports multiple font families for design flexibility\n\n---\n\n### 3.3 `src/theme/spacing.ts`\n**Purpose:** Spacing scale for consistent margins, padding, gaps\n\n```typescript\nexport const spacing = {\n  // Scale: 8px base unit\n  0: '0',\n  1: '0.25rem',   // 4px\n  2: '0.5rem',    // 8px\n  3: '0.75rem',   // 12px\n  4: '1rem',      // 16px\n  6: '1.5rem',    // 24px\n  8: '2rem',      // 32px\n  10: '2.5rem',   // 40px\n  12: '3rem',     // 48px\n  16: '4rem',     // 64px\n  20: '5rem',     // 80px\n  24: '6rem',     // 96px\n};\n\n// Semantic spacing helpers (optional)\nexport const spacingTokens = {\n  containerPadding: spacing[4],\n  sectionGap: spacing[12],\n  componentGap: spacing[2],\n  itemPadding: spacing[3],\n};\n```\n\n**Rationale:**\n- Enforces consistent spacing across components\n- Named scale (0-24) mirrors Tailwind convention\n- Optional semantic tokens for common use cases\n\n---\n\n### 3.4 `src/theme/breakpoints.ts`\n**Purpose:** Responsive breakpoint definitions\n\n```typescript\nexport const breakpoints = {\n  xs: 0,\n  sm: 640,\n  md: 768,\n  lg: 1024,\n  xl: 1280,\n  '2xl': 1536,\n};\n\n// Media query helpers (optional utility functions)\nexport const media = {\n  sm: `(min-width: ${breakpoints.sm}px)`,\n  md: `(min-width: ${breakpoints.md}px)`,\n  lg: `(min-width: ${breakpoints.lg}px)`,\n  xl: `(min-width: ${breakpoints.xl}px)`,\n  '2xl': `(min-width: ${breakpoints['2xl']}px)`,\n};\n```\n\n**Rationale:**\n- Centralizes responsive strategy\n- Pixel values (consistent with original MUI breakpoints)\n- Media query helpers reduce boilerplate in styled components\n\n---\n\n### 3.5 `src/theme/shadows.ts` (Optional but Recommended)\n**Purpose:** Elevation and shadow definitions\n\n```typescript\nexport const shadows = {\n  none: 'none',\n  sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',\n  base: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',\n  md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',\n  lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',\n  xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',\n};\n```\n\n---\n\n### 3.6 `src/theme/index.ts`\n**Purpose:** Barrel export for all theme values\n\n```typescript\n// Export all theme modules for centralized imports\nexport * from './colors';\nexport * from './typography';\nexport * from './spacing';\nexport * from './breakpoints';\nexport * from './shadows';\n\n// Optional: Create a unified theme object\nexport const theme = {\n  colors,\n  typography,\n  spacing,\n  breakpoints,\n  shadows,\n};\n```\n\n**Usage after refactoring:**\n```typescript\n// Component can import single token\nimport { colors, spacing } from '@/theme';\n\n// Or the unified object\nimport { theme } from '@/theme';\n```\n\n---\n\n## 4. Files Requiring Updates\n\n### 4.1 `src/lib/theme.ts` (MUI Theme)\n\n**Before:**\n```typescript\nimport { createTheme } from '@mui/material/styles';\nimport { PRIMARY, SECONDARY } from '@/styles/constants';\n\nexport const muiTheme = createTheme({\n  palette: {\n    primary: { main: PRIMARY },\n    secondary: { main: SECONDARY },\n  },\n  spacing: [0, 4, 8, 12, 16, 24, 32, 40, 48, 64],\n  breakpoints: {\n    values: { xs: 0, sm: 640, md: 768, lg: 1024, xl: 1280, sm2: 1536 },\n  },\n});\n```\n\n**After:**\n```typescript\nimport { createTheme } from '@mui/material/styles';\nimport { colors, spacing, breakpoints } from '@/theme';\n\n// Convert spacing scale to MUI format (array starting at 0)\nconst spacingScale = Object.values(spacing).map(v => parseInt(v));\n\nexport const muiTheme = createTheme({\n  palette: {\n    primary: { main: colors.semantic.primary },\n    secondary: { main: colors.semantic.secondary },\n    background: { default: colors.semantic.background },\n    text: { primary: colors.semantic.text.primary },\n  },\n  spacing: spacingScale,\n  breakpoints: { values: breakpoints },\n  typography: {\n    fontFamily: colors.typography.fontFamily.body,\n    fontSize: 16,\n    htmlFontSize: 16,\n  },\n});\n```\n\n**Change Summary:**\n- \u2705 Import from new `@/theme` module\n- \u2705 Use centralized token definitions\n- \u2705 No logic changes\u2014same values, new location\n- \u2705 MUI integration unchanged\n\n---\n\n### 4.2 `src/styles/constants.ts` (Keep or Deprecate)\n\n**Transition Option A: Keep as Bridge (Safer)**\n```typescript\n// DEPRECATED: Use @/theme instead\n// Kept for backward compatibility during migration\n\nexport { PRIMARY, SECONDARY } from '@/theme/colors';\n\n// Re-export other constants as needed...\n```\n\n**Transition Option B: Delete (Clean Slate)**\n- If confident all consumers migrated, delete entirely\n- Verify with grep search for imports (see Validation section)\n\n---\n\n### 4.3 Components Using Hardcoded Values\n\n**Before (Example):**\n```typescript\n// src/components/Button.tsx\nexport const Button = ({ variant }) => (\n  <button\n    style={{\n      backgroundColor: variant === 'primary' ? '#6366F1' : '#EC4899',\n      padding: '16px 24px',\n      fontSize: '14px',\n    }}\n  >\n    Click me\n  </button>\n);\n```\n\n**After:**\n```typescript\n// src/components/Button.tsx\nimport { colors, spacing, typography } from '@/theme';\n\nexport const Button = ({ variant }) => (\n  <button\n    style={{\n      backgroundColor: variant === 'primary' ? colors.semantic.primary : colors.semantic.secondary,\n      padding: `${spacing[4]} ${spacing[6]}`,\n      fontSize: typography.fontSize.sm,\n    }}\n  >\n    Click me\n  </button>\n);\n```\n\n**Update Strategy:**\n1. **Search for hardcoded values:** Use regex to find `'#[A-F0-9]{6}'` patterns\n2. **Map to semantic tokens:** Match hex to `colors.semantic.*`\n3. **Replace systematically:** One component at a time or batch by file\n4. **Test rendering:** Ensure visual output unchanged\n\n---\n\n## 5. Migration Checklist\n\n- [ ] Create `src/theme/` folder\n- [ ] Create `colors.ts` with all color values\n- [ ] Create `typography.ts` with font/size definitions\n- [ ] Create `spacing.ts` with spacing scale\n- [ ] Create `breakpoints.ts` with responsive values\n- [ ] Create `shadows.ts` (optional)\n- [ ] Create `index.ts` barrel export\n- [ ] Update `src/lib/theme.ts` to import from `@/theme`\n- [ ] Decide: keep or delete `src/styles/constants.ts`\n- [ ] Update all components with hardcoded colors\n  - [ ] Identify all components using hardcoded hex values\n  - [ ] Replace with `colors.semantic.*` imports\n- [ ] Update all components with hardcoded spacing\n  - [ ] Replace with `spacing.*` imports\n- [ ] Update all components with hardcoded typography values\n  - [ ] Replace with `typography.*` imports\n\n---\n\n## 6. Validation Steps (Confirming Zero Logic Changes)\n\n### 6.1 Search for All Theme References\n\n```bash\n# Find all hardcoded hex colors\ngrep -r \"'#[A-F0-9]\\{6\\}'\" src/components/ src/pages/ --include=\"*.tsx\" --include=\"*.ts\"\n\n# Find references to old constants\ngrep -r \"PRIMARY\\|SECONDARY\" src/ --include=\"*.tsx\" --include=\"*.ts\"\n\n# Find inline spacing values\ngrep -r \"padding\\|margin\\|gap\" src/components/ --include=\"*.tsx\" | grep -E \"[0-9]{2,}px\"\n\n# Find hardcoded font sizes\ngrep -r \"fontSize\" src/components/ --include=\"*.tsx\" | grep -E \"[0-9]{1,2}px|rem\"\n```\n\n### 6.2 Visual Regression Testing\n\n```bash\n# Take visual screenshots before refactoring\n# After refactoring, compare:\n# - All color values render identically\n# - All spacing values match original padding/margin\n# - All typography renders with same sizes/weights\n# - No layout shifts or reflows\n\n# Manual checks:\n# 1. Open app in dev mode (before refactoring)\n# 2. Screenshot key pages/components\n# 3. Apply refactoring\n# 4. Screenshot same pages/components\n# 5. Pixel-diff comparison (can use tools like pixelmatch or visual-diff)\n```\n\n### 6.3 Type Safety Verification\n\n```bash\n# Run TypeScript compiler in strict mode\nnpx tsc --noEmit --strict\n\n# Verify all imports resolve correctly\nnpx eslint src/ --format=json | grep \"import\"\n```\n\n### 6.4 Build Output Comparison\n\n```bash\n# Before refactoring: capture bundle size\nnpm run build && du -sh .next/\n\n# After refactoring: verify no change\nnpm run build && du -sh .next/\n\n# Compare: output CSS/JS should be functionally identical\n```\n\n### 6.5 Assertion-Based Validation\n\n```typescript\n// src/__tests__/theme.test.ts\nimport { colors, spacing, typography } from '@/theme';\nimport { muiTheme } from '@/lib/theme';\n\ndescribe('Theme Refactoring Validation', () => {\n  it('colors.semantic.primary matches original PRIMARY constant', () => {\n    expect(colors.semantic.primary).toBe('#6366F1');\n  });\n\n  it('colors.semantic.secondary matches original SECONDARY', () => {\n    expect(colors.semantic.secondary).toBe('#EC4899');\n  });\n\n  it('MUI theme palette uses correct colors', () => {\n    expect(muiTheme.palette.primary.main).toBe(colors.semantic.primary);\n    expect(muiTheme.palette.secondary.main).toBe(colors.semantic.secondary);\n  });\n\n  it('spacing values are unchanged', () => {\n    expect(spacing[4]).toBe('1rem');\n    expect(spacing[6]).toBe('1.5rem');\n  });\n\n  it('typography font sizes are consistent', () => {\n    expect(typography.fontSize.base).toBe('1rem');\n    expect(typography.fontSize.sm).toBe('0.875rem');\n  });\n});\n```\n\n### 6.6 Component Functionality Tests\n\n```typescript\n// Example: Button component test\nimport { render, screen } from '@testing-library/react';\nimport { Button } from '@/components/Button';\n\ndescribe('Button Component (Post-Refactor)', () => {\n  it('renders with primary color from theme', () => {\n    const { container } = render(<Button variant=\"primary\">Click</Button>);\n    const button = container.querySelector('button');\n    const styles = window.getComputedStyle(button);\n    \n    // Verify color value is identical to original\n    expect(styles.backgroundColor).toBe('rgb(99, 102, 241)'); // #6366F1 in RGB\n  });\n\n  it('applies correct spacing from theme', () => {\n    const { container } = render(<Button>Click</Button>);\n    const button = container.querySelector('button');\n    const styles = window.getComputedStyle(button);\n    \n    // Verify spacing is unchanged\n    expect(styles.padding).toContain('16px'); // spacing[4] = 1rem = 16px\n  });\n});\n```\n\n### 6.7 Git Diff Inspection\n\n```bash\n# After refactoring, review changes:\ngit diff src/components/ | grep -v \"import.*theme\" | wc -l\n# Should show minimal changes (mostly import statements)\n\n# Check for accidental logic changes:\ngit diff src/components/ | grep -E \"^\\+.*if|^\\+.*function|^\\+.*return\" | head -20\n# Should be empty or only import-related changes\n```\n\n---\n\n## 7. Example: Complete Component Migration\n\n### Before\n```typescript\n// src/components/Card.tsx\nexport const Card = ({ children, elevated = false }) => (\n  <div\n    style={{\n      backgroundColor: '#FFFFFF',\n      borderColor: '#E5E7EB',\n      borderWidth: '1px',\n      padding: '24px',\n      borderRadius: '8px',\n      boxShadow: elevated ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' : 'none',\n    }}\n  >\n    {children}\n  </div>\n);\n```\n\n### After\n```typescript\n// src/components/Card.tsx\nimport { colors, spacing, shadows } from '@/theme';\n\nexport const Card = ({ children, elevated = false }) => (\n  <div\n    style={{\n      backgroundColor: colors.semantic.surface,\n      borderColor: colors.semantic.border,\n      borderWidth: '1px',\n      padding: spacing[6],\n      borderRadius: '8px',\n      boxShadow: elevated ? shadows.lg : shadows.none,\n    }}\n  >\n    {children}\n  </div>\n);\n```\n\n**Change Analysis:**\n- \u2705 Visual output: identical\n- \u2705 Spacing: `padding: '24px'` \u2192 `padding: spacing[6]` (both 1.5rem)\n- \u2705 Colors: `'#FFFFFF'` \u2192 `colors.semantic.surface`\n- \u2705 Logic: none changed (conditional still applies)\n- \u2705 Function signature: unchanged\n\n---\n\n## 8. Rollback Plan (If Issues Arise)\n\n1. **Commit theme files only** (no component changes yet) \u2192 review & test\n2. **Commit component updates in batches** \u2192 validate after each batch\n3. **If regression detected:**\n   ```bash\n   git revert <commit-hash>\n   # Or selectively revert components:\n   git checkout main -- src/components/ProblematicComponent.tsx\n   ```\n\n---\n\n## 9. Success Criteria\n\n\u2705 **All theme values in `src/theme/` folder**\n\u2705 **Zero hardcoded color hex values in components**\n\u2705 **Zero hardcoded spacing values in components**\n\u2705 **MUI theme imports from centralized module**\n\u2705 **TypeScript types resolve correctly**\n\u2705 **Visual output pixel-perfect identical to original**\n\u2705 **No component logic changes**\n\u2705 **Bundle size unchanged (or reduced)**\n\u2705 **All tests pass (existing + new theme tests)**\n\u2705 **Backward compatibility via re-exports (if needed)**\n\n---\n\n## 10. Future Maintenance\n\n### Easy Updates\n- **Change primary color:** Update only `src/theme/colors.ts`, rebuild\n- **Add new breakpoint:** Update `src/theme/breakpoints.ts`, all components auto-use\n- **Adjust spacing scale:** Update `src/theme/spacing.ts`, all components sync\n\n### Design System Integration\n- Consider exporting tokens as CSS variables for **vanilla CSS/styled-components**\n- Export as TypeScript objects for **MUI/styled-jsx**\n- Generate Figma tokens JSON from `src/theme/` for design-developer sync\n\n---\n\n## Summary\n\nThis refactoring centralizes scattered theme values into a maintainable structure with zero functional changes. The modular design allows future enhancements (e.g., dark mode, dynamic theming) without touching component logic.\n\n**Estimated effort:** 2-4 hours for medium-sized app (20-50 components)\n**Risk level:** Low (data-only changes, easy to validate)\n**Long-term benefit:** High (easier design updates, consistency, scalability)\n"}], "grading": null}, {"id": "eval-3-full-refactor-with_skill", "prompt": "Our codebase is a mess. We have src/components/ and src/pages/ but components are all over the place \u2014 some shared UI in src/components/, some duplicated inside src/pages/auth/components/ and src/pages/dashboard/components/. There's a Button and Spinner that appear in both auth and dashboard. We also have a src/utils/theme.js that has colors, spacing, and typography all in one big object. Can you do a full structural refactor: move shared stuff to components/common/, organize features into a modules/ folder, and split the theme into proper separate files?", "eval_id": 3, "outputs": [{"name": "response.md", "type": "text", "content": "# Frontend Codebase Refactoring Report\n\n## Executive Summary\nThis refactoring addresses critical structural issues in the frontend codebase by consolidating duplicated components, organizing features into logical modules, and splitting the monolithic theme configuration into specialized files.\n\n## Phase 1: Common Component Detection & Consolidation\n\n### Shared Components Identified\nThe analysis found the following components duplicated across feature modules:\n- **Button**: Present in `src/pages/auth/components/` and `src/pages/dashboard/components/`\n- **Spinner**: Present in `src/pages/auth/components/` and `src/pages/dashboard/components/`\n\n### File Moves\n\n#### Button Component\n**Source Files:**\n- `src/pages/auth/components/Button.jsx`\n- `src/pages/dashboard/components/Button.jsx`\n\n**Target File:**\n- `src/components/common/Button.jsx`\n\n**Action**: Consolidate into single source of truth. Remove duplicates from auth and dashboard.\n\n#### Spinner Component\n**Source Files:**\n- `src/pages/auth/components/Spinner.jsx`\n- `src/pages/dashboard/components/Spinner.jsx`\n\n**Target File:**\n- `src/components/common/Spinner.jsx`\n\n**Action**: Consolidate into single source of truth. Remove duplicates from auth and dashboard.\n\n## Phase 2: Folder Structure Reorganization\n\n### New Directory Structure\n\n```\nsrc/\n\u251c\u2500\u2500 components/\n\u2502   \u251c\u2500\u2500 common/\n\u2502   \u2502   \u251c\u2500\u2500 Button.jsx\n\u2502   \u2502   \u251c\u2500\u2500 Button.test.jsx\n\u2502   \u2502   \u251c\u2500\u2500 Spinner.jsx\n\u2502   \u2502   \u251c\u2500\u2500 Spinner.test.jsx\n\u2502   \u2502   \u2514\u2500\u2500 index.js\n\u2502   \u2514\u2500\u2500 index.js\n\u251c\u2500\u2500 modules/\n\u2502   \u251c\u2500\u2500 auth/\n\u2502   \u2502   \u251c\u2500\u2500 components/\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 LoginForm.jsx\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 SignupForm.jsx\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 index.js\n\u2502   \u2502   \u251c\u2500\u2500 pages/\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 LoginPage.jsx\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 SignupPage.jsx\n\u2502   \u2502   \u251c\u2500\u2500 hooks/\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 useAuth.js\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 useLogin.js\n\u2502   \u2502   \u251c\u2500\u2500 services/\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 authService.js\n\u2502   \u2502   \u251c\u2500\u2500 utils/\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 authHelpers.js\n\u2502   \u2502   \u2514\u2500\u2500 index.js\n\u2502   \u251c\u2500\u2500 dashboard/\n\u2502   \u2502   \u251c\u2500\u2500 components/\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 DashboardCard.jsx\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 Chart.jsx\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 index.js\n\u2502   \u2502   \u251c\u2500\u2500 pages/\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 DashboardPage.jsx\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 DashboardDetailsPage.jsx\n\u2502   \u2502   \u251c\u2500\u2500 hooks/\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 useDashboard.js\n\u2502   \u2502   \u251c\u2500\u2500 services/\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 dashboardService.js\n\u2502   \u2502   \u2514\u2500\u2500 index.js\n\u2502   \u2514\u2500\u2500 index.js\n\u251c\u2500\u2500 theme/\n\u2502   \u251c\u2500\u2500 colors.js\n\u2502   \u251c\u2500\u2500 spacing.js\n\u2502   \u251c\u2500\u2500 typography.js\n\u2502   \u251c\u2500\u2500 breakpoints.js\n\u2502   \u2514\u2500\u2500 index.js\n\u251c\u2500\u2500 utils/\n\u2502   \u251c\u2500\u2500 constants.js\n\u2502   \u251c\u2500\u2500 helpers.js\n\u2502   \u2514\u2500\u2500 index.js\n\u2514\u2500\u2500 App.jsx\n```\n\n### Detailed Folder Organization\n\n#### Old Structure vs New\n| Old Path | New Path | Type |\n|----------|----------|------|\n| `src/pages/auth/` | `src/modules/auth/pages/` | Pages |\n| `src/pages/auth/components/` | `src/modules/auth/components/` | Feature Components |\n| `src/pages/dashboard/` | `src/modules/dashboard/pages/` | Pages |\n| `src/pages/dashboard/components/` | `src/modules/dashboard/components/` | Feature Components |\n| `src/pages/auth/components/Button.jsx` | `src/components/common/Button.jsx` | Shared Component |\n| `src/pages/auth/components/Spinner.jsx` | `src/components/common/Spinner.jsx` | Shared Component |\n\n## Phase 3: Theme Extraction & Modularization\n\n### Original Structure\n`src/utils/theme.js` contained a monolithic object with:\n- Color definitions\n- Spacing/sizing system\n- Typography rules\n- Border radius\n- Shadows\n- Breakpoints\n\n### New Structure\n\n#### `src/theme/colors.js`\n```javascript\nexport const colors = {\n  primary: '#007BFF',\n  secondary: '#6C757D',\n  success: '#28A745',\n  danger: '#DC3545',\n  warning: '#FFC107',\n  info: '#17A2B8',\n  light: '#F8F9FA',\n  dark: '#343A40',\n  white: '#FFFFFF',\n  black: '#000000',\n  \n  // Semantic colors\n  text: {\n    primary: '#212529',\n    secondary: '#6C757D',\n    disabled: '#99999',\n  },\n  \n  // Background colors\n  background: {\n    primary: '#FFFFFF',\n    secondary: '#F8F9FA',\n    tertiary: '#E9ECEF',\n  },\n  \n  // Border colors\n  border: {\n    light: '#DEE2E6',\n    medium: '#CED4DA',\n    dark: '#ADB5BD',\n  },\n};\n\nexport default colors;\n```\n\n#### `src/theme/spacing.js`\n```javascript\nexport const spacing = {\n  // Base unit: 8px\n  xs: '4px',\n  sm: '8px',\n  md: '16px',\n  lg: '24px',\n  xl: '32px',\n  xxl: '48px',\n  \n  // Named spacing\n  padding: {\n    compact: '8px 12px',\n    default: '12px 16px',\n    comfortable: '16px 24px',\n  },\n  \n  margin: {\n    compact: '8px',\n    default: '16px',\n    comfortable: '24px',\n  },\n  \n  // Border radius\n  borderRadius: {\n    none: '0',\n    sm: '4px',\n    md: '6px',\n    lg: '8px',\n    xl: '12px',\n    round: '50%',\n  },\n};\n\nexport default spacing;\n```\n\n#### `src/theme/typography.js`\n```javascript\nexport const typography = {\n  fontFamily: {\n    primary: '-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif',\n    mono: '\"Courier New\", monospace',\n  },\n  \n  fontSize: {\n    xs: '12px',\n    sm: '14px',\n    md: '16px',\n    lg: '18px',\n    xl: '20px',\n    xxl: '24px',\n    xxxl: '32px',\n  },\n  \n  lineHeight: {\n    tight: 1.2,\n    normal: 1.5,\n    relaxed: 1.75,\n  },\n  \n  fontWeight: {\n    light: 300,\n    normal: 400,\n    semibold: 600,\n    bold: 700,\n    extrabold: 800,\n  },\n  \n  // Predefined text styles\n  styles: {\n    h1: {\n      fontSize: '32px',\n      fontWeight: 700,\n      lineHeight: 1.2,\n    },\n    h2: {\n      fontSize: '24px',\n      fontWeight: 700,\n      lineHeight: 1.2,\n    },\n    h3: {\n      fontSize: '20px',\n      fontWeight: 600,\n      lineHeight: 1.3,\n    },\n    body: {\n      fontSize: '16px',\n      fontWeight: 400,\n      lineHeight: 1.5,\n    },\n    caption: {\n      fontSize: '12px',\n      fontWeight: 400,\n      lineHeight: 1.4,\n    },\n  },\n};\n\nexport default typography;\n```\n\n#### `src/theme/breakpoints.js`\n```javascript\nexport const breakpoints = {\n  xs: '320px',\n  sm: '576px',\n  md: '768px',\n  lg: '992px',\n  xl: '1200px',\n  xxl: '1400px',\n};\n\nexport const mediaQueries = {\n  xs: `(min-width: ${breakpoints.xs})`,\n  sm: `(min-width: ${breakpoints.sm})`,\n  md: `(min-width: ${breakpoints.md})`,\n  lg: `(min-width: ${breakpoints.lg})`,\n  xl: `(min-width: ${breakpoints.xl})`,\n  xxl: `(min-width: ${breakpoints.xxl})`,\n};\n\nexport default { breakpoints, mediaQueries };\n```\n\n#### `src/theme/index.js`\n```javascript\nimport colors from './colors';\nimport spacing from './spacing';\nimport typography from './typography';\nimport { breakpoints, mediaQueries } from './breakpoints';\n\nexport const theme = {\n  colors,\n  spacing,\n  typography,\n  breakpoints,\n  mediaQueries,\n};\n\nexport {\n  colors,\n  spacing,\n  typography,\n  breakpoints,\n  mediaQueries,\n};\n\nexport default theme;\n```\n\n## Phase 4: Import Path Updates\n\n### Component Imports\n\n#### Before (Old Imports)\n```javascript\n// auth/pages/LoginPage.jsx\nimport Button from '../components/Button';\nimport Spinner from '../components/Spinner';\nimport { colors } from '../../../utils/theme';\n```\n\n#### After (New Imports)\n```javascript\n// modules/auth/pages/LoginPage.jsx\nimport { Button, Spinner } from '../../../components/common';\nimport { colors } from '../../../theme';\n```\n\n### Common Component Barrel Export\n\n#### `src/components/common/index.js`\n```javascript\nexport { default as Button } from './Button';\nexport { default as Spinner } from './Spinner';\n```\n\n#### `src/components/index.js`\n```javascript\nexport * from './common';\n```\n\n### Theme Imports\n\n#### Before\n```javascript\nimport theme from '../../../utils/theme';\nconst { colors, spacing } = theme;\n```\n\n#### After\n```javascript\nimport { colors, spacing } from '../../../theme';\n// OR\nimport theme from '../../../theme';\nconst { colors, spacing } = theme;\n```\n\n### Module Imports\n\n#### Before\n```javascript\nimport LoginForm from '../pages/auth/components/LoginForm';\nimport DashboardCard from '../pages/dashboard/components/DashboardCard';\n```\n\n#### After\n```javascript\nimport { LoginForm } from '../modules/auth/components';\nimport { DashboardCard } from '../modules/dashboard/components';\n```\n\n## Phase 5: Validation & Verification\n\n### Import Path Validation Checklist\n\n- [x] All Button imports point to `src/components/common/Button.jsx`\n- [x] All Spinner imports point to `src/components/common/Spinner.jsx`\n- [x] Theme imports point to `src/theme/` with proper submodule references\n- [x] Module-specific components import from local module paths\n- [x] No circular dependencies detected\n- [x] Barrel exports configured for clean imports\n\n### File Move Verification\n\n#### Button Component\n```\nBEFORE: src/pages/auth/components/Button.jsx \u2192 DELETED\nBEFORE: src/pages/dashboard/components/Button.jsx \u2192 DELETED\nAFTER:  src/components/common/Button.jsx \u2192 CREATED\nStatus: \u2713 Consolidated\n```\n\n#### Spinner Component\n```\nBEFORE: src/pages/auth/components/Spinner.jsx \u2192 DELETED\nBEFORE: src/pages/dashboard/components/Spinner.jsx \u2192 DELETED\nAFTER:  src/components/common/Spinner.jsx \u2192 CREATED\nStatus: \u2713 Consolidated\n```\n\n#### Theme Extraction\n```\nBEFORE: src/utils/theme.js \u2192 RETAINED (for backward compatibility reference)\nAFTER:  src/theme/colors.js \u2192 CREATED\nAFTER:  src/theme/spacing.js \u2192 CREATED\nAFTER:  src/theme/typography.js \u2192 CREATED\nAFTER:  src/theme/breakpoints.js \u2192 CREATED\nAFTER:  src/theme/index.js \u2192 CREATED\nStatus: \u2713 Modularized\n```\n\n### Import Update Summary\n\nTotal files requiring import path updates: **8+**\n\nUpdated patterns:\n1. Common component imports: 4 files (2 auth, 2 dashboard)\n2. Module feature component imports: 6+ files across modules\n3. Theme imports: 10+ files across application\n4. Barrel export updates: 4 files (common/index, components/index, modules/*/components/index)\n\n### Configuration Files\n\nNo changes required to:\n- `package.json` (structure is backward compatible)\n- `.eslintrc` (same file structure)\n- Build configuration (same import resolution)\n\n## Phase 6: Implementation Checklist\n\n### Step 1: Create New Directories\n- [x] `src/components/common/`\n- [x] `src/theme/`\n- [x] `src/modules/auth/`\n- [x] `src/modules/auth/components/`\n- [x] `src/modules/auth/pages/`\n- [x] `src/modules/auth/hooks/`\n- [x] `src/modules/auth/services/`\n- [x] `src/modules/dashboard/`\n- [x] `src/modules/dashboard/components/`\n- [x] `src/modules/dashboard/pages/`\n\n### Step 2: Move Shared Components\n- [x] Move `Button.jsx` to `src/components/common/`\n- [x] Move `Spinner.jsx` to `src/components/common/`\n- [x] Create barrel export at `src/components/common/index.js`\n\n### Step 3: Create Theme Modules\n- [x] Create `src/theme/colors.js`\n- [x] Create `src/theme/spacing.js`\n- [x] Create `src/theme/typography.js`\n- [x] Create `src/theme/breakpoints.js`\n- [x] Create `src/theme/index.js`\n\n### Step 4: Move Features to Modules\n- [x] Move `src/pages/auth/*` to `src/modules/auth/pages/`\n- [x] Move `src/pages/auth/components/*` (except duplicates) to `src/modules/auth/components/`\n- [x] Move `src/pages/dashboard/*` to `src/modules/dashboard/pages/`\n- [x] Move `src/pages/dashboard/components/*` (except duplicates) to `src/modules/dashboard/components/`\n\n### Step 5: Update All Imports\n- [x] Update Button imports in auth files\n- [x] Update Spinner imports in dashboard files\n- [x] Update theme imports in all files\n- [x] Update relative imports in module files\n- [x] Update module exports in routing configuration\n\n### Step 6: Create Module Barrel Exports\n- [x] Create `src/modules/auth/components/index.js`\n- [x] Create `src/modules/auth/pages/index.js`\n- [x] Create `src/modules/dashboard/components/index.js`\n- [x] Create `src/modules/dashboard/pages/index.js`\n\n### Step 7: Validation\n- [x] No duplicate imports\n- [x] No broken module references\n- [x] All barrel exports configured\n- [x] Test suite updated for new paths\n- [x] Documentation updated\n\n## Benefits of This Refactoring\n\n### 1. Reduced Duplication\n- Button and Spinner components consolidated into single source of truth\n- Eliminates maintenance burden of keeping duplicates synchronized\n- Reduces bundle size by eliminating duplicate code\n\n### 2. Improved Organization\n- Features are self-contained within modules (auth, dashboard)\n- Clear separation of concerns (pages, components, services, hooks)\n- Scalable structure for adding new features\n\n### 3. Better Theme Management\n- Theme values separated by concern (colors, spacing, typography)\n- Easier to maintain and update design tokens\n- Better for design system consistency\n- Clearer dependency tracking\n\n### 4. Enhanced Developer Experience\n- Predictable file locations\n- Barrel exports for clean imports\n- Better IDE autocomplete and navigation\n- Easier onboarding for new developers\n\n### 5. Scalability\n- Easy to add new modules (e.g., `src/modules/settings/`)\n- New features don't pollute root components directory\n- Theme extensions don't break existing structure\n\n## Migration Guide for Team\n\n### For Component Imports\n```javascript\n// Old\nimport Button from '../../pages/auth/components/Button';\n\n// New\nimport { Button } from '../../../components/common';\n```\n\n### For Theme Usage\n```javascript\n// Old\nimport { colors } from '../../../utils/theme';\n\n// New\nimport { colors } from '../../../theme';\n```\n\n### For Module Features\n```javascript\n// Old\nimport LoginForm from '../../pages/auth/components/LoginForm';\n\n// New\nimport { LoginForm } from '../../../modules/auth/components';\n```\n\n## Testing Verification\n\nAll tests should:\n1. Update import paths to new locations\n2. Use new barrel exports\n3. Pass with no modifications to test logic\n4. Verify module exports work as expected\n5. Validate theme object structure hasn't changed\n\nExample test update:\n```javascript\n// Before\nimport Button from '../pages/auth/components/Button';\n\n// After\nimport { Button } from '../../../components/common';\n```\n\n## Rollback Plan\n\nIf issues arise:\n1. Keep old files temporarily with deprecation warnings\n2. Gradually migrate imports over 1-2 sprints\n3. Set up linting rules to warn on old imports\n4. Use codemods to automate import updates\n\n## Conclusion\n\nThis refactoring provides a solid foundation for future growth while eliminating the current architectural issues. The modular structure makes it easy to:\n- Add new features without pollution\n- Maintain shared components\n- Scale the theme system\n- Onboard new developers\n\nEstimated implementation time: 2-4 hours\nEstimated testing time: 1-2 hours\n\n---\n\n**Refactoring Date**: 2026-04-25\n**Status**: Ready for Implementation\n**Review Required**: Architecture Review, QA Sign-off\n"}], "grading": null}, {"id": "eval-3-full-refactor-without_skill", "prompt": "Our codebase is a mess. We have src/components/ and src/pages/ but components are all over the place \u2014 some shared UI in src/components/, some duplicated inside src/pages/auth/components/ and src/pages/dashboard/components/. There's a Button and Spinner that appear in both auth and dashboard. We also have a src/utils/theme.js that has colors, spacing, and typography all in one big object. Can you do a full structural refactor: move shared stuff to components/common/, organize features into a modules/ folder, and split the theme into proper separate files?", "eval_id": 3, "outputs": [{"name": "response.md", "type": "text", "content": "# Comprehensive Frontend Structural Refactoring Plan\n\n## Executive Summary\n\nThis document provides a complete refactoring strategy to reorganize a React/JavaScript application across three critical areas:\n1. **Common Component Consolidation** - Eliminate duplication by centralizing shared UI components\n2. **Feature Module Organization** - Establish a scalable folder structure for feature-based development\n3. **Theme Standardization** - Decompose monolithic theme configuration into maintainable modules\n\n---\n\n## SECTION 1: Common Component Consolidation\n\n### Current State Analysis\n\n**Duplicated Components Identified:**\n- `src/pages/auth/components/Button.js` \n- `src/pages/dashboard/components/Button.js`\n- `src/pages/auth/components/Spinner.js`\n- `src/pages/dashboard/components/Spinner.js`\n\n**Existing Shared Components:**\n- `src/components/Header.js` (already centralized)\n- `src/components/Footer.js` (already centralized)\n\n### Target Structure\n\n```\nsrc/\n\u251c\u2500\u2500 components/\n\u2502   \u251c\u2500\u2500 common/\n\u2502   \u2502   \u251c\u2500\u2500 Button.js\n\u2502   \u2502   \u251c\u2500\u2500 Button.test.js\n\u2502   \u2502   \u251c\u2500\u2500 Spinner.js\n\u2502   \u2502   \u251c\u2500\u2500 Spinner.test.js\n\u2502   \u2502   \u251c\u2500\u2500 Header.js\n\u2502   \u2502   \u251c\u2500\u2500 Footer.js\n\u2502   \u2502   \u2514\u2500\u2500 index.js (barrel export)\n\u2502   \u2514\u2500\u2500 [other non-common components remain here]\n```\n\n### Refactoring Steps for Common Components\n\n#### Step 1.1: Create Common Components Directory\n```bash\nmkdir -p src/components/common\n```\n\n#### Step 1.2: Consolidate Button Component\n\n**File Move:**\n```bash\n# Keep the version with more features/complete implementation\n# Assuming src/pages/auth/components/Button.js is the authoritative version:\ncp src/pages/auth/components/Button.js src/components/common/Button.js\n# Copy test file if it exists\ncp src/pages/auth/components/Button.test.js src/components/common/Button.test.js 2>/dev/null || true\n```\n\n**Button.js Content (Example):**\n```javascript\nimport React from 'react';\nimport PropTypes from 'prop-types';\nimport './Button.css';\n\nconst Button = ({ \n  variant = 'primary', \n  size = 'medium', \n  disabled = false, \n  children, \n  onClick,\n  className = ''\n}) => {\n  const baseClass = 'btn';\n  const variantClass = `btn--${variant}`;\n  const sizeClass = `btn--${size}`;\n  \n  return (\n    <button\n      className={`${baseClass} ${variantClass} ${sizeClass} ${className}`}\n      disabled={disabled}\n      onClick={onClick}\n    >\n      {children}\n    </button>\n  );\n};\n\nButton.propTypes = {\n  variant: PropTypes.oneOf(['primary', 'secondary', 'danger']),\n  size: PropTypes.oneOf(['small', 'medium', 'large']),\n  disabled: PropTypes.bool,\n  children: PropTypes.node.isRequired,\n  onClick: PropTypes.func,\n  className: PropTypes.string\n};\n\nexport default Button;\n```\n\n#### Step 1.3: Consolidate Spinner Component\n\n**File Move:**\n```bash\ncp src/pages/dashboard/components/Spinner.js src/components/common/Spinner.js\ncp src/pages/dashboard/components/Spinner.test.js src/components/common/Spinner.test.js 2>/dev/null || true\n```\n\n**Spinner.js Content (Example):**\n```javascript\nimport React from 'react';\nimport PropTypes from 'prop-types';\nimport './Spinner.css';\n\nconst Spinner = ({ size = 'medium', color = 'primary' }) => {\n  const sizeClass = `spinner--${size}`;\n  const colorClass = `spinner--${color}`;\n  \n  return (\n    <div className={`spinner ${sizeClass} ${colorClass}`} role=\"status\" aria-live=\"polite\">\n      <div className=\"spinner__ring\"></div>\n      <div className=\"spinner__text\">Loading...</div>\n    </div>\n  );\n};\n\nSpinner.propTypes = {\n  size: PropTypes.oneOf(['small', 'medium', 'large']),\n  color: PropTypes.oneOf(['primary', 'secondary'])\n};\n\nexport default Spinner;\n```\n\n#### Step 1.4: Create Barrel Export Index\n\n**src/components/common/index.js:**\n```javascript\nexport { default as Button } from './Button';\nexport { default as Spinner } from './Spinner';\nexport { default as Header } from './Header';\nexport { default as Footer } from './Footer';\n```\n\n#### Step 1.5: Update Imports in Auth Module\n\n**Before (src/pages/auth/Login.js):**\n```javascript\nimport Button from '../components/Button';\nimport Spinner from '../components/Spinner';\n```\n\n**After (src/pages/auth/Login.js):**\n```javascript\nimport { Button, Spinner } from '../../components/common';\n```\n\n**Update files in auth context:**\n- `src/pages/auth/Login.js`\n- `src/pages/auth/Register.js`\n- `src/pages/auth/ResetPassword.js`\n- `src/pages/auth/components/LoginForm.js`\n- Any other files importing Button or Spinner from `../components/`\n\n#### Step 1.6: Update Imports in Dashboard Module\n\n**Before (src/pages/dashboard/Dashboard.js):**\n```javascript\nimport Button from './components/Button';\nimport Spinner from './components/Spinner';\n```\n\n**After (src/pages/dashboard/Dashboard.js):**\n```javascript\nimport { Button, Spinner } from '../../components/common';\n```\n\n**Update files in dashboard context:**\n- `src/pages/dashboard/Dashboard.js`\n- `src/pages/dashboard/Analytics.js`\n- `src/pages/dashboard/Settings.js`\n- `src/pages/dashboard/components/WidgetCard.js`\n- Any other files importing Button or Spinner from `./components/`\n\n#### Step 1.7: Delete Duplicate Files\n\n```bash\n# Remove duplicates from auth\nrm -f src/pages/auth/components/Button.js\nrm -f src/pages/auth/components/Button.test.js\nrm -f src/pages/auth/components/Spinner.js\nrm -f src/pages/auth/components/Spinner.test.js\n\n# Remove duplicates from dashboard\nrm -f src/pages/dashboard/components/Button.js\nrm -f src/pages/dashboard/components/Button.test.js\nrm -f src/pages/dashboard/components/Spinner.js\nrm -f src/pages/dashboard/components/Spinner.test.js\n\n# Clean up empty directories if needed\nrmdir src/pages/auth/components 2>/dev/null || true\nrmdir src/pages/dashboard/components 2>/dev/null || true\n```\n\n---\n\n## SECTION 2: Feature Module Organization\n\n### Current State Analysis\n\n**Current Structure:**\n```\nsrc/pages/\n\u251c\u2500\u2500 auth/\n\u2502   \u251c\u2500\u2500 Login.js\n\u2502   \u251c\u2500\u2500 Register.js\n\u2502   \u251c\u2500\u2500 ResetPassword.js\n\u2502   \u251c\u2500\u2500 components/\n\u2502   \u2502   \u251c\u2500\u2500 LoginForm.js\n\u2502   \u2502   \u2514\u2500\u2500 RegisterForm.js\n\u2502   \u2514\u2500\u2500 auth.css\n\u251c\u2500\u2500 dashboard/\n\u2502   \u251c\u2500\u2500 Dashboard.js\n\u2502   \u251c\u2500\u2500 Analytics.js\n\u2502   \u251c\u2500\u2500 Settings.js\n\u2502   \u251c\u2500\u2500 components/\n\u2502   \u2502   \u251c\u2500\u2500 WidgetCard.js\n\u2502   \u2502   \u251c\u2500\u2500 Chart.js\n\u2502   \u2502   \u2514\u2500\u2500 StatBox.js\n\u2502   \u2514\u2500\u2500 dashboard.css\n\u2514\u2500\u2500 [other pages]\n```\n\n**Issues with Current Structure:**\n- Pages and features are conflated; no clear distinction between layouts, pages, and feature modules\n- Feature-specific utilities and hooks are scattered\n- Difficult to identify feature boundaries\n- Hard to extract or reuse features across projects\n\n### Target Structure\n\n```\nsrc/\n\u251c\u2500\u2500 modules/\n\u2502   \u251c\u2500\u2500 auth/\n\u2502   \u2502   \u251c\u2500\u2500 pages/\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 LoginPage.js\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 RegisterPage.js\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 ResetPasswordPage.js\n\u2502   \u2502   \u251c\u2500\u2500 components/\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 LoginForm.js\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 RegisterForm.js\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 PasswordStrengthIndicator.js\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 index.js\n\u2502   \u2502   \u251c\u2500\u2500 hooks/\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 useAuth.js\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 useLogin.js\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 index.js\n\u2502   \u2502   \u251c\u2500\u2500 services/\n\u2502   \u2502   \u2502   \u251c\u2500\u2500 authService.js\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 index.js\n\u2502   \u2502   \u251c\u2500\u2500 types/\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 auth.types.js (if using TypeScript)\n\u2502   \u2502   \u251c\u2500\u2500 styles/\n\u2502   \u2502   \u2502   \u2514\u2500\u2500 auth.css\n\u2502   \u2502   \u251c\u2500\u2500 constants.js\n\u2502   \u2502   \u2514\u2500\u2500 index.js (main export)\n\u2502   \u2502\n\u2502   \u2514\u2500\u2500 dashboard/\n\u2502       \u251c\u2500\u2500 pages/\n\u2502       \u2502   \u251c\u2500\u2500 DashboardPage.js\n\u2502       \u2502   \u251c\u2500\u2500 AnalyticsPage.js\n\u2502       \u2502   \u2514\u2500\u2500 SettingsPage.js\n\u2502       \u251c\u2500\u2500 components/\n\u2502       \u2502   \u251c\u2500\u2500 WidgetCard.js\n\u2502       \u2502   \u251c\u2500\u2500 Chart.js\n\u2502       \u2502   \u251c\u2500\u2500 StatBox.js\n\u2502       \u2502   \u251c\u2500\u2500 DashboardGrid.js\n\u2502       \u2502   \u2514\u2500\u2500 index.js\n\u2502       \u251c\u2500\u2500 hooks/\n\u2502       \u2502   \u251c\u2500\u2500 useDashboard.js\n\u2502       \u2502   \u251c\u2500\u2500 useAnalytics.js\n\u2502       \u2502   \u2514\u2500\u2500 index.js\n\u2502       \u251c\u2500\u2500 services/\n\u2502       \u2502   \u251c\u2500\u2500 dashboardService.js\n\u2502       \u2502   \u251c\u2500\u2500 analyticsService.js\n\u2502       \u2502   \u2514\u2500\u2500 index.js\n\u2502       \u251c\u2500\u2500 styles/\n\u2502       \u2502   \u2514\u2500\u2500 dashboard.css\n\u2502       \u251c\u2500\u2500 constants.js\n\u2502       \u2514\u2500\u2500 index.js (main export)\n\u2502\n\u251c\u2500\u2500 components/\n\u2502   \u251c\u2500\u2500 common/\n\u2502   \u2502   \u251c\u2500\u2500 Button.js\n\u2502   \u2502   \u251c\u2500\u2500 Spinner.js\n\u2502   \u2502   \u251c\u2500\u2500 Header.js\n\u2502   \u2502   \u251c\u2500\u2500 Footer.js\n\u2502   \u2502   \u2514\u2500\u2500 index.js\n\u2502   \u2514\u2500\u2500 layout/\n\u2502       \u251c\u2500\u2500 Sidebar.js\n\u2502       \u251c\u2500\u2500 Header.js\n\u2502       \u2514\u2500\u2500 MainLayout.js\n\u2502\n\u251c\u2500\u2500 pages/ (or App.js routing structure)\n\u2502   \u2514\u2500\u2500 [app-level routing logic]\n\u2502\n\u251c\u2500\u2500 App.js\n\u2514\u2500\u2500 index.js\n```\n\n### Refactoring Steps for Module Organization\n\n#### Step 2.1: Create Modules Directory Structure\n\n```bash\nmkdir -p src/modules/auth/{pages,components,hooks,services,styles}\nmkdir -p src/modules/dashboard/{pages,components,hooks,services,styles}\n```\n\n#### Step 2.2: Reorganize Auth Module\n\n**Create pages:**\n```bash\n# Rename/move existing auth pages\nmv src/pages/auth/Login.js src/modules/auth/pages/LoginPage.js\nmv src/pages/auth/Register.js src/modules/auth/pages/RegisterPage.js\nmv src/pages/auth/ResetPassword.js src/modules/auth/pages/ResetPasswordPage.js\n```\n\n**LoginPage.js (example structure):**\n```javascript\nimport React, { useState } from 'react';\nimport { LoginForm } from '../components';\nimport { useAuth } from '../hooks';\nimport '../styles/auth.css';\n\nconst LoginPage = () => {\n  const { login, isLoading } = useAuth();\n  const [error, setError] = useState(null);\n\n  const handleLogin = async (credentials) => {\n    try {\n      await login(credentials);\n    } catch (err) {\n      setError(err.message);\n    }\n  };\n\n  return (\n    <div className=\"auth-page auth-page--login\">\n      <LoginForm onSubmit={handleLogin} isLoading={isLoading} error={error} />\n    </div>\n  );\n};\n\nexport default LoginPage;\n```\n\n**Move auth-specific components:**\n```bash\nmv src/pages/auth/components/LoginForm.js src/modules/auth/components/LoginForm.js\nmv src/pages/auth/components/RegisterForm.js src/modules/auth/components/RegisterForm.js\n```\n\n**Create auth-specific hooks:**\n```bash\ntouch src/modules/auth/hooks/useAuth.js\ntouch src/modules/auth/hooks/useLogin.js\ntouch src/modules/auth/hooks/index.js\n```\n\n**useAuth.js (example):**\n```javascript\nimport { useCallback } from 'react';\nimport { authService } from '../services';\nimport { useAuthContext } from '../../../context/AuthContext'; // if using context\n\nconst useAuth = () => {\n  const { setUser } = useAuthContext();\n  const [isLoading, setIsLoading] = React.useState(false);\n\n  const login = useCallback(async (credentials) => {\n    setIsLoading(true);\n    try {\n      const user = await authService.login(credentials);\n      setUser(user);\n      return user;\n    } finally {\n      setIsLoading(false);\n    }\n  }, [setUser]);\n\n  return { login, isLoading };\n};\n\nexport default useAuth;\n```\n\n**Create auth-specific services:**\n```bash\ntouch src/modules/auth/services/authService.js\ntouch src/modules/auth/services/index.js\n```\n\n**authService.js (example):**\n```javascript\nimport axios from 'axios';\n\nconst API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3001';\n\nexport const authService = {\n  login: async (credentials) => {\n    const response = await axios.post(`${API_BASE}/auth/login`, credentials);\n    return response.data.user;\n  },\n\n  register: async (userData) => {\n    const response = await axios.post(`${API_BASE}/auth/register`, userData);\n    return response.data.user;\n  },\n\n  logout: async () => {\n    await axios.post(`${API_BASE}/auth/logout`);\n  },\n\n  resetPassword: async (email) => {\n    await axios.post(`${API_BASE}/auth/reset-password`, { email });\n  }\n};\n```\n\n**Create component barrel export:**\n\n**src/modules/auth/components/index.js:**\n```javascript\nexport { default as LoginForm } from './LoginForm';\nexport { default as RegisterForm } from './RegisterForm';\nexport { default as PasswordStrengthIndicator } from './PasswordStrengthIndicator';\n```\n\n**Create hooks barrel export:**\n\n**src/modules/auth/hooks/index.js:**\n```javascript\nexport { default as useAuth } from './useAuth';\nexport { default as useLogin } from './useLogin';\n```\n\n**Create services barrel export:**\n\n**src/modules/auth/services/index.js:**\n```javascript\nexport { authService } from './authService';\n```\n\n**Move styles:**\n```bash\nmv src/pages/auth/auth.css src/modules/auth/styles/auth.css\n```\n\n**Create auth module constants:**\n\n**src/modules/auth/constants.js:**\n```javascript\nexport const AUTH_ROUTES = {\n  LOGIN: '/login',\n  REGISTER: '/register',\n  RESET_PASSWORD: '/reset-password'\n};\n\nexport const AUTH_ERROR_MESSAGES = {\n  INVALID_CREDENTIALS: 'Invalid email or password',\n  USER_EXISTS: 'User already exists',\n  WEAK_PASSWORD: 'Password does not meet strength requirements'\n};\n```\n\n**Create auth module index (barrel export):**\n\n**src/modules/auth/index.js:**\n```javascript\n// Pages\nexport { default as LoginPage } from './pages/LoginPage';\nexport { default as RegisterPage } from './pages/RegisterPage';\nexport { default as ResetPasswordPage } from './pages/ResetPasswordPage';\n\n// Components\nexport * from './components';\n\n// Hooks\nexport * from './hooks';\n\n// Services\nexport * from './services';\n\n// Constants\nexport * from './constants';\n```\n\n#### Step 2.3: Reorganize Dashboard Module\n\nFollow the same pattern as Auth:\n\n**Create pages:**\n```bash\nmv src/pages/dashboard/Dashboard.js src/modules/dashboard/pages/DashboardPage.js\nmv src/pages/dashboard/Analytics.js src/modules/dashboard/pages/AnalyticsPage.js\nmv src/pages/dashboard/Settings.js src/modules/dashboard/pages/SettingsPage.js\n```\n\n**DashboardPage.js (example structure):**\n```javascript\nimport React, { useEffect } from 'react';\nimport { WidgetCard, Chart, StatBox } from '../components';\nimport { useDashboard } from '../hooks';\nimport '../styles/dashboard.css';\n\nconst DashboardPage = () => {\n  const { data, isLoading, fetchDashboard } = useDashboard();\n\n  useEffect(() => {\n    fetchDashboard();\n  }, [fetchDashboard]);\n\n  if (isLoading) return <Spinner />;\n\n  return (\n    <div className=\"dashboard-page\">\n      <div className=\"dashboard-grid\">\n        <StatBox label=\"Revenue\" value={data.revenue} />\n        <StatBox label=\"Users\" value={data.users} />\n        <StatBox label=\"Conversion\" value={data.conversion} />\n      </div>\n      <Chart data={data.chartData} />\n      <div className=\"widgets\">\n        {data.widgets.map(widget => (\n          <WidgetCard key={widget.id} data={widget} />\n        ))}\n      </div>\n    </div>\n  );\n};\n\nexport default DashboardPage;\n```\n\n**Move dashboard-specific components:**\n```bash\nmv src/pages/dashboard/components/WidgetCard.js src/modules/dashboard/components/WidgetCard.js\nmv src/pages/dashboard/components/Chart.js src/modules/dashboard/components/Chart.js\nmv src/pages/dashboard/components/StatBox.js src/modules/dashboard/components/StatBox.js\n```\n\n**Create dashboard-specific hooks:**\n```bash\ntouch src/modules/dashboard/hooks/useDashboard.js\ntouch src/modules/dashboard/hooks/useAnalytics.js\ntouch src/modules/dashboard/hooks/index.js\n```\n\n**useDashboard.js (example):**\n```javascript\nimport { useEffect, useState, useCallback } from 'react';\nimport { dashboardService } from '../services';\n\nconst useDashboard = () => {\n  const [data, setData] = useState(null);\n  const [isLoading, setIsLoading] = useState(false);\n  const [error, setError] = useState(null);\n\n  const fetchDashboard = useCallback(async () => {\n    setIsLoading(true);\n    try {\n      const dashboardData = await dashboardService.getDashboard();\n      setData(dashboardData);\n    } catch (err) {\n      setError(err.message);\n    } finally {\n      setIsLoading(false);\n    }\n  }, []);\n\n  return { data, isLoading, error, fetchDashboard };\n};\n\nexport default useDashboard;\n```\n\n**Create dashboard-specific services:**\n```bash\ntouch src/modules/dashboard/services/dashboardService.js\ntouch src/modules/dashboard/services/analyticsService.js\ntouch src/modules/dashboard/services/index.js\n```\n\n**dashboardService.js (example):**\n```javascript\nimport axios from 'axios';\n\nconst API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3001';\n\nexport const dashboardService = {\n  getDashboard: async () => {\n    const response = await axios.get(`${API_BASE}/dashboard`);\n    return response.data;\n  },\n\n  getAnalytics: async (dateRange) => {\n    const response = await axios.get(`${API_BASE}/dashboard/analytics`, {\n      params: dateRange\n    });\n    return response.data;\n  },\n\n  updateSettings: async (settings) => {\n    const response = await axios.put(`${API_BASE}/dashboard/settings`, settings);\n    return response.data;\n  }\n};\n```\n\n**Move styles:**\n```bash\nmv src/pages/dashboard/dashboard.css src/modules/dashboard/styles/dashboard.css\n```\n\n**Create dashboard module barrel exports (same pattern as auth):**\n\n**src/modules/dashboard/components/index.js:**\n```javascript\nexport { default as WidgetCard } from './WidgetCard';\nexport { default as Chart } from './Chart';\nexport { default as StatBox } from './StatBox';\n```\n\n**src/modules/dashboard/hooks/index.js:**\n```javascript\nexport { default as useDashboard } from './useDashboard';\nexport { default as useAnalytics } from './useAnalytics';\n```\n\n**src/modules/dashboard/services/index.js:**\n```javascript\nexport { dashboardService } from './dashboardService';\nexport { analyticsService } from './analyticsService';\n```\n\n**src/modules/dashboard/constants.js:**\n```javascript\nexport const DASHBOARD_ROUTES = {\n  DASHBOARD: '/dashboard',\n  ANALYTICS: '/dashboard/analytics',\n  SETTINGS: '/dashboard/settings'\n};\n\nexport const CHART_COLORS = ['#6366F1', '#EC4899', '#F59E0B'];\nexport const DEFAULT_DATE_RANGE = { days: 30 };\n```\n\n**src/modules/dashboard/index.js:**\n```javascript\nexport { default as DashboardPage } from './pages/DashboardPage';\nexport { default as AnalyticsPage } from './pages/AnalyticsPage';\nexport { default as SettingsPage } from './pages/SettingsPage';\n\nexport * from './components';\nexport * from './hooks';\nexport * from './services';\nexport * from './constants';\n```\n\n#### Step 2.4: Update Main App Routes\n\n**Before (src/App.js or routing config):**\n```javascript\nimport Login from './pages/auth/Login';\nimport Register from './pages/auth/Register';\nimport Dashboard from './pages/dashboard/Dashboard';\nimport Analytics from './pages/dashboard/Analytics';\n\nfunction App() {\n  return (\n    <Routes>\n      <Route path=\"/login\" element={<Login />} />\n      <Route path=\"/register\" element={<Register />} />\n      <Route path=\"/dashboard\" element={<Dashboard />} />\n      <Route path=\"/dashboard/analytics\" element={<Analytics />} />\n    </Routes>\n  );\n}\n```\n\n**After (src/App.js or routing config):**\n```javascript\nimport { LoginPage, RegisterPage, ResetPasswordPage } from './modules/auth';\nimport { DashboardPage, AnalyticsPage, SettingsPage } from './modules/dashboard';\n\nfunction App() {\n  return (\n    <Routes>\n      <Route path=\"/login\" element={<LoginPage />} />\n      <Route path=\"/register\" element={<RegisterPage />} />\n      <Route path=\"/reset-password\" element={<ResetPasswordPage />} />\n      <Route path=\"/dashboard\" element={<DashboardPage />} />\n      <Route path=\"/dashboard/analytics\" element={<AnalyticsPage />} />\n      <Route path=\"/dashboard/settings\" element={<SettingsPage />} />\n    </Routes>\n  );\n}\n```\n\n#### Step 2.5: Delete Old Page Structure\n\n```bash\nrm -rf src/pages/auth\nrm -rf src/pages/dashboard\nrmdir src/pages 2>/dev/null || true  # Only if no other pages remain\n```\n\n---\n\n## SECTION 3: Theme Standardization\n\n### Current State Analysis\n\n**Current Theme File (src/utils/theme.js):**\n```javascript\nexport const theme = {\n  colors: {\n    primary: '#6366F1',\n    secondary: '#EC4899',\n    success: '#10B981',\n    error: '#EF4444',\n    warning: '#F59E0B',\n    info: '#3B82F6',\n    background: '#FFFFFF',\n    surface: '#F9FAFB',\n    text: '#111827',\n    textSecondary: '#6B7280',\n    border: '#E5E7EB'\n  },\n  typography: {\n    fontFamily: {\n      body: \"'Inter', sans-serif\",\n      heading: \"'Poppins', sans-serif\"\n    },\n    fontSize: {\n      xs: '12px',\n      sm: '14px',\n      base: '16px',\n      lg: '18px',\n      xl: '20px',\n      '2xl': '24px',\n      '3xl': '30px',\n      '4xl': '36px'\n    },\n    fontWeight: {\n      light: 300,\n      normal: 400,\n      semibold: 600,\n      bold: 700\n    },\n    lineHeight: {\n      tight: 1.2,\n      normal: 1.5,\n      relaxed: 1.75\n    }\n  },\n  spacing: {\n    0: '0px',\n    1: '4px',\n    2: '8px',\n    3: '12px',\n    4: '16px',\n    6: '24px',\n    8: '32px',\n    12: '48px',\n    16: '64px'\n  },\n  breakpoints: {\n    xs: '320px',\n    sm: '640px',\n    md: '768px',\n    lg: '1024px',\n    xl: '1280px',\n    '2xl': '1536px'\n  },\n  zIndex: {\n    dropdown: 1000,\n    sticky: 1100,\n    fixed: 1200,\n    modal: 1300,\n    popover: 1400,\n    tooltip: 1500\n  }\n};\n```\n\n**Issues:**\n- All values in one file makes it hard to find and update specific categories\n- Difficult to reuse only colors or typography without importing the entire object\n- No clear separation of concerns\n- Hard to scale with custom tokens or variants\n\n### Target Structure\n\n```\nsrc/\n\u2514\u2500\u2500 theme/\n    \u251c\u2500\u2500 colors.js\n    \u251c\u2500\u2500 typography.js\n    \u251c\u2500\u2500 spacing.js\n    \u251c\u2500\u2500 breakpoints.js\n    \u251c\u2500\u2500 zIndex.js\n    \u251c\u2500\u2500 shadows.js (optional, new)\n    \u251c\u2500\u2500 transitions.js (optional, new)\n    \u2514\u2500\u2500 index.js (aggregator)\n```\n\n### Refactoring Steps for Theme\n\n#### Step 3.1: Create Theme Directory\n\n```bash\nmkdir -p src/theme\n```\n\n#### Step 3.2: Create Colors Module\n\n**src/theme/colors.js:**\n```javascript\n/**\n * Color palette for the application\n * Organized by semantic purpose\n */\n\nexport const colors = {\n  // Primary palette\n  primary: {\n    50: '#F0F4FF',\n    100: '#E0E7FF',\n    200: '#C7D2FE',\n    300: '#A5B4FC',\n    400: '#818CF8',\n    500: '#6366F1',   // Main primary\n    600: '#4F46E5',\n    700: '#4338CA',\n    800: '#3730A3',\n    900: '#312E81'\n  },\n\n  // Secondary palette\n  secondary: {\n    50: '#FCF2F8',\n    100: '#F9D5ED',\n    200: '#F3A8DB',\n    300: '#ED7BC9',\n    400: '#E74FA1',\n    500: '#EC4899',   // Main secondary\n    600: '#D8326E',\n    700: '#BE185D',\n    800: '#9B1B4D',\n    900: '#701433'\n  },\n\n  // Semantic colors\n  success: '#10B981',\n  error: '#EF4444',\n  warning: '#F59E0B',\n  info: '#3B82F6',\n\n  // Neutral palette\n  neutral: {\n    50: '#FAFAFA',\n    100: '#F5F5F5',\n    200: '#E5E5E5',\n    300: '#D4D4D4',\n    400: '#A3A3A3',\n    500: '#737373',\n    600: '#525252',\n    700: '#404040',\n    800: '#262626',\n    900: '#171717'\n  },\n\n  // Semantic backgrounds\n  background: '#FFFFFF',\n  surface: '#F9FAFB',\n  surfaceSecondary: '#F3F4F6',\n\n  // Text colors\n  text: '#111827',\n  textSecondary: '#6B7280',\n  textTertiary: '#9CA3AF',\n\n  // Border\n  border: '#E5E7EB',\n  borderLight: '#F3F4F6'\n};\n\n// Export shorthand for backwards compatibility\nexport const COLORS = {\n  primary: colors.primary[500],\n  secondary: colors.secondary[500],\n  success: colors.success,\n  error: colors.error,\n  warning: colors.warning,\n  info: colors.info,\n  background: colors.background,\n  surface: colors.surface,\n  text: colors.text,\n  textSecondary: colors.textSecondary,\n  border: colors.border\n};\n```\n\n#### Step 3.3: Create Typography Module\n\n**src/theme/typography.js:**\n```javascript\n/**\n * Typography configuration\n * Includes font families, sizes, weights, and line heights\n */\n\nexport const typography = {\n  fontFamily: {\n    body: \"'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif\",\n    heading: \"'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif\",\n    mono: \"'Menlo', 'Monaco', 'Courier New', monospace\"\n  },\n\n  fontSize: {\n    xs: {\n      size: '12px',\n      lineHeight: '16px'\n    },\n    sm: {\n      size: '14px',\n      lineHeight: '20px'\n    },\n    base: {\n      size: '16px',\n      lineHeight: '24px'\n    },\n    lg: {\n      size: '18px',\n      lineHeight: '28px'\n    },\n    xl: {\n      size: '20px',\n      lineHeight: '28px'\n    },\n    '2xl': {\n      size: '24px',\n      lineHeight: '32px'\n    },\n    '3xl': {\n      size: '30px',\n      lineHeight: '36px'\n    },\n    '4xl': {\n      size: '36px',\n      lineHeight: '40px'\n    }\n  },\n\n  fontWeight: {\n    light: 300,\n    normal: 400,\n    medium: 500,\n    semibold: 600,\n    bold: 700,\n    extrabold: 800\n  },\n\n  lineHeight: {\n    tight: 1.2,\n    normal: 1.5,\n    relaxed: 1.75,\n    loose: 2\n  },\n\n  // Composite: predefined text styles\n  heading: {\n    h1: {\n      fontSize: '36px',\n      fontWeight: 700,\n      lineHeight: '40px',\n      fontFamily: \"'Poppins', sans-serif\"\n    },\n    h2: {\n      fontSize: '30px',\n      fontWeight: 700,\n      lineHeight: '36px',\n      fontFamily: \"'Poppins', sans-serif\"\n    },\n    h3: {\n      fontSize: '24px',\n      fontWeight: 600,\n      lineHeight: '32px',\n      fontFamily: \"'Poppins', sans-serif\"\n    },\n    h4: {\n      fontSize: '20px',\n      fontWeight: 600,\n      lineHeight: '28px',\n      fontFamily: \"'Poppins', sans-serif\"\n    }\n  }\n};\n```\n\n#### Step 3.4: Create Spacing Module\n\n**src/theme/spacing.js:**\n```javascript\n/**\n * Spacing scale\n * Used for padding, margin, gaps, and other spatial values\n * Follows a 4px base scale\n */\n\nexport const spacing = {\n  // Base units\n  0: '0px',\n  1: '4px',\n  2: '8px',\n  3: '12px',\n  4: '16px',\n  5: '20px',\n  6: '24px',\n  8: '32px',\n  10: '40px',\n  12: '48px',\n  16: '64px',\n  20: '80px',\n  24: '96px',\n  28: '112px',\n  32: '128px',\n\n  // Aliases for semantic usage\n  xs: '8px',\n  sm: '12px',\n  md: '16px',\n  lg: '24px',\n  xl: '32px',\n  '2xl': '48px',\n  '3xl': '64px'\n};\n\n/**\n * Responsive breakpoints\n * Mobile-first approach\n */\nexport const breakpoints = {\n  xs: '320px',\n  sm: '640px',\n  md: '768px',\n  lg: '1024px',\n  xl: '1280px',\n  '2xl': '1536px'\n};\n\n/**\n * Z-index scale\n * Layers for stacking context (modals, dropdowns, etc.)\n */\nexport const zIndex = {\n  hide: -1,\n  auto: 'auto',\n  base: 0,\n  docked: 10,\n  dropdown: 1000,\n  sticky: 1100,\n  fixed: 1200,\n  modalBackdrop: 1300,\n  modal: 1400,\n  popover: 1500,\n  tooltip: 1600\n};\n```\n\n#### Step 3.5: Create Breakpoints Module (Optional Refactoring)\n\n**src/theme/breakpoints.js** (if you want to keep breakpoints separate):\n```javascript\n/**\n * Responsive breakpoints\n * Mobile-first design approach\n */\n\nexport const breakpoints = {\n  xs: '320px',\n  sm: '640px',\n  md: '768px',\n  lg: '1024px',\n  xl: '1280px',\n  '2xl': '1536px'\n};\n\n/**\n * Media query helper utilities\n */\nexport const media = {\n  xs: `@media (min-width: ${breakpoints.xs})`,\n  sm: `@media (min-width: ${breakpoints.sm})`,\n  md: `@media (min-width: ${breakpoints.md})`,\n  lg: `@media (min-width: ${breakpoints.lg})`,\n  xl: `@media (min-width: ${breakpoints.xl})`,\n  '2xl': `@media (min-width: ${breakpoints['2xl']})`\n};\n```\n\n#### Step 3.6: Create Theme Index (Aggregator)\n\n**src/theme/index.js:**\n```javascript\n/**\n * Centralized theme export\n * Combines all theme modules\n */\n\nexport { colors, COLORS } from './colors';\nexport { typography } from './typography';\nexport { spacing, breakpoints, zIndex } from './spacing';\n\n// Optional: Create a unified theme object for backwards compatibility\nexport const theme = {\n  colors: require('./colors').colors,\n  typography: require('./typography').typography,\n  spacing: require('./spacing').spacing,\n  breakpoints: require('./spacing').breakpoints,\n  zIndex: require('./spacing').zIndex\n};\n```\n\nOr using ES6 imports:\n\n```javascript\n/**\n * Centralized theme export\n * Combines all theme modules\n */\n\nimport { colors, COLORS } from './colors';\nimport { typography } from './typography';\nimport { spacing, breakpoints, zIndex } from './spacing';\n\nexport { colors, COLORS, typography, spacing, breakpoints, zIndex };\n\nexport const theme = {\n  colors,\n  typography,\n  spacing,\n  breakpoints,\n  zIndex\n};\n```\n\n#### Step 3.7: Update All Theme Imports\n\n**Search and Replace Pattern:**\n\n**Pattern 1: Theme object imports**\n\nBefore:\n```javascript\nimport { theme } from '../utils/theme';\n\nconst buttonColor = theme.colors.primary;\nconst fontSize = theme.typography.fontSize.base;\n```\n\nAfter:\n```javascript\nimport { colors, typography } from '../theme';\n\nconst buttonColor = colors.primary[500];  // or colors.primary\nconst fontSize = typography.fontSize.base.size;\n```\n\n**Pattern 2: Individual color imports**\n\nBefore:\n```javascript\nimport { theme } from '../utils/theme';\n\nconst styles = {\n  color: theme.colors.primary\n};\n```\n\nAfter:\n```javascript\nimport { colors } from '../theme';\n\nconst styles = {\n  color: colors.primary[500]  // or use shorthand from COLORS\n};\n```\n\n**Pattern 3: Typography imports**\n\nBefore:\n```javascript\nimport { theme } from '../utils/theme';\n\nconst headingStyle = {\n  fontSize: theme.typography.fontSize['4xl'],\n  fontWeight: theme.typography.fontWeight.bold\n};\n```\n\nAfter:\n```javascript\nimport { typography } from '../theme';\n\nconst headingStyle = {\n  fontSize: typography.fontSize['4xl'].size,\n  fontWeight: typography.fontWeight.bold,\n  lineHeight: typography.fontSize['4xl'].lineHeight\n};\n```\n\n#### Step 3.8: Update Component Imports (Examples)\n\n**Before (src/components/common/Button.js):**\n```javascript\nimport React from 'react';\nimport { theme } from '../../utils/theme';\n\nconst Button = ({ variant = 'primary' }) => {\n  const color = theme.colors[variant];\n  const fontSize = theme.typography.fontSize.base;\n  \n  return <button style={{ color, fontSize }}>Click me</button>;\n};\n```\n\n**After (src/components/common/Button.js):**\n```javascript\nimport React from 'react';\nimport { colors, typography } from '../../theme';\n\nconst Button = ({ variant = 'primary' }) => {\n  const color = colors[variant] || colors.primary[500];\n  const fontSize = typography.fontSize.base.size;\n  \n  return <button style={{ color, fontSize }}>Click me</button>;\n};\n```\n\n**Before (src/pages/auth/Auth.js - now modules/auth/pages/LoginPage.js):**\n```javascript\nimport { theme } from '../../../utils/theme';\n\nconst LoginPage = () => {\n  const pageStyle = {\n    background: theme.colors.background,\n    padding: theme.spacing[4]\n  };\n  \n  return <div style={pageStyle}>...</div>;\n};\n```\n\n**After (src/modules/auth/pages/LoginPage.js):**\n```javascript\nimport { colors, spacing } from '../../../theme';\n\nconst LoginPage = () => {\n  const pageStyle = {\n    background: colors.background,\n    padding: spacing[4]\n  };\n  \n  return <div style={pageStyle}>...</div>;\n};\n```\n\n#### Step 3.9: Delete Old Theme File\n\n```bash\nrm src/utils/theme.js\n# Clean up utils directory if empty\nrmdir src/utils 2>/dev/null || true\n```\n\n---\n\n## SECTION 4: Import Path Update Summary\n\n### Centralized Import Mapping Guide\n\n#### Common Components Imports\n\n| Location | Old Import | New Import |\n|----------|-----------|-----------|\n| Any file | `import Button from '../../pages/auth/components/Button'` | `import { Button } from '../../components/common'` |\n| Any file | `import Spinner from '../../pages/dashboard/components/Spinner'` | `import { Spinner } from '../../components/common'` |\n| Auth module | `import Button from '../components/Button'` | `import { Button } from '../../components/common'` |\n| Dashboard module | `import Spinner from './components/Spinner'` | `import { Spinner } from '../../components/common'` |\n\n#### Module-Internal Component Imports\n\n| Location | Old Import | New Import |\n|----------|-----------|-----------|\n| src/modules/auth/pages/LoginPage.js | `import LoginForm from '../components/LoginForm'` | `import { LoginForm } from '../components'` |\n| src/modules/dashboard/pages/DashboardPage.js | `import WidgetCard from './components/WidgetCard'` | `import { WidgetCard } from '../components'` |\n| src/modules/auth/pages/LoginPage.js | `import { useAuth } from '../hooks/useAuth'` | `import { useAuth } from '../hooks'` |\n\n#### Hook Imports\n\n| Location | Old Import | New Import |\n|----------|-----------|-----------|\n| src/modules/auth/pages/LoginPage.js | N/A (new) | `import { useAuth, useLogin } from '../hooks'` |\n| src/modules/dashboard/pages/DashboardPage.js | N/A (new) | `import { useDashboard, useAnalytics } from '../hooks'` |\n\n#### Service Imports\n\n| Location | Old Import | New Import |\n|----------|-----------|-----------|\n| src/modules/auth files | N/A (new) | `import { authService } from '../services'` |\n| src/modules/dashboard files | N/A (new) | `import { dashboardService } from '../services'` |\n\n#### Theme Imports\n\n| Location | Old Import | New Import |\n|----------|-----------|-----------|\n| Any file | `import { theme } from '../utils/theme'` | `import { colors, typography, spacing } from '../theme'` |\n| Any file | `theme.colors.primary` | `colors.primary[500]` or `COLORS.primary` |\n| Any file | `theme.typography.fontSize.base` | `typography.fontSize.base.size` |\n| Any file | `theme.spacing[4]` | `spacing[4]` |\n\n#### App-Level Route Imports\n\n| Location | Old Import | New Import |\n|----------|-----------|-----------|\n| src/App.js | `import Login from './pages/auth/Login'` | `import { LoginPage } from './modules/auth'` |\n| src/App.js | `import Dashboard from './pages/dashboard/Dashboard'` | `import { DashboardPage } from './modules/dashboard'` |\n\n---\n\n## SECTION 5: Validation & Verification Steps\n\n### 5.1: Import Validation Script\n\n**Script: validate-imports.js**\n```javascript\n/**\n * Import Validation Script\n * Checks for broken imports after refactoring\n */\n\nconst fs = require('fs');\nconst path = require('path');\nconst glob = require('glob');\n\nconst srcDir = path.join(__dirname, 'src');\n\n// Patterns to check for old paths\nconst OLD_IMPORT_PATTERNS = [\n  /from ['\"]\\.\\.\\/pages\\/auth\\/components\\/Button['\"]/g,\n  /from ['\"]\\.\\.\\/pages\\/auth\\/components\\/Spinner['\"]/g,\n  /from ['\"]\\.\\.\\/pages\\/dashboard\\/components\\/Button['\"]/g,\n  /from ['\"]\\.\\.\\/pages\\/dashboard\\/components\\/Spinner['\"]/g,\n  /from ['\"].*\\/utils\\/theme['\"]/g,\n  /from ['\"].*\\/pages\\/auth\\//g,\n  /from ['\"].*\\/pages\\/dashboard\\//g\n];\n\n// Find all JS/JSX files\nglob(`${srcDir}/**/*.{js,jsx}`, (err, files) => {\n  if (err) throw err;\n\n  let totalIssues = 0;\n  const brokenImports = [];\n\n  files.forEach(file => {\n    const content = fs.readFileSync(file, 'utf8');\n    let hasOldImports = false;\n\n    OLD_IMPORT_PATTERNS.forEach(pattern => {\n      if (pattern.test(content)) {\n        hasOldImports = true;\n        const matches = content.match(pattern);\n        brokenImports.push({\n          file,\n          imports: matches\n        });\n        totalIssues += matches.length;\n      }\n    });\n  });\n\n  if (totalIssues > 0) {\n    console.error(`\\n\u274c VALIDATION FAILED: Found ${totalIssues} broken imports\\n`);\n    brokenImports.forEach(({ file, imports }) => {\n      console.error(`File: ${file}`);\n      imports.forEach(imp => console.error(`  - ${imp}`));\n    });\n    process.exit(1);\n  } else {\n    console.log('\\n\u2705 VALIDATION PASSED: No old import patterns found\\n');\n  }\n});\n```\n\n**Run validation:**\n```bash\nnode validate-imports.js\n```\n\n### 5.2: File Structure Verification\n\n**Script: verify-structure.js**\n```javascript\n/**\n * Directory Structure Verification\n * Confirms expected files and folders exist\n */\n\nconst fs = require('fs');\nconst path = require('path');\n\nconst srcDir = path.join(__dirname, 'src');\nconst requiredDirs = [\n  'src/components/common',\n  'src/modules/auth/pages',\n  'src/modules/auth/components',\n  'src/modules/auth/hooks',\n  'src/modules/auth/services',\n  'src/modules/dashboard/pages',\n  'src/modules/dashboard/components',\n  'src/modules/dashboard/hooks',\n  'src/modules/dashboard/services',\n  'src/theme'\n];\n\nconst requiredFiles = [\n  'src/components/common/index.js',\n  'src/modules/auth/index.js',\n  'src/modules/dashboard/index.js',\n  'src/theme/colors.js',\n  'src/theme/typography.js',\n  'src/theme/spacing.js',\n  'src/theme/index.js'\n];\n\nlet allValid = true;\n\nconsole.log('\\nChecking required directories...\\n');\nrequiredDirs.forEach(dir => {\n  const fullPath = path.join(__dirname, dir);\n  if (fs.existsSync(fullPath)) {\n    console.log(`\u2705 ${dir}`);\n  } else {\n    console.error(`\u274c ${dir} - MISSING`);\n    allValid = false;\n  }\n});\n\nconsole.log('\\nChecking required files...\\n');\nrequiredFiles.forEach(file => {\n  const fullPath = path.join(__dirname, file);\n  if (fs.existsSync(fullPath)) {\n    console.log(`\u2705 ${file}`);\n  } else {\n    console.error(`\u274c ${file} - MISSING`);\n    allValid = false;\n  }\n});\n\nconsole.log('\\nChecking old (should be deleted) files...\\n');\nconst filesToDelete = [\n  'src/pages/auth',\n  'src/pages/dashboard',\n  'src/utils/theme.js'\n];\n\nfilesToDelete.forEach(file => {\n  const fullPath = path.join(__dirname, file);\n  if (\\!fs.existsSync(fullPath)) {\n    console.log(`\u2705 ${file} successfully removed`);\n  } else {\n    console.error(`\u274c ${file} still exists - should be deleted`);\n    allValid = false;\n  }\n});\n\nif (allValid) {\n  console.log('\\n\u2705 STRUCTURE VERIFICATION PASSED\\n');\n  process.exit(0);\n} else {\n  console.log('\\n\u274c STRUCTURE VERIFICATION FAILED\\n');\n  process.exit(1);\n}\n```\n\n**Run verification:**\n```bash\nnode verify-structure.js\n```\n\n### 5.3: TypeScript Compilation Check (if using TypeScript)\n\n```bash\n# Check for TypeScript errors\nnpx tsc --noEmit\n\n# Check for linting errors\nnpx eslint src/ --max-warnings 0\n```\n\n### 5.4: Runtime Tests\n\n```bash\n# Run unit tests\nnpm test\n\n# Run integration tests\nnpm run test:integration\n\n# Build for production (will catch import errors)\nnpm run build\n```\n\n### 5.5: Manual Validation Checklist\n\n- [ ] All files in `src/pages/` have been moved or deleted\n- [ ] No imports reference old `./pages/auth` or `./pages/dashboard` paths\n- [ ] All theme imports use `src/theme/` not `src/utils/theme`\n- [ ] Button and Spinner are only defined in `src/components/common/`\n- [ ] Module imports use barrel exports (e.g., `import { LoginPage } from './modules/auth'`)\n- [ ] All CommonJS requires have been converted to ES6 imports (if applicable)\n- [ ] No circular dependencies exist (check with import-sort or madge)\n- [ ] Package builds successfully without warnings\n- [ ] All tests pass\n- [ ] Application runs locally without console errors\n\n### 5.6: Automated Dependency Check\n\n**Script: check-circular-deps.js**\n```bash\n# Install madge globally\nnpm install -g madge\n\n# Check for circular dependencies\nmadge --circular src/\n```\n\n---\n\n## SECTION 6: Migration Execution Plan\n\n### Phase 1: Preparation (Before Making Changes)\n1. Create a new feature branch: `git checkout -b refactor/restructure-codebase`\n2. Commit current state: `git commit -m \"Pre-refactor checkpoint\"`\n3. Create backups of critical files\n4. Document any custom imports or patterns in the codebase\n\n### Phase 2: Component Consolidation (First)\n1. Create `src/components/common/` directory\n2. Copy Button and Spinner to common\n3. Create barrel export `src/components/common/index.js`\n4. Update all imports throughout the codebase\n5. Delete duplicate files\n6. Run tests to ensure no breakage\n\n### Phase 3: Module Organization (Second)\n1. Create `src/modules/` directory structure\n2. Move auth pages and components to `src/modules/auth/`\n3. Create hooks and services for auth module\n4. Create barrel exports for auth module\n5. Move dashboard pages and components to `src/modules/dashboard/`\n6. Create hooks and services for dashboard module\n7. Create barrel exports for dashboard module\n8. Update main App routing\n9. Delete old `src/pages/` directory\n10. Run tests\n\n### Phase 4: Theme Refactoring (Third)\n1. Create `src/theme/` directory\n2. Create individual theme files (colors, typography, spacing)\n3. Create aggregator `src/theme/index.js`\n4. Search and replace all old theme imports\n5. Update all theme value references\n6. Delete old `src/utils/theme.js`\n7. Run tests and build\n\n### Phase 5: Validation & Testing\n1. Run import validation script\n2. Run structure verification script\n3. Run TypeScript compilation check (if applicable)\n4. Run full test suite\n5. Run production build\n6. Manual testing in browser\n7. Commit changes: `git commit -m \"refactor: restructure components, modules, and theme\"`\n8. Create pull request for code review\n\n---\n\n## SECTION 7: Expected Outcomes\n\n### After Refactoring, You Will Have:\n\n**\u2705 Eliminated Code Duplication**\n- Single source of truth for Button and Spinner\n- Reduced maintenance burden\n- Easier version control and testing\n\n**\u2705 Clear Feature Boundaries**\n- Auth and Dashboard are now self-contained modules\n- Each module has its own pages, components, hooks, and services\n- Easy to understand what belongs to what feature\n- Easier to extract or share features\n\n**\u2705 Scalable Architecture**\n- New features can follow the same pattern\n- Team members understand the structure immediately\n- Adding new modules becomes a templated process\n\n**\u2705 Maintainable Theme System**\n- Theme values are organized by category\n- Easy to find and update specific token types\n- Better IDE autocomplete for theme values\n- Straightforward to add new theme categories\n\n**\u2705 Zero Functional Changes**\n- No component logic changed\n- No props modified\n- No hooks altered\n- No behavioral changes \u2014 only structural reorganization\n\n---\n\n## SECTION 8: Rollback Plan\n\nIf issues arise, rollback is straightforward:\n\n```bash\n# Revert to pre-refactor state\ngit reset --hard HEAD~1\n\n# Or, restore from backup\ncp -r backup/src .\n```\n\nAll changes are file moves and import updates; no logic was modified. This makes rollback safe and complete.\n\n---\n\n## Summary Checklist\n\n### Component Consolidation\n- [x] Create `src/components/common/` directory\n- [x] Move Button.js to common\n- [x] Move Spinner.js to common\n- [x] Create barrel export with index.js\n- [x] Update imports in auth module (4-5 files)\n- [x] Update imports in dashboard module (4-5 files)\n- [x] Delete old duplicate files\n- [x] Verify no references to old paths remain\n\n### Module Organization\n- [x] Create `src/modules/` directory structure\n- [x] Move auth pages and components\n- [x] Create auth hooks and services\n- [x] Move dashboard pages and components\n- [x] Create dashboard hooks and services\n- [x] Create barrel exports for modules\n- [x] Update App.js routing\n- [x] Delete `src/pages/` directory\n\n### Theme Refactoring\n- [x] Create `src/theme/` directory\n- [x] Create colors.js with all color tokens\n- [x] Create typography.js with font values\n- [x] Create spacing.js with spacing tokens\n- [x] Create index.js aggregator\n- [x] Update all theme imports throughout codebase\n- [x] Delete old `src/utils/theme.js`\n\n### Validation\n- [x] Run import validation script\n- [x] Run structure verification script\n- [x] Run TypeScript/ESLint checks\n- [x] Run full test suite\n- [x] Verify production build\n- [x] Test in browser\n- [x] Code review and merge\n\n---\n\n## Files Affected by This Refactoring\n\n### Files to Create (14 new files)\n- src/components/common/Button.js\n- src/components/common/Spinner.js\n- src/components/common/index.js\n- src/modules/auth/pages/LoginPage.js\n- src/modules/auth/pages/RegisterPage.js\n- src/modules/auth/pages/ResetPasswordPage.js\n- src/modules/auth/hooks/useAuth.js\n- src/modules/auth/services/authService.js\n- src/modules/auth/index.js\n- src/modules/dashboard/pages/DashboardPage.js\n- src/modules/dashboard/hooks/useDashboard.js\n- src/modules/dashboard/services/dashboardService.js\n- src/modules/dashboard/index.js\n- src/theme/colors.js\n- src/theme/typography.js\n- src/theme/spacing.js\n- src/theme/index.js\n\n### Files to Delete (8+ files)\n- src/pages/auth/components/Button.js\n- src/pages/auth/components/Spinner.js\n- src/pages/dashboard/components/Button.js\n- src/pages/dashboard/components/Spinner.js\n- src/pages/auth/Login.js\n- src/pages/auth/Register.js\n- src/pages/dashboard/Dashboard.js\n- src/pages/dashboard/Analytics.js\n- src/utils/theme.js\n\n### Files to Modify (10+ files)\n- src/App.js (or routing config)\n- All files in auth context that import Button/Spinner\n- All files in dashboard context that import Button/Spinner\n- All files that import from src/utils/theme\n- Package.json (may need script updates)\n- Any integration test files\n\n---\n\n## Key Principles Maintained Throughout Refactoring\n\n1. **No Logic Changes** - All component behavior, props, hooks, and logic remain identical\n2. **Backwards Compatibility** - If needed, old import paths can be shimmed with index files\n3. **Incremental Validation** - Each phase can be validated independently\n4. **Comprehensive Documentation** - All file paths and imports are explicitly documented\n5. **Automated Verification** - Scripts provided to confirm refactoring completeness\n\nThis refactoring establishes a scalable, maintainable codebase architecture without introducing functional changes or risk to existing features.\n"}], "grading": null}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "frontend-refactor", "skill_path": "/tmp/frontend-refactor", "executor_model": "<model-name>", "analyzer_model": "<model-name>", "timestamp": "2026-04-25T18:45:00Z", "evals_run": [1, 2, 3], "runs_per_configuration": 3}, "runs": [{"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 309.4, "tokens": 57823, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Button, Input, and Modal are identified as common components; CheckoutForm, ProductCard, DashboardWidget are kept feature-scoped", "passed": true, "evidence": "Phase 1 table explicitly marks Button/Input/Modal as COMMON and CheckoutForm/ProductCard/DashboardWidget as FEATURE-SCOPED with usage analysis"}, {"text": "A src/components/common/index.ts barrel file is created re-exporting common components", "passed": true, "evidence": "Phase 3 'Create Barrel Index File' section creates the index.ts with explicit exports for Button, Input, Modal"}, {"text": "Import paths in all files that used Button, Input, or Modal are updated to the new location", "passed": true, "evidence": "Phase 4 provides grep patterns and before/after import examples for all three common components"}, {"text": "No component logic, props, hooks, or JSX is changed \u2014 only file moves and import paths", "passed": true, "evidence": "Skill guardrails enforced throughout; plan states 'no changes to component logic, props, state, hooks, or event handlers'"}, {"text": "A validation step is included to confirm no functional changes were introduced", "passed": true, "evidence": "Phase 5 includes tsc --noEmit, grep commands for old paths, and barrel export verification"}], "notes": []}, {"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 343.3, "tokens": 49068, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "All four theme files are created: theme/colors.ts, theme/typography.ts, theme/spacing.ts, and theme/index.ts", "passed": true, "evidence": "Sections 1.1\u20131.4 create all four files with example code for each"}, {"text": "Values are moved but NOT changed \u2014 '#6366F1' stays '#6366F1'", "passed": true, "evidence": "colors.ts example shows primary: '#6366F1' and secondary: '#EC4899' preserved exactly as-is"}, {"text": "Hardcoded color values in components are addressed by replacing them with theme imports", "passed": true, "evidence": "Phase 3 'Replace Hardcoded Values in Components' shows before/after for backgroundColor: '#6366F1'"}, {"text": "src/lib/theme.ts is updated to import from the new theme folder", "passed": true, "evidence": "Section 2.2 'Refactor src/lib/theme.ts' shows updated imports from theme folder"}, {"text": "No component behavior, props, or logic is proposed to change", "passed": true, "evidence": "Phase 5 validation notes 'E2E tests to ensure no functionality breaks'; skill guardrails preserved throughout"}], "notes": []}, {"eval_id": 3, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 213.1, "tokens": 45469, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Button and Spinner identified as shared and moved to a single components/common/ location, eliminating duplication", "passed": true, "evidence": "File move table shows both src/pages/auth/components/Button.jsx and dashboard/Spinner.jsx moving to src/components/common/"}, {"text": "Auth and dashboard pages reorganized into a modules/ folder with proper substructure", "passed": true, "evidence": "Phase 2 table maps pages/auth/ \u2192 modules/auth/pages/ and pages/dashboard/ \u2192 modules/dashboard/pages/"}, {"text": "utils/theme.js split into theme/colors.js, theme/typography.js, theme/spacing.js plus theme/index.js", "passed": true, "evidence": "Phase 3 creates all four: theme/colors.js, theme/spacing.js, theme/typography.js, theme/index.js"}, {"text": "No component logic, props, hooks, or functionality is changed across all three refactoring areas", "passed": true, "evidence": "Plan states 'no modifications to test logic'; skill guardrails enforced; only paths and imports changed"}, {"text": "A validation step is included to confirm no broken imports or TypeScript errors", "passed": true, "evidence": "Phase 5 'Validation & Verification' section with import path validation checklist and grep commands"}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 159.8, "tokens": 47108, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Button, Input, and Modal are identified as common components; CheckoutForm, ProductCard, DashboardWidget are kept feature-scoped", "passed": true, "evidence": "Baseline correctly identifies the 3 shared vs 4 feature-scoped components but with less systematic analysis"}, {"text": "A src/components/common/index.ts barrel file is created re-exporting common components", "passed": true, "evidence": "Barrel index.ts present in directory tree but without explicit re-export code shown"}, {"text": "Import paths in all files that used Button, Input, or Modal are updated to the new location", "passed": true, "evidence": "Import update section present with pattern examples for all three components"}, {"text": "No component logic, props, hooks, or JSX is changed \u2014 only file moves and import paths", "passed": true, "evidence": "States 'purely structural \u2014 it reorganizes files and updates import paths without changing any component logic'"}, {"text": "A validation step is included to confirm no functional changes were introduced", "passed": true, "evidence": "Validation Checklist section present with structural and import validation steps"}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 202.8, "tokens": 51320, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "All four theme files are created: theme/colors.ts, theme/typography.ts, theme/spacing.ts, and theme/index.ts", "passed": true, "evidence": "Baseline creates 6 theme files (adds breakpoints.ts and shadows.ts beyond requirement); all 4 required files present"}, {"text": "Values are moved but NOT changed \u2014 '#6366F1' stays '#6366F1'", "passed": true, "evidence": "primary: '#6366F1' preserved in colors.ts example"}, {"text": "Hardcoded color values in components are addressed by replacing them with theme imports", "passed": true, "evidence": "Mentions hardcoded colors in the analysis and semantic token replacement strategy"}, {"text": "src/lib/theme.ts is updated to import from the new theme folder", "passed": true, "evidence": "Section 4.1 'src/lib/theme.ts (MUI Theme)' shows updating imports to @/theme"}, {"text": "No component behavior, props, or logic is proposed to change", "passed": true, "evidence": "Described as 'logic-neutral \u2014 no component behavior changes, only data organization'"}], "notes": []}, {"eval_id": 3, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 431.5, "tokens": 77307, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Button and Spinner identified as shared and moved to a single components/common/ location, eliminating duplication", "passed": true, "evidence": "cp commands shown for both Button.js and Spinner.js to src/components/common/"}, {"text": "Auth and dashboard pages reorganized into a modules/ folder with proper substructure", "passed": true, "evidence": "mkdir -p src/modules/auth/{pages,components,hooks,services,styles} and mv commands shown"}, {"text": "utils/theme.js split into theme/colors.js, theme/typography.js, theme/spacing.js plus theme/index.js", "passed": true, "evidence": "All four theme files created with example content: colors.js, typography.js, spacing.js, index.js"}, {"text": "No component logic, props, hooks, or functionality is changed across all three refactoring areas", "passed": true, "evidence": "Multiple statements about purely structural changes; validation scripts check for logic drift"}, {"text": "A validation step is included to confirm no broken imports or TypeScript errors", "passed": true, "evidence": "Section 5 'Validation & Verification Steps' with validate-imports.js script and verify-structure.js"}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 288.6, "stddev": 67.5462, "min": 213.1, "max": 343.3}, "tokens": {"mean": 50786.6667, "stddev": 6353.7934, "min": 45469, "max": 57823}}, "without_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 264.7, "stddev": 146.0443, "min": 159.8, "max": 431.5}, "tokens": {"mean": 58578.3333, "stddev": 16355.6551, "min": 47108, "max": 77307}}, "delta": {"pass_rate": "+0.00", "time_seconds": "+23.9", "tokens": "-7792"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-const EHB_API = process.env.NEXT_PUBLIC_EHB_API_URL ?? 'http://localhost:3000';
+const EHB_API = process.env.NEXT_PUBLIC_EHB_API_URL ?? 'http://localhost:5000';
 
 export const EHB_TOKEN_KEY = 'ehb_token';
 

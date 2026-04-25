@@ -43,28 +43,23 @@ const SOCIAL_LINKS = [
 
 export default function Footer() {
   return (
-    <footer className="relative border-t border-white/[0.06] overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-
-      <div className="mx-auto max-w-6xl px-6 py-16">
-        {/* Top row: Logo + Social */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-12 pb-12 border-b border-white/[0.06]">
-          {/* Logo + tagline */}
+    <footer className="relative border-t border-slate-200 bg-slate-50 overflow-hidden">
+      <div className="mx-auto max-w-6xl px-6 py-14">
+        {/* Top row */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-12 pb-10 border-b border-slate-200">
           <div>
-            <a href="#" className="flex items-center gap-2.5 mb-3 group w-fit">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 shadow-lg shadow-cyan-500/25">
-                <Zap className="h-4.5 w-4.5 text-white fill-white" />
+            <a href="#" className="flex items-center gap-2.5 mb-3 w-fit">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-md shadow-blue-200">
+                <Zap className="h-4 w-4 text-white fill-white" />
               </div>
-              <span className="font-display text-2xl font-bold tracking-tight text-white">EHB</span>
+              <span className="font-display text-xl font-bold tracking-tight text-slate-900">EHB</span>
             </a>
-            <p className="text-white/35 text-sm max-w-xs leading-relaxed">
+            <p className="text-slate-500 text-sm max-w-xs leading-relaxed">
               Education Health Business — the trust infrastructure
               for every industry, powered by PSS.
             </p>
           </div>
 
-          {/* Social links */}
           <div className="flex items-center gap-2">
             {SOCIAL_LINKS.map((social) => {
               const Icon = social.icon;
@@ -73,8 +68,8 @@ export default function Footer() {
                   key={social.label}
                   href={social.href}
                   aria-label={social.label}
-                  className="flex items-center justify-center w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.03] text-white/40 hover:text-white hover:border-white/20 hover:bg-white/[0.07] transition-all"
-                  whileHover={{ scale: 1.1, y: -2 }}
+                  className="flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:border-slate-300 hover:shadow-sm transition-all"
+                  whileHover={{ scale: 1.08, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <Icon className="h-4 w-4" />
@@ -88,16 +83,11 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
           {Object.entries(FOOTER_LINKS).map(([category, links]) => (
             <div key={category}>
-              <h4 className="font-semibold text-white/60 text-xs uppercase tracking-widest mb-5">
-                {category}
-              </h4>
-              <ul className="space-y-3">
+              <h4 className="font-semibold text-slate-900 text-xs uppercase tracking-widest mb-4">{category}</h4>
+              <ul className="space-y-2.5">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-white/35 hover:text-white/75 text-sm transition-colors"
-                    >
+                    <a href={link.href} className="text-slate-500 hover:text-slate-800 text-sm transition-colors">
                       {link.label}
                     </a>
                   </li>
@@ -108,14 +98,14 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-8 border-t border-white/[0.06] flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-white/25 text-xs">
+        <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-slate-400 text-xs">
             <span>© 2026 EHB — Education Health Business</span>
             <span className="hidden md:inline">·</span>
             <span className="hidden md:inline">All rights reserved</span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-white/25">
+          <div className="flex items-center gap-2 text-xs text-slate-400">
             <span className="flex items-center gap-1.5">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />

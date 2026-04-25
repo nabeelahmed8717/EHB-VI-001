@@ -79,3 +79,101 @@ PSS is the only system that holds:
 - Cross-platform user identity
 
 All other platforms own only their own business data.
+
+---
+
+## Local Dev Port Map (Authoritative)
+
+| Service | Port | Notes |
+|---------|------|-------|
+| EHB Main backend | **5000** | JWT_SECRET = ehb-main-jwt-secret |
+| EHB Main frontend | **4000** | NEXT_PUBLIC_EHB_API_URL = http://localhost:5000 |
+| PSS backend | **3001** | |
+| PSS frontend | **4001** | |
+| GoSellr backend | **3002** | EHB_API_URL = http://localhost:5000 (NOT 3000) |
+| GoSellr frontend | **4002** | NEXT_PUBLIC_GOSELLR_API_URL = http://localhost:3002 |
+
+**Critical:** EHB Main backend is port 5000. Any service calling EHB Main to verify
+tokens (e.g. GoSellr backend) must use port 5000. Port 3000 is wrong and will cause
+"Invalid or expired EHB token" errors silently.
+
+---
+
+## Database Ownership (One DB Per Service — No Sharing)
+
+| Service | MongoDB database |
+|---------|----------------|
+| PSS | `pss_db` |
+| EHB Main | `ehb_main_db` |
+| GoSellr | `gosellr_db` |
+| OLS | `ols_db` |
+| HPS | `hps_db` |
+| JPS | `jps_db` |
+| WMS | `wms_db` |
+| OBS | `obs_db` |
+
+**Never point two different services at the same database.**
+EHB Main uses `ehb_main_db`, NOT `pss_db`. Mixing them causes user schema
+collisions and silent data corruption.
+
+---
+
+## EHB SSO Flow (Login with EHB across platforms)
+
+Sub-platforms (GoSellr, OLS, etc.) let users log in via their EHB identity.
+The flow is:
+
+```
+1. Sub-platform frontend
+      window.location.href = 'http://localhost:4000/login?redirect=gosellr'
+
+2. EHB Main frontend (4000)
+      User submits credentials
+      → POST http://localhost:5000/auth/login?redirect_platform=gosellr
+      → Backend returns { ehb_token, redirect_url }
+      → redirect_url = http://localhost:4002/callback?ehb_token=<jwt>
+
+3. Sub-platform frontend /callback
+      Reads ?ehb_token from URL
+      → POST http://localhost:3002/auth/ehb-callback { ehb_token }
+
+4. Sub-platform backend (e.g. 3002)
+      → GET http://localhost:5000/auth/verify-token
+            Authorization: Bearer <ehb_token>
+      → EHB Main validates JWT + token_version
+      → Returns { valid: true, user: { ehb_user_id, email, full_name } }
+      → Sub-platform finds or creates local user
+      → Issues sub-platform JWT
+```
+
+**Required env vars for each layer:**
+
+EHB Main backend `.env`:
+```
+PORT=5000
+JWT_SECRET=ehb-main-jwt-secret
+PLATFORM_CALLBACK_URLS=gosellr:http://localhost:4002/callback,ols:http://localhost:4003/callback
+```
+
+EHB Main frontend `.env.local`:
+```
+NEXT_PUBLIC_EHB_API_URL=http://localhost:5000
+NEXT_PUBLIC_CALLBACK_GOSELLR=http://localhost:4002/callback
+NEXT_PUBLIC_CALLBACK_OLS=http://localhost:4003/callback
+```
+
+GoSellr backend `.env`:
+```
+EHB_API_URL=http://localhost:5000
+```
+
+GoSellr frontend `.env.local`:
+```
+NEXT_PUBLIC_EHB_URL=http://localhost:4000
+NEXT_PUBLIC_GOSELLR_API_URL=http://localhost:3002
+```
+
+**When adding a new platform to SSO:**
+1. Add `platform_id:http://localhost:<frontend_port>/callback` to EHB Main backend `PLATFORM_CALLBACK_URLS`
+2. Add `NEXT_PUBLIC_CALLBACK_<PLATFORM_ID>=http://localhost:<frontend_port>/callback` to EHB Main frontend `.env.local`
+3. Set `EHB_API_URL=http://localhost:5000` in new platform backend `.env`

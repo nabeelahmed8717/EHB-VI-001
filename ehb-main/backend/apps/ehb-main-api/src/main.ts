@@ -45,7 +45,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = parseInt(process.env.PORT ?? '3000', 10);
+  const port = parseInt(process.env.PORT ?? '5000', 10);
   await app.listen(port);
   logger.log(`EHB Main API running on http://localhost:${port}`);
   logger.log(`Swagger docs: http://localhost:${port}/api/docs`);

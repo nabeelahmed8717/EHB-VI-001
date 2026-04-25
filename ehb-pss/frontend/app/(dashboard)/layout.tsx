@@ -1,6 +1,7 @@
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { NavigationLoader } from '@/components/layout/navigation-loader';
 
 export default function DashboardLayout({
   children,
@@ -16,7 +17,12 @@ export default function DashboardLayout({
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar />
         <Breadcrumb />
-        <main className="flex-1 overflow-y-auto">
+        {/*
+          `relative` is required so NavigationLoader's `absolute inset-0`
+          is scoped to this content area — not the full viewport.
+        */}
+        <main className="relative flex-1 overflow-y-auto">
+          <NavigationLoader />
           <div className="p-6">{children}</div>
         </main>
       </div>

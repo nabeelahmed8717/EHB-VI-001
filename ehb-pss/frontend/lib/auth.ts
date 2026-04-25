@@ -1,8 +1,10 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import { jwtVerify } from 'jose';
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    /* ── 1. Classic admin-key login ── */
     CredentialsProvider({
       id: 'admin-key',
       name: 'Admin Key',
@@ -25,6 +27,47 @@ export const authOptions: NextAuthOptions = {
         return null;
       },
     }),
+
+    /* ── 2. EHB SSO — token handed over by other EHB platforms ── */
+    CredentialsProvider({
+      id: 'ehb-sso',
+      name: 'EHB SSO',
+      credentials: {
+        token: { label: 'EHB Token', type: 'text' },
+      },
+      async authorize(credentials) {
+        const rawToken = credentials?.token;
+        if (!rawToken) return null;
+
+        const secret = process.env.EHB_JWT_SECRET;
+        if (!secret) {
+          throw new Error('EHB_JWT_SECRET not configured on server');
+        }
+
+        try {
+          const { payload } = await jwtVerify(
+            rawToken,
+            new TextEncoder().encode(secret),
+          );
+
+          const sub   = payload.sub   as string | undefined;
+          const email = payload['email'] as string | undefined;
+
+          if (!sub || !email) return null;
+
+          return {
+            id:       sub,
+            name:     email.split('@')[0],
+            email,
+            // Carry the raw EHB token so RTK Query can forward it to the backend
+            ehbToken: rawToken,
+          };
+        } catch {
+          // Invalid / expired token
+          return null;
+        }
+      },
+    }),
   ],
   session: {
     strategy: 'jwt',
@@ -33,15 +76,19 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        // Persist admin key in the JWT so it can be attached to API requests
-        token['adminKey'] = (user as { adminKey?: string }).adminKey;
+        const u = user as { adminKey?: string; ehbToken?: string };
+        token['adminKey'] = u.adminKey;
+        token['ehbToken'] = u.ehbToken;
       }
       return token;
     },
     async session({ session, token }) {
-      // Expose admin key on the session object for RTK Query prepareHeaders
-      (session as typeof session & { adminKey?: string }).adminKey =
-        token['adminKey'] as string | undefined;
+      const s = session as typeof session & {
+        adminKey?: string;
+        ehbToken?: string;
+      };
+      s.adminKey = token['adminKey'] as string | undefined;
+      s.ehbToken = token['ehbToken'] as string | undefined;
       return session;
     },
   },

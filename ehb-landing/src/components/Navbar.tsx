@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Zap } from 'lucide-react';
+import { Menu, X, Zap, ChevronDown } from 'lucide-react';
 
 const NAV_LINKS = [
-  { label: 'Platforms', href: '#platforms' },
-  { label: 'PSS Engine', href: '#pss' },
-  { label: 'SQ Levels', href: '#sq-levels' },
-  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Platforms', href: '#platforms', hasDropdown: true },
+  { label: 'PSS Engine', href: '#pss', hasDropdown: true },
+  { label: 'SQ Levels', href: '#sq-levels', hasDropdown: false },
+  { label: 'How It Works', href: '#how-it-works', hasDropdown: false },
 ];
 
 export default function Navbar() {
@@ -24,9 +24,7 @@ export default function Navbar() {
   function handleLinkClick(href: string) {
     setMobileOpen(false);
     const el = document.querySelector(href);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   }
 
   return (
@@ -34,15 +32,16 @@ export default function Navbar() {
       <motion.header
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? 'bg-black/80 backdrop-blur-xl border-b border-white/[0.06]'
+            ? 'bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-sm'
             : 'bg-transparent'
         }`}
       >
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex h-16 items-center justify-between">
+
             {/* Logo */}
             <motion.a
               href="#"
@@ -50,54 +49,55 @@ export default function Navbar() {
               whileHover={{ scale: 1.02 }}
               transition={{ type: 'spring', stiffness: 500 }}
             >
-              <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 shadow-lg shadow-cyan-500/25">
+              <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-md shadow-blue-500/20">
                 <Zap className="h-4 w-4 text-white fill-white" />
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 opacity-0 group-hover:opacity-100 blur-md transition-opacity" />
               </div>
-              <span className="font-display text-xl font-bold tracking-tight text-white">
+              <span className="font-display text-xl font-bold tracking-tight text-slate-900">
                 EHB
               </span>
             </motion.a>
 
             {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center gap-0.5">
               {NAV_LINKS.map((link) => (
                 <motion.button
                   key={link.label}
                   onClick={() => handleLinkClick(link.href)}
-                  className="px-4 py-2 text-sm text-white/60 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all duration-200 font-medium"
-                  whileHover={{ scale: 1.02 }}
+                  className="flex items-center gap-1 px-3.5 py-2 text-sm text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100/80 transition-all duration-150 font-medium"
+                  whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   {link.label}
+                  {link.hasDropdown && (
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400 mt-px" />
+                  )}
                 </motion.button>
               ))}
             </nav>
 
             {/* Desktop CTAs */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2">
               <motion.a
-                href="#platforms"
-                className="px-4 py-2 text-sm text-white/70 hover:text-white font-medium transition-colors"
+                href="#"
+                className="px-4 py-2 text-sm text-slate-600 hover:text-slate-900 font-medium transition-colors rounded-lg hover:bg-slate-100/80"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                Sign In
+                Log in
               </motion.a>
               <motion.a
                 href="#cta"
-                className="relative px-5 py-2.5 text-sm font-semibold text-black rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 overflow-hidden group"
-                whileHover={{ scale: 1.04 }}
+                className="px-5 py-2 text-sm font-semibold text-white rounded-full bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 transition-all"
+                whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               >
-                <span className="relative z-10">Get Started</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-300 to-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                Get started
               </motion.a>
             </div>
 
-            {/* Mobile Menu Toggle */}
+            {/* Mobile Toggle */}
             <motion.button
-              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl border border-white/10 text-white/70 hover:text-white hover:bg-white/[0.06] transition-all"
+              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-all"
               onClick={() => setMobileOpen(!mobileOpen)}
               whileTap={{ scale: 0.95 }}
             >
@@ -107,42 +107,38 @@ export default function Navbar() {
         </div>
       </motion.header>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="fixed top-16 left-0 right-0 z-40 bg-black/95 backdrop-blur-xl border-b border-white/[0.07] px-6 py-6"
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-16 left-0 right-0 z-40 bg-white backdrop-blur-xl border-b border-slate-200 shadow-lg px-6 py-5"
           >
             <nav className="flex flex-col gap-1">
               {NAV_LINKS.map((link, i) => (
                 <motion.button
                   key={link.label}
-                  initial={{ opacity: 0, x: -16 }}
+                  initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.06 }}
+                  transition={{ delay: i * 0.05 }}
                   onClick={() => handleLinkClick(link.href)}
-                  className="w-full text-left px-4 py-3 text-white/70 hover:text-white hover:bg-white/[0.06] rounded-xl font-medium transition-all"
+                  className="flex items-center justify-between w-full px-4 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl font-medium transition-all text-sm"
                 >
-                  {link.label}
+                  <span>{link.label}</span>
+                  {link.hasDropdown && <ChevronDown className="h-4 w-4 text-slate-400" />}
                 </motion.button>
               ))}
-              <div className="mt-4 pt-4 border-t border-white/[0.07] flex flex-col gap-2">
-                <a
-                  href="#"
-                  className="px-4 py-3 text-center text-white/70 hover:text-white font-medium rounded-xl hover:bg-white/[0.06] transition-all"
-                >
-                  Sign In
+              <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
+                <a href="#" className="px-4 py-2.5 text-center text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition-all">
+                  Log in
                 </a>
-                <a
-                  href="#cta"
-                  onClick={() => setMobileOpen(false)}
-                  className="px-4 py-3 text-center font-semibold text-black rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500"
+                <a href="#cta" onClick={() => setMobileOpen(false)}
+                  className="px-4 py-2.5 text-center text-sm font-semibold text-white rounded-full bg-blue-600 hover:bg-blue-700 transition-colors"
                 >
-                  Get Started
+                  Get started
                 </a>
               </div>
             </nav>
