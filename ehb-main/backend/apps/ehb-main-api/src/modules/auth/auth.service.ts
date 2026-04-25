@@ -131,7 +131,7 @@ export class AuthService {
    */
   verifyToken(user: UserDocument): {
     valid: true;
-    user: { ehb_user_id: string; email: string; full_name: string };
+    user: { ehb_user_id: string; email: string; full_name: string; registered_platforms: string[] };
   } {
     return {
       valid: true,
@@ -139,6 +139,7 @@ export class AuthService {
         ehb_user_id: (user._id as unknown as { toString(): string }).toString(),
         email: user.email,
         full_name: user.full_name,
+        registered_platforms: user.registered_platforms ?? [],
       },
     };
   }

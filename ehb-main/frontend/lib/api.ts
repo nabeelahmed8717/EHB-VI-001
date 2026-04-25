@@ -26,7 +26,7 @@ export function getStoredEhbToken(): string | null {
  * Verify the stored EHB token with the backend.
  * Returns the user identity if valid, null if expired/revoked/missing.
  */
-export async function verifyStoredToken(): Promise<{ ehb_user_id: string; email: string; full_name: string } | null> {
+export async function verifyStoredToken(): Promise<{ ehb_user_id: string; email: string; full_name: string; registered_platforms: string[] } | null> {
   const token = getStoredEhbToken();
   if (!token) return null;
   try {
@@ -37,7 +37,7 @@ export async function verifyStoredToken(): Promise<{ ehb_user_id: string; email:
       clearEhbToken(); // expired or revoked — purge it
       return null;
     }
-    const data = (await res.json()) as { valid: boolean; user: { ehb_user_id: string; email: string; full_name: string } };
+    const data = (await res.json()) as { valid: boolean; user: { ehb_user_id: string; email: string; full_name: string; registered_platforms: string[] } };
     return data.valid ? data.user : null;
   } catch {
     return null; // network error — don't clear token, might be transient

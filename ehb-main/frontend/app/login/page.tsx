@@ -83,7 +83,7 @@ function LoginForm() {
       if (res.redirect_url) {
         window.location.href = res.redirect_url;
       } else {
-        router.push('/');
+        router.push('/dashboard');
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';

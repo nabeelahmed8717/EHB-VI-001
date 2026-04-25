@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+
 
 /* ─── CSS Variables ─── */
 :root {
@@ -26,7 +26,7 @@ html { scroll-behavior: smooth; }
 body {
   background-color: var(--bg);
   color: var(--text-heading);
-  font-family: 'Google Sans', 'Noto Sans', Arial, sans-serif;
+  font-family: 'Google Sans', var(--font-noto-sans), Arial, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
