@@ -99,22 +99,23 @@ tokens (e.g. GoSellr backend) must use port 5000. Port 3000 is wrong and will ca
 
 ---
 
-## Database Ownership (One DB Per Service — No Sharing)
+## Database Ownership
 
-| Service | MongoDB database |
-|---------|----------------|
-| PSS | `pss_db` |
-| EHB Main | `ehb_main_db` |
-| GoSellr | `gosellr_db` |
-| OLS | `ols_db` |
-| HPS | `hps_db` |
-| JPS | `jps_db` |
-| WMS | `wms_db` |
-| OBS | `obs_db` |
+| Service | MongoDB database | Notes |
+|---------|----------------|-------|
+| PSS | `pss_db` | SQ records, routing rules, franchises, audit logs |
+| EHB Main | `pss_db` | Writes user identity to `pss_db.users` — shared intentionally |
+| GoSellr | `gosellr_db` | GoSellr business data only |
+| OLS | `ols_db` | |
+| HPS | `hps_db` | |
+| JPS | `jps_db` | |
+| WMS | `wms_db` | |
+| OBS | `obs_db` | |
 
-**Never point two different services at the same database.**
-EHB Main uses `ehb_main_db`, NOT `pss_db`. Mixing them causes user schema
-collisions and silent data corruption.
+**EHB Main and PSS both use `pss_db` — this is intentional.**
+User identity (`pss_db.users`) is the shared record that makes the ecosystem
+coherent. EHB Main creates it; PSS reads it for SQ verification. All sub-platform
+business data lives in each platform's own DB.
 
 ---
 
@@ -173,7 +174,21 @@ NEXT_PUBLIC_EHB_URL=http://localhost:4000
 NEXT_PUBLIC_GOSELLR_API_URL=http://localhost:3002
 ```
 
+PSS frontend `.env.local` (for EHB SSO login into PSS admin dashboard):
+```
+EHB_JWT_SECRET=ehb-main-jwt-secret   <- must match JWT_SECRET in ehb-main/backend/.env
+NEXTAUTH_SECRET=changeme-nextauth-secret-32chars-min
+NEXTAUTH_URL=http://localhost:4001
+NEXT_PUBLIC_PSS_API_URL=http://localhost:3001/api
+```
+
+PSS frontend has:
+- `/callback` page (`ehb-pss/frontend/app/callback/page.tsx`) — receives `?ehb_token=` and calls NextAuth signIn('ehb-sso')
+- NextAuth `ehb-sso` credentials provider (`ehb-pss/frontend/lib/auth.ts`) — verifies token using `jose` + `EHB_JWT_SECRET`
+
 **When adding a new platform to SSO:**
 1. Add `platform_id:http://localhost:<frontend_port>/callback` to EHB Main backend `PLATFORM_CALLBACK_URLS`
 2. Add `NEXT_PUBLIC_CALLBACK_<PLATFORM_ID>=http://localhost:<frontend_port>/callback` to EHB Main frontend `.env.local`
 3. Set `EHB_API_URL=http://localhost:5000` in new platform backend `.env`
+4. Restart EHB Main backend after changing `PLATFORM_CALLBACK_URLS` (parsed once at startup)
+5. Restart EHB Main frontend after changing any `NEXT_PUBLIC_*` vars

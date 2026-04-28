@@ -1,0 +1,51 @@
+{
+  "name": "jps-api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/jps-api/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/jps-api",
+        "main": "apps/jps-api/src/main.ts",
+        "tsConfig": "apps/jps-api/tsconfig.app.json",
+        "isolatedConfig": false
+      },
+      "configurations": {
+        "development": { "optimization": false },
+        "production": { "optimization": true, "extractLicenses": true, "inspect": false }
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": { "buildTarget": "jps-api:build" },
+      "configurations": {
+        "development": {
+          "buildTarget": "jps-api:build:development",
+          "inspect": true
+        },
+        "production": {
+          "buildTarget": "jps-api:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/jps-api/jest.config.ts"
+      }
+    }
+  },
+  "tags": []
+}

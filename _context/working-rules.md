@@ -52,6 +52,13 @@ JWT_SECRET=
 PORT=
 ```
 
+EXCEPTION — EHB Main backend uses `pss_db`, NOT `ehb_main_db`:
+```
+# ehb-main/backend/.env
+MONGODB_URI=mongodb://localhost:27017/pss_db   <- CORRECT (shared intentionally)
+```
+Never change this to `ehb_main_db`. User identity lives in `pss_db.users`. Always.
+
 Sub-platforms that support EHB SSO also need:
 ```
 EHB_API_URL=http://localhost:5000   <- EHB Main backend (always port 5000 in dev)
@@ -64,6 +71,13 @@ NEXT_PUBLIC_CALLBACK_GOSELLR=http://localhost:4002/callback
 NEXT_PUBLIC_CALLBACK_OLS=http://localhost:4003/callback
 ```
 
+PSS frontend `.env.local` needs (for EHB SSO login into PSS admin):
+```
+EHB_JWT_SECRET=<value>   <- must match JWT_SECRET in ehb-main/backend/.env exactly
+NEXTAUTH_SECRET=<value>
+NEXTAUTH_URL=http://localhost:4001
+```
+
 Never hardcode URLs. Always use env vars.
 
 ---
@@ -74,9 +88,10 @@ Never hardcode URLs. Always use env vars.
 Any service calling EHB Main with port 3000 gets connection refused and
 throws "Invalid or expired EHB token". Always 5000.
 
-**2. Each service gets its own MongoDB database — never share.**
-EHB Main = `ehb_main_db`. PSS = `pss_db`. GoSellr = `gosellr_db`.
-Pointing two services at the same DB causes silent schema collisions.
+**2. EHB Main and PSS both use `pss_db` — this is intentional design.**
+User identity lives in `pss_db.users`. EHB Main writes it; PSS reads it.
+Sub-platforms each get their own DB: GoSellr = `gosellr_db`, OLS = `ols_db`, etc.
+Never point a sub-platform at `pss_db`.
 
 **3. NEXT_PUBLIC_* vars need a dev server restart to take effect.**
 Adding a new var to `.env.local` has no effect until Next.js is restarted.
@@ -94,6 +109,19 @@ Any change requires restarting the EHB Main backend process.
 The Windows filesystem mount corrupts `.env` files that contain multi-byte
 UTF-8 characters (em dash, curly quotes, etc.). Use only plain ASCII in
 all `.env` files. Use `-` not `--` in comments.
+
+**7. NEVER change EHB Main backend MONGODB_URI away from pss_db.**
+EHB Main backend `.env` must always have `MONGODB_URI=mongodb://localhost:27017/pss_db`.
+Changing it to `ehb_main_db` (or any other DB) breaks user identity for the entire
+ecosystem. Any user registered while the wrong URI was active gets stranded in that
+wrong DB and will not be found by PSS or any SSO flow. If this happens, the user
+must re-register (or manually copy the document to `pss_db.users` via Compass/shell).
+
+**8. EHB_JWT_SECRET in PSS frontend must match JWT_SECRET in EHB Main backend.**
+PSS frontend uses NextAuth `ehb-sso` credentials provider (in `ehb-pss/frontend/lib/auth.ts`).
+It verifies `ehb_token` JWTs using `EHB_JWT_SECRET`. If this value doesn't match
+the `JWT_SECRET` that EHB Main backend used to sign the token, verification will fail
+silently with a NextAuth credentials error.
 
 ---
 

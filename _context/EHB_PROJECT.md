@@ -62,15 +62,15 @@ EHB is composed of three layers:
 ### 2.4 Registration rule
 
 A user can enter the EHB ecosystem via **either**:
-- `ehb-main` → signup creates the EHB identity in `ehb_main_db.users`, then SSO into any sub-platform; **or**
+- `ehb-main` → signup creates the EHB identity in `pss_db.users`, then SSO into any sub-platform; **or**
 - any sub-platform directly (e.g. `ehb-gosellr/register`) — creates a local account in that platform's own DB.
 
 EHB SSO links the two: "Login with EHB" on a sub-platform verifies the EHB JWT
 with EHB Main backend (port 5000) and finds-or-creates a local user record.
 
-**Database ownership: each service has its own database.**
-EHB Main identity lives in `ehb_main_db`, NOT `pss_db`. Sub-platform business
-data lives in each platform's own DB (e.g. `gosellr_db`). Never share DBs.
+**Identity lives in `pss_db.users` — always.**
+EHB Main writes to `pss_db.users`. PSS reads from it for SQ verification.
+Sub-platform business data lives in each platform's own DB (e.g. `gosellr_db`).
 
 ---
 
@@ -342,10 +342,20 @@ Steps to migrate any backend:
 
 | Repo | Backend modules present | Frontend routes present |
 |------|------------------------|-------------------------|
-| ehb-pss | auth, sq-engine, rule-engine, franchise, edr, criteria, audit, platforms, webhook, dev-seed | (auth)/login, (dashboard)/overview, sq-requests, platforms, criteria, rule-engine, franchise, edr, audit |
+| ehb-pss | auth, sq-engine, rule-engine, franchise, edr, criteria, audit, platforms, webhook, dev-seed | (auth)/login, (dashboard)/overview, sq-requests, platforms, criteria, rule-engine, franchise, edr, audit, /callback |
 | ehb-gosellr | auth, users, products, pss-client, webhooks | (auth)/login,register,callback · (buyer)/browse,settings · (seller)/dashboard |
 | ehb-main | auth, users | /login, /register, /callback |
 | ehb-landing | — (marketing only) | public marketing pages |
+
+### PSS Frontend — UI components built
+
+| File | What it does |
+|------|-------------|
+| `components/layout/sidebar.tsx` | White collapsible sidebar. 220px expanded / 60px collapsed. Blue active state. Collapse toggle (PanelLeftClose/Open icon). |
+| `components/layout/navigation-loader.tsx` | Content-area loader. Click-based nav detection (not pushState — avoids race condition). SVG arc spinner. `absolute inset-0 backdrop-blur-[3px]` overlay scoped to `<main>`. |
+| `app/(dashboard)/layout.tsx` | Dashboard shell. `<main>` has `relative` so overlay clips to content only. Mounts `<NavigationLoader />`. |
+| `app/callback/page.tsx` | EHB SSO callback. Reads `?ehb_token` from URL, calls `signIn('ehb-sso')`, shows spinner/success/error states. |
+| `lib/auth.ts` | NextAuth config. `ehb-sso` credentials provider verifies `ehb_token` using `jose` jwtVerify + `EHB_JWT_SECRET`. `EHB_JWT_SECRET` must match `JWT_SECRET` in `ehb-main/backend/.env`. |
 
 ---
 
@@ -409,6 +419,9 @@ If this feature needs SQ approval: call pss-client service, do not call PSS dire
 - All SQ decisions write to audit_logs in pss_db
 - No silent auto-rejections — every rejection has a logged reason
 - Frontend is plain Next.js — never add Nx to frontend/
+- EHB Main backend MONGODB_URI = pss_db always — NEVER change it to ehb_main_db
+- EHB_JWT_SECRET in PSS frontend must match JWT_SECRET in EHB Main backend
+- EHB Main backend is port 5000 — any service calling it must use 5000, never 3000
 
 ---
 
