@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import {
   ChevronLeft,
   Edit2,
@@ -57,7 +58,23 @@ export default function ProfileDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
 
-  const { data: profile, isLoading, isError } = useGetProfileQuery(params.id);
+  // Auto-poll every 8s while PSS is processing — stops once a terminal state arrives.
+  const PENDING_STATUSES = ['submitted', 'under_review'];
+  const [pollingInterval, setPollingInterval] = useState(8_000);
+
+  const { data: profile, isLoading, isError } = useGetProfileQuery(params.id, {
+    pollingInterval,
+  });
+
+  // Stop polling once the profile reaches a terminal state (approved / rejected)
+  useEffect(() => {
+    if (profile && !PENDING_STATUSES.includes(profile.status)) {
+      setPollingInterval(0);
+    } else if (profile && PENDING_STATUSES.includes(profile.status)) {
+      setPollingInterval(8_000);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.status]);
   const [submitProfile, { isLoading: isSubmitting }] = useSubmitProfileMutation();
   const [deleteProfile, { isLoading: isDeleting }] = useDeleteProfileMutation();
 

@@ -2,7 +2,7 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { ProfilesService } from '../profiles/profiles.service';
-import { PssWebhookPayload } from '@ehb-jps/types';
+import { PssWebhookPayload, PssWebhookDecisionPayload } from '@ehb-jps/types';
 
 @Injectable()
 export class WebhooksService {
@@ -41,20 +41,22 @@ export class WebhooksService {
   ): Promise<{ received: true }> {
     this.verifySignature(rawBody, signature);
 
-    this.logger.log(
-      `PSS webhook: event=${payload.event} entity=${payload.entity_id} decision=${payload.decision}`,
-    );
+    this.logger.log(`PSS webhook: event=${payload.event} entity=${payload.entity_id}`);
 
     try {
       if (payload.event === 'sq.decision') {
+        const p = payload as PssWebhookDecisionPayload;
         await this.profilesService.updateFromPssWebhook(
-          payload.entity_id,
-          payload.decision,
-          payload.sq_level,
-          payload.rejection_reason,
+          p.entity_id,
+          p.decision,
+          p.sq_level,
+          p.rejection_reason ?? undefined,
         );
+      } else if (payload.event === 'sq.under_review') {
+        // Profile routed to EDR / Franchise for manual review.
+        // Transition 'submitted' → 'under_review' so the user sees accurate status.
+        await this.profilesService.markUnderReview(payload.entity_id);
       }
-      // sq.under_review events are informational — no action needed
     } catch (err: unknown) {
       this.logger.error(`Webhook handler error: ${String(err)}`);
       // Always return 200 — PSS must not retry due to our internal errors

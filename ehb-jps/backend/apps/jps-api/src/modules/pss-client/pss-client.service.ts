@@ -70,6 +70,19 @@ export class PssClientService {
       );
       return response.data;
     } catch (err: unknown) {
+      // 404 = PSS has no record for this entity yet — not an outage, just "not_found".
+      // Return a synthetic not_found response so syncFromPss can distinguish this from
+      // a real PSS outage (which returns { error: 'PSS unavailable' }).
+      const axiosErr = err as { response?: { status?: number } };
+      if (axiosErr.response?.status === 404) {
+        this.logger.debug(`PSS getSqStatus: entity ${entityId} not found in PSS (not submitted yet or pending)`);
+        return {
+          entity_id: entityId,
+          platform_id: this.platformId,
+          status: 'not_found',
+          sq_level: null,
+        };
+      }
       this.logger.error(`PSS getSqStatus failed: ${String(err)}`);
       return { error: 'PSS unavailable' };
     }

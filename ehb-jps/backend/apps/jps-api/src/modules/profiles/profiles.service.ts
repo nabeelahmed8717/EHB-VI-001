@@ -67,6 +67,14 @@ export class ProfilesService {
       .findOne({ _id: id, ...this.baseQuery(userId) })
       .exec();
     if (!profile) throw new NotFoundException('Profile not found');
+
+    // Auto-sync from PSS when the profile is in a pending state.
+    // This ensures JPS always reflects the authoritative PSS decision even if the
+    // webhook was missed (JPS was down, delivery failed, EDR approved after restart).
+    if (['submitted', 'under_review'].includes(profile.status)) {
+      await this.syncFromPss(profile);
+    }
+
     return profile;
   }
 
@@ -177,6 +185,27 @@ export class ProfilesService {
   }
 
   /**
+   * Called by WebhooksService when PSS sends sq.under_review.
+   * Transitions profile from 'submitted' → 'under_review' so the user
+   * sees accurate status while EDR / Franchise review is pending.
+   * Safe to call multiple times — idempotent if already under_review.
+   */
+  async markUnderReview(entityId: string): Promise<void> {
+    const profile = await this.profileModel.findById(entityId).exec();
+    if (!profile) {
+      this.logger.warn(`PSS under_review: profile ${entityId} not found — ignoring`);
+      return;
+    }
+    if (profile.status !== 'submitted') {
+      // Already transitioned further — don't overwrite
+      return;
+    }
+    profile.status = 'under_review';
+    await profile.save();
+    this.logger.log(`Profile ${entityId} → under_review (routed to manual review)`);
+  }
+
+  /**
    * Called ONLY by WebhooksService when PSS fires a decision webhook.
    * This is the single write point for sq_level and approval status.
    */
@@ -203,6 +232,68 @@ export class ProfilesService {
     await profile.save();
 
     this.logger.log(`Profile ${entityId} updated: status=${newStatus} sq_level=${sqLevel}`);
+  }
+
+  /**
+   * Queries PSS for the authoritative SQ status of a pending profile and applies
+   * any decision that PSS has already made — regardless of whether the webhook arrived.
+   *
+   * Called automatically by findOne() when status is 'submitted' or 'under_review'.
+   * Safe to call multiple times (idempotent).
+   *
+   * PSS status → JPS action:
+   *   'approved' → set status=approved + sq_level
+   *   'rejected' → set status=rejected + rejection_reason
+   *   'pending'  → if still 'submitted' on JPS, advance to 'under_review'
+   *   'not_found'→ no-op (profile not yet processed by PSS)
+   */
+  private async syncFromPss(profile: ProfileDocument): Promise<void> {
+    const profileId = (profile._id as unknown as { toString(): string }).toString();
+    try {
+      const pssStatus = await this.pssClient.getSqStatus(profileId);
+
+      // PSS unreachable / auth error — skip without crashing
+      if ('error' in pssStatus) {
+        this.logger.warn(`[PssSync] Skipped profile ${profileId}: ${pssStatus.error}`);
+        return;
+      }
+
+      this.logger.debug(
+        `[PssSync] Profile ${profileId} → PSS status=${pssStatus.status} sq_level=${pssStatus.sq_level}`,
+      );
+
+      const REVIEW_STATUSES = ['pending', 'pending_edr', 'pending_franchise'];
+
+      if (pssStatus.status === 'approved' || pssStatus.status === 'conditional') {
+        profile.status = 'approved';
+        profile.sq_level = pssStatus.sq_level ?? null;
+        profile.rejection_reason = null;
+        await profile.save();
+        this.logger.log(
+          `[PssSync] Profile ${profileId} → approved SQ${pssStatus.sq_level}`,
+        );
+      } else if (pssStatus.status === 'rejected') {
+        profile.status = 'rejected';
+        profile.sq_level = null;
+        profile.rejection_reason = pssStatus.rejection_reason ?? 'Rejected by PSS';
+        await profile.save();
+        this.logger.log(`[PssSync] Profile ${profileId} → rejected`);
+      } else if (
+        REVIEW_STATUSES.includes(pssStatus.status) &&
+        profile.status === 'submitted'
+      ) {
+        // PSS is routing or has routed to franchise/EDR — advance JPS to under_review
+        profile.status = 'under_review';
+        await profile.save();
+        this.logger.log(
+          `[PssSync] Profile ${profileId} → under_review (PSS: ${pssStatus.status})`,
+        );
+      }
+      // 'not_found' → no-op; already under_review and still pending → no-op
+    } catch (err) {
+      // Never crash findOne() due to a PSS sync failure
+      this.logger.warn(`[PssSync] Failed for profile ${profileId}: ${String(err)}`);
+    }
   }
 
   private assertTransition(current: ProfileStatus, next: ProfileStatus): void {

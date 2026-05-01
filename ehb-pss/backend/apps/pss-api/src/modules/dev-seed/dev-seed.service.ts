@@ -167,6 +167,25 @@ export class DevSeedService implements OnModuleInit {
   //     Insufficient profile information. Rejected immediately with guidance.
 
   private readonly DEV_RULES: Array<Partial<PlatformRule>> = [
+    // ── [DEV] Rule 0: Perfect / near-perfect profile → Auto-approve ───────
+    // sq_score >= 89 % means at least 8 of 9 criteria are met.
+    // All required fields (display_name, platform, role, CNIC front, CNIC back)
+    // plus most optional fields (bio, description, address, address_proof) are present.
+    // This rule exists purely to enable end-to-end testing in dev without needing
+    // a PSS admin to manually approve every submission.
+    // In production, remove or deactivate this rule and rely on EDR/Franchise review.
+    {
+      platform_id: 'jps',
+      rule_name: 'JPS — [DEV] Perfect profile → Auto-approve SQ5',
+      criteria_threshold: 89,       // sq_score >= 89 % (8+ / 9 criteria met)
+      operator: 'gte',
+      threshold_max: null,
+      action: 'auto_approve',
+      sq_level_assigned: 5,         // Grant SQ5 — Verified Professional
+      rejection_reason: null,
+      priority: 5,                  // Evaluated first — beats the EDR rule at priority 10
+      active: true,
+    },
     // ── JPS Rule 1: Complete / near-complete profile → EDR ────────────────
     {
       platform_id: 'jps',

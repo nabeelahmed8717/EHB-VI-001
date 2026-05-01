@@ -97,24 +97,60 @@ export interface PssSubmitResponse {
 export interface PssSqStatusResponse {
   entity_id: string;
   platform_id: string;
-  status: 'approved' | 'pending' | 'rejected' | 'not_found';
+  /**
+   * 'approved' | 'conditional'            — final approval states (sq_record exists)
+   * 'rejected'                             — final rejection state
+   * 'pending'                              — just submitted, scoring in progress
+   * 'pending_franchise' | 'pending_edr'   — routed to manual review
+   * 'not_found'                            — no record in PSS at all
+   */
+  status:
+    | 'approved'
+    | 'conditional'
+    | 'rejected'
+    | 'pending'
+    | 'pending_franchise'
+    | 'pending_edr'
+    | 'not_found';
   sq_level: number | null;
   badge_label?: string;
   rejection_reason?: string;
   can_resubmit?: boolean;
+  /** Present when status is pending_edr or pending_franchise */
+  pending_at?: string;
+  message?: string;
 }
 
 export interface PssBulkStatusResponse {
   results: Array<{ entity_id: string; sq_level: number | null; status: string }>;
 }
 
-export interface PssWebhookPayload {
-  event: 'sq.decision' | 'sq.under_review';
+/** sq.decision — final approval or rejection */
+export interface PssWebhookDecisionPayload {
+  event: 'sq.decision';
+  sq_request_id: string;
   entity_id: string;
+  entity_type: string;
+  user_id: string;
   platform_id: string;
-  decision: 'approved' | 'rejected' | 'conditional';
+  decision: 'approved' | 'rejected';
   sq_level: number | null;
-  rejection_reason?: string;
+  decided_by: 'auto' | 'franchise' | 'edr';
   decided_at: string;
-  pss_request_id: string;
+  rejection_reason: string | null;
 }
+
+/** sq.under_review — routed to Franchise or EDR for manual review */
+export interface PssWebhookUnderReviewPayload {
+  event: 'sq.under_review';
+  sq_request_id: string;
+  entity_id: string;
+  entity_type: string;
+  user_id: string;
+  platform_id: string;
+  routed_to: 'franchise' | 'edr';
+  queued_at: string;
+}
+
+/** Union of all PSS → platform webhook event shapes */
+export type PssWebhookPayload = PssWebhookDecisionPayload | PssWebhookUnderReviewPayload;

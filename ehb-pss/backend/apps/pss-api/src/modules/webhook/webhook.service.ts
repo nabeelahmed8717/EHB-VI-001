@@ -9,7 +9,12 @@ import * as crypto from 'crypto';
 import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
-import { SqDecisionEvent, RULE_ENGINE_EVENTS } from '../rule-engine/rule-engine.service';
+import {
+  SqDecisionEvent,
+  FranchiseReviewRequestedEvent,
+  EdrReviewRequestedEvent,
+  RULE_ENGINE_EVENTS,
+} from '../rule-engine/rule-engine.service';
 import { AuditWriteEvent, SQ_ENGINE_EVENTS } from '../sq-engine/sq-engine.service';
 import { PlatformsService } from '../platforms/platforms.service';
 import { WebhookDelivery, WebhookDeliveryDocument } from './webhook-delivery.schema';
@@ -25,7 +30,7 @@ export interface WebhookJobData {
   delivery_id: string;
 }
 
-// ── Outgoing webhook payload (pss-api-contract.md § 6) ────────────────────────
+// ── Outgoing webhook payloads ──────────────────────────────────────────────────
 
 export interface PssWebhookDecisionPayload {
   event: 'sq.decision';
@@ -39,6 +44,21 @@ export interface PssWebhookDecisionPayload {
   decided_by: 'auto' | 'franchise' | 'edr';
   decided_at: string;          // ISO 8601
   rejection_reason: string | null;
+}
+
+/**
+ * Sent immediately when PSS routes a submission to EDR or Franchise for manual review.
+ * Lets the originating platform update its UI from "submitted" → "under_review".
+ */
+export interface PssWebhookUnderReviewPayload {
+  event: 'sq.under_review';
+  sq_request_id: string;
+  entity_id: string;
+  entity_type: string;
+  user_id: string;
+  platform_id: string;
+  routed_to: 'franchise' | 'edr';
+  queued_at: string;           // ISO 8601
 }
 
 // ── HTTP response shape ────────────────────────────────────────────────────────
@@ -235,6 +255,76 @@ export class WebhookService {
           err instanceof Error ? err.stack : undefined,
         );
       }
+    }
+  }
+
+  // ── Under-Review Webhooks (Franchise / EDR routing) ───────────────────────
+
+  /**
+   * Fires immediately when PSS routes a submission to Franchise for manual review.
+   * Sends an sq.under_review webhook so the platform can update its UI.
+   * No Bull queue / retry — this is best-effort informational.
+   */
+  @OnEvent(RULE_ENGINE_EVENTS.FRANCHISE_REVIEW, { async: true })
+  async handleFranchiseReview(event: FranchiseReviewRequestedEvent): Promise<void> {
+    await this.sendUnderReviewWebhook(event, 'franchise');
+  }
+
+  /**
+   * Fires immediately when PSS routes a submission to EDR for identity verification.
+   * Sends an sq.under_review webhook so the platform can update its UI.
+   */
+  @OnEvent(RULE_ENGINE_EVENTS.EDR_REVIEW, { async: true })
+  async handleEdrReview(event: EdrReviewRequestedEvent): Promise<void> {
+    await this.sendUnderReviewWebhook(event, 'edr');
+  }
+
+  private async sendUnderReviewWebhook(
+    event: FranchiseReviewRequestedEvent | EdrReviewRequestedEvent,
+    routed_to: 'franchise' | 'edr',
+  ): Promise<void> {
+    const { sq_request_id, entity_id, entity_type, user_id, platform_id } = event;
+
+    const webhookConfig = await this.platformsService.getWebhookConfig(platform_id);
+    if (!webhookConfig) {
+      this.logger.warn(
+        `[UnderReview] No webhook config for platform=${platform_id} — skipping sq.under_review`,
+      );
+      return;
+    }
+
+    const payload: PssWebhookUnderReviewPayload = {
+      event: 'sq.under_review',
+      sq_request_id,
+      entity_id,
+      entity_type,
+      user_id,
+      platform_id,
+      routed_to,
+      queued_at: new Date().toISOString(),
+    };
+
+    const bodyStr = JSON.stringify(payload);
+    const signature = this.signPayload(bodyStr, webhookConfig.webhook_secret);
+
+    try {
+      const result = await this.postWithTimeout(webhookConfig.webhook_url, bodyStr, signature, 10_000);
+      if (result.ok) {
+        this.logger.log(
+          `[UnderReview] sq.under_review delivered: sq_request=${sq_request_id} ` +
+          `routed_to=${routed_to} status=${result.statusCode}`,
+        );
+      } else {
+        this.logger.warn(
+          `[UnderReview] Non-2xx from platform: sq_request=${sq_request_id} ` +
+          `status=${result.statusCode}`,
+        );
+      }
+    } catch (err) {
+      this.logger.error(
+        `[UnderReview] Network error: sq_request=${sq_request_id} ` +
+        `error=${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
