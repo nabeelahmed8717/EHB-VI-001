@@ -1,11 +1,43 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { json } from 'express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
+// Extend Express Request type to carry the raw body for webhook HMAC verification
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      rawBody?: Buffer;
+    }
+  }
+}
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Create without default body parser so we can attach rawBody ourselves
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+  });
   const logger = new Logger('Bootstrap');
+
+  // ── Raw body middleware ─────────────────────────────────────────────────────
+  // Attaches req.rawBody (Buffer) so the webhook handler can verify the exact
+  // bytes PSS signed, rather than re-serializing the parsed object.
+  // This must be registered BEFORE the global ValidationPipe.
+  app.use(
+    json({
+      verify: (req, _res, buf) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (req as any).rawBody = buf;
+      },
+    }),
+  );
+
+  // Serve uploaded files (CNIC, address proofs, etc.) as static assets
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/static' });
 
   app.useGlobalPipes(
     new ValidationPipe({

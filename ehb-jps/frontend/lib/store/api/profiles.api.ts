@@ -10,16 +10,25 @@ interface PaginatedProfiles {
 }
 
 interface CreateProfileBody {
+  platform: string;
   role: string;
   display_name: string;
   bio?: string;
-  role_data?: Record<string, unknown>;
+  description?: string;
+  cnic_front?: string;
+  cnic_back?: string;
+  address?: string;
+  address_proof?: string;
 }
 
 interface UpdateProfileBody {
   display_name?: string;
   bio?: string;
-  role_data?: Record<string, unknown>;
+  description?: string;
+  cnic_front?: string;
+  cnic_back?: string;
+  address?: string;
+  address_proof?: string;
 }
 
 export const profilesApi = baseApi.injectEndpoints({
@@ -77,6 +86,16 @@ export const profilesApi = baseApi.injectEndpoints({
         { type: 'Profile', id: 'LIST' },
       ],
     }),
+
+    uploadImage: build.mutation<{ url: string }, FormData>({
+      query: (formData) => ({
+        url: '/uploads/image',
+        method: 'POST',
+        body: formData,
+        // RTK Query: don't set Content-Type — browser sets it with boundary for multipart
+        formData: true,
+      }),
+    }),
   }),
 });
 
@@ -87,4 +106,5 @@ export const {
   useUpdateProfileMutation,
   useSubmitProfileMutation,
   useDeleteProfileMutation,
+  useUploadImageMutation,
 } = profilesApi;

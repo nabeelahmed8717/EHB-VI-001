@@ -3,15 +3,27 @@ import {
   UseGuards, Req, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { IsString, IsOptional, IsObject, IsNotEmpty, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty, IsIn } from 'class-validator';
 import { ProfilesService } from './profiles.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UserDocument } from '../users/user.schema';
 import { Request } from 'express';
 
+const VALID_PLATFORMS = ['gosellr', 'jps', 'hps', 'ols', 'wms', 'obs'] as const;
+const VALID_ROLES = [
+  'seller', 'buyer', 'rider', 'chef', 'driver',
+  'cleaner', 'electrician', 'plumber', 'trainer',
+  'worker', 'employer', 'freelancer', 'recruiter',
+  'doctor', 'nurse', 'lawyer', 'teacher', 'other',
+] as const;
+
 export class CreateProfileDto {
   @IsString() @IsNotEmpty()
-  @IsIn(['worker', 'employer', 'freelancer', 'trainer', 'recruiter'])
+  @IsIn(VALID_PLATFORMS)
+  platform: string;
+
+  @IsString() @IsNotEmpty()
+  @IsIn(VALID_ROLES)
   role: string;
 
   @IsString() @IsNotEmpty()
@@ -20,8 +32,20 @@ export class CreateProfileDto {
   @IsString() @IsOptional()
   bio?: string;
 
-  @IsObject() @IsOptional()
-  role_data?: Record<string, unknown>;
+  @IsString() @IsOptional()
+  description?: string;
+
+  @IsString() @IsOptional()
+  cnic_front?: string;
+
+  @IsString() @IsOptional()
+  cnic_back?: string;
+
+  @IsString() @IsOptional()
+  address?: string;
+
+  @IsString() @IsOptional()
+  address_proof?: string;
 }
 
 export class UpdateProfileDto {
@@ -31,8 +55,20 @@ export class UpdateProfileDto {
   @IsString() @IsOptional()
   bio?: string;
 
-  @IsObject() @IsOptional()
-  role_data?: Record<string, unknown>;
+  @IsString() @IsOptional()
+  description?: string;
+
+  @IsString() @IsOptional()
+  cnic_front?: string;
+
+  @IsString() @IsOptional()
+  cnic_back?: string;
+
+  @IsString() @IsOptional()
+  address?: string;
+
+  @IsString() @IsOptional()
+  address_proof?: string;
 }
 
 function userId(req: Request): string {

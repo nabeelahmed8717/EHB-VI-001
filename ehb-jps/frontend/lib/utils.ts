@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { ProfileRole, ProfileStatus } from '@/types/jps.types';
+import type { EhbPlatform, ProfileRole, ProfileStatus } from '@/types/jps.types';
 
 // ── Tailwind merge utility ────────────────────────────────────────────────────
 
@@ -92,22 +92,62 @@ export function getStatusLabel(status: ProfileStatus | string): string {
 
 export function getRoleLabel(role: ProfileRole | string): string {
   const map: Record<string, string> = {
+    seller: 'Seller',
+    buyer: 'Buyer',
+    rider: 'Rider / Delivery',
+    chef: 'Chef / Cook',
+    driver: 'Driver',
+    cleaner: 'Cleaner',
+    electrician: 'Electrician',
+    plumber: 'Plumber',
+    trainer: 'Trainer / Instructor',
     worker: 'Worker',
     employer: 'Employer',
     freelancer: 'Freelancer',
-    trainer: 'Trainer',
     recruiter: 'Recruiter',
+    doctor: 'Doctor',
+    nurse: 'Nurse',
+    lawyer: 'Lawyer',
+    teacher: 'Teacher',
+    other: 'Other',
   };
   return map[role] ?? role;
 }
 
 export function getRoleIcon(role: ProfileRole | string): string {
   const map: Record<string, string> = {
-    worker: '🔧',
+    seller: '🛍️',
+    buyer: '🛒',
+    rider: '🛵',
+    chef: '👨‍🍳',
+    driver: '🚗',
+    cleaner: '🧹',
+    electrician: '⚡',
+    plumber: '🔧',
+    trainer: '🎓',
+    worker: '👷',
     employer: '🏢',
     freelancer: '💼',
-    trainer: '🎓',
     recruiter: '🔍',
+    doctor: '🩺',
+    nurse: '💉',
+    lawyer: '⚖️',
+    teacher: '📚',
+    other: '👤',
   };
   return map[role] ?? '👤';
+}
+
+// ── Platform helpers ──────────────────────────────────────────────────────────
+
+export function getPlatformLabel(platform: EhbPlatform | string): string {
+  const map: Record<string, string> = {
+    gosellr: 'GoSellr — Marketplace',
+    jps: 'JPS — Job Providing Service',
+    hps: 'HPS — Healthcare Platform',
+    ols: 'OLS — Legal Marketplace',
+    wms: 'WMS — Hospital Management',
+    obs: 'OBS — Book Retail',
+  };
+  return map[platform] ?? platform;
 }

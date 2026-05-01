@@ -8,7 +8,8 @@ import {
   Send,
   Trash2,
   RefreshCw,
-  ExternalLink,
+  MapPin,
+  FileText,
 } from 'lucide-react';
 import {
   useGetProfileQuery,
@@ -20,69 +21,32 @@ import { SqBadge } from '@/components/profile/sq-badge';
 import {
   getRoleLabel,
   getRoleIcon,
+  getPlatformLabel,
   formatDate,
   formatDateShort,
 } from '@/lib/utils';
-import type { ProfileRole } from '@/types/jps.types';
 
-// ── Role data display ─────────────────────────────────────────────────────────
+const API_BASE = process.env.NEXT_PUBLIC_JPS_API_URL ?? 'http://localhost:3006';
 
-function RoleDataSection({ role, data }: { role: ProfileRole; data: Record<string, unknown> }) {
-  if (!data || Object.keys(data).length === 0) return null;
+// ── Document preview ──────────────────────────────────────────────────────────
 
-  const fields: Array<{ label: string; value: string }> = [];
-
-  if (role === 'worker') {
-    if (Array.isArray(data.skills) && data.skills.length > 0)
-      fields.push({ label: 'Skills', value: (data.skills as string[]).join(', ') });
-    if (data.years_of_experience !== undefined)
-      fields.push({ label: 'Experience', value: `${data.years_of_experience} years` });
-  } else if (role === 'employer') {
-    if (data.company_name) fields.push({ label: 'Company', value: String(data.company_name) });
-    if (data.industry) fields.push({ label: 'Industry', value: String(data.industry) });
-  } else if (role === 'freelancer') {
-    if (data.hourly_rate !== undefined)
-      fields.push({ label: 'Hourly Rate', value: `$${data.hourly_rate}/hr` });
-    if (data.portfolio_url)
-      fields.push({ label: 'Portfolio', value: String(data.portfolio_url) });
-  } else if (role === 'trainer') {
-    if (Array.isArray(data.certifications) && data.certifications.length > 0)
-      fields.push({ label: 'Certifications', value: (data.certifications as string[]).join(', ') });
-    if (Array.isArray(data.training_areas) && data.training_areas.length > 0)
-      fields.push({ label: 'Training Areas', value: (data.training_areas as string[]).join(', ') });
-  } else if (role === 'recruiter') {
-    if (data.agency_name) fields.push({ label: 'Agency', value: String(data.agency_name) });
-    if (data.specialization)
-      fields.push({ label: 'Specialization', value: String(data.specialization) });
+function DocumentImage({ src, label }: { src: string | null; label: string }) {
+  if (!src) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 h-32 text-gray-400">
+        <FileText className="h-5 w-5" />
+        <p className="text-xs">Not uploaded</p>
+      </div>
+    );
   }
-
-  if (fields.length === 0) return null;
-
   return (
-    <div>
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">Role Details</h3>
-      <dl className="divide-y divide-gray-100">
-        {fields.map(({ label, value }) => (
-          <div key={label} className="flex gap-4 py-2.5">
-            <dt className="text-sm text-gray-500 w-36 shrink-0">{label}</dt>
-            <dd className="text-sm text-gray-800">
-              {label === 'Portfolio' ? (
-                <a
-                  href={value}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                >
-                  {value}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              ) : (
-                value
-              )}
-            </dd>
-          </div>
-        ))}
-      </dl>
+    <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50 h-32">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`${API_BASE}${src}`}
+        alt={label}
+        className="w-full h-full object-contain"
+      />
     </div>
   );
 }
@@ -153,7 +117,7 @@ export default function ProfileDetailPage() {
   const canDelete = profile.status === 'draft' || profile.status === 'rejected';
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 pb-12">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -168,7 +132,9 @@ export default function ProfileDetailPage() {
               <span className="text-xl">{getRoleIcon(profile.role)}</span>
               <h2 className="text-xl font-semibold text-gray-900">{profile.display_name}</h2>
             </div>
-            <p className="text-sm text-gray-500 ml-8">{getRoleLabel(profile.role)}</p>
+            <p className="text-sm text-gray-500 ml-8">
+              {getRoleLabel(profile.role)} · {getPlatformLabel(profile.platform)}
+            </p>
           </div>
         </div>
 
@@ -237,44 +203,90 @@ export default function ProfileDetailPage() {
           </div>
         )}
 
-        {/* Submitted/under review notice */}
         {(profile.status === 'submitted' || profile.status === 'under_review') && (
           <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
             <p className="text-xs text-blue-700">
-              Your profile is currently being reviewed by PSS. You'll be notified when a decision is
-              made.
+              Your profile is currently being reviewed by PSS. You&apos;ll be notified when a
+              decision is made.
             </p>
           </div>
         )}
       </div>
 
-      {/* Profile details card */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-5 divide-y divide-gray-100">
+      {/* Profile details */}
+      <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100">
         {/* Bio */}
         {profile.bio && (
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">About</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">{profile.bio}</p>
+          <div className="p-5">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Bio</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">{profile.bio}</p>
           </div>
         )}
 
-        {/* Role data */}
-        <div className={profile.bio ? 'pt-5' : ''}>
-          <RoleDataSection
-            role={profile.role as ProfileRole}
-            data={profile.role_data as Record<string, unknown>}
-          />
+        {/* Description */}
+        {profile.description && (
+          <div className="p-5">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Profile Description
+            </h3>
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+              {profile.description}
+            </p>
+          </div>
+        )}
+
+        {/* Address */}
+        {profile.address && (
+          <div className="p-5">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Address
+            </h3>
+            <div className="flex items-start gap-2 text-sm text-gray-700">
+              <MapPin className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+              <span>{profile.address}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Identity documents */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5">
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
+          Identity Documents
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-gray-500 mb-2">CNIC Front</p>
+            <DocumentImage src={profile.cnic_front} label="CNIC Front" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-2">CNIC Back</p>
+            <DocumentImage src={profile.cnic_back} label="CNIC Back" />
+          </div>
         </div>
+
+        {profile.address_proof && (
+          <div className="mt-4">
+            <p className="text-xs text-gray-500 mb-2">Address Proof</p>
+            <DocumentImage src={profile.address_proof} label="Address Proof" />
+          </div>
+        )}
       </div>
 
       {/* PSS metadata */}
       {profile.pss_request_id && (
         <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">PSS Verification</h3>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            PSS Verification
+          </h3>
           <dl className="space-y-2">
             <div className="flex gap-4">
               <dt className="text-sm text-gray-500 w-36">Request ID</dt>
-              <dd className="text-sm text-gray-800 font-mono">{profile.pss_request_id}</dd>
+              <dd className="text-sm text-gray-800 font-mono text-xs">{profile.pss_request_id}</dd>
+            </div>
+            <div className="flex gap-4">
+              <dt className="text-sm text-gray-500 w-36">Last Updated</dt>
+              <dd className="text-sm text-gray-800">{formatDate(profile.updated_at)}</dd>
             </div>
           </dl>
         </div>

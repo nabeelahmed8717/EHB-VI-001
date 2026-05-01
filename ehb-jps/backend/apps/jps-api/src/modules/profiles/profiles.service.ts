@@ -9,7 +9,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Profile, ProfileDocument } from './profile.schema';
-import { ProfileStatus } from '../../../../../../libs/jps-types/src';
+import { ProfileStatus } from '@ehb-jps/types';
 import { PssClientService } from '../pss-client/pss-client.service';
 
 // ── State machine ─────────────────────────────────────────────────────────────
@@ -73,19 +73,29 @@ export class ProfilesService {
   async create(
     userId: string,
     dto: {
+      platform: string;
       role: string;
       display_name: string;
       bio?: string;
-      role_data?: Record<string, unknown>;
+      description?: string;
+      cnic_front?: string;
+      cnic_back?: string;
+      address?: string;
+      address_proof?: string;
     },
   ): Promise<ProfileDocument> {
     try {
       return await this.profileModel.create({
         user_id: userId,
+        platform: dto.platform,
         role: dto.role,
         display_name: dto.display_name,
         bio: dto.bio ?? '',
-        role_data: dto.role_data ?? {},
+        description: dto.description ?? '',
+        cnic_front: dto.cnic_front ?? null,
+        cnic_back: dto.cnic_back ?? null,
+        address: dto.address ?? '',
+        address_proof: dto.address_proof ?? null,
         status: 'draft',
         sq_level: null,
         pss_request_id: null,
@@ -94,7 +104,7 @@ export class ProfilesService {
     } catch (err: unknown) {
       const mongoErr = err as { code?: number };
       if (mongoErr.code === 11000) {
-        throw new ConflictException(`You already have a ${dto.role} profile`);
+        throw new ConflictException(`You already have a ${dto.role} profile on ${dto.platform}`);
       }
       throw err;
     }
@@ -103,7 +113,15 @@ export class ProfilesService {
   async update(
     id: string,
     userId: string,
-    dto: { display_name?: string; bio?: string; role_data?: Record<string, unknown> },
+    dto: {
+      display_name?: string;
+      bio?: string;
+      description?: string;
+      cnic_front?: string;
+      cnic_back?: string;
+      address?: string;
+      address_proof?: string;
+    },
   ): Promise<ProfileDocument> {
     const profile = await this.findOne(id, userId);
 
@@ -119,15 +137,23 @@ export class ProfilesService {
     const profile = await this.findOne(id, userId);
     this.assertTransition(profile.status, 'submitted');
 
-    // Send to PSS
+    // Send to PSS — entity_data must contain every field the criteria set checks.
+    // PSS criteria for jps_profile evaluate: display_name, platform, role,
+    // bio, description, cnic_front, cnic_back, address, address_proof.
     const pssResult = await this.pssClient.submitForSQ(
       (profile._id as unknown as { toString(): string }).toString(),
       userId,
       'jps_profile',
       {
+        platform: profile.platform,
         role: profile.role,
         display_name: profile.display_name,
-        role_data: profile.role_data,
+        bio: profile.bio || null,
+        description: profile.description || null,
+        cnic_front: profile.cnic_front,
+        cnic_back: profile.cnic_back,
+        address: profile.address || null,
+        address_proof: profile.address_proof,
       },
     );
 

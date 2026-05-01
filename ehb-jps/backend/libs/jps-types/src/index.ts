@@ -1,11 +1,46 @@
-// ─── Profile ──────────────────────────────────────────────────────────────────
+// ─── EHB Platforms ────────────────────────────────────────────────────────────
+
+export const EHB_PLATFORMS = [
+  { id: 'gosellr', label: 'GoSellr — Marketplace' },
+  { id: 'jps',     label: 'JPS — Job Providing Service' },
+  { id: 'hps',     label: 'HPS — Healthcare Platform' },
+  { id: 'ols',     label: 'OLS — Legal Marketplace' },
+  { id: 'wms',     label: 'WMS — Hospital Management' },
+  { id: 'obs',     label: 'OBS — Book Retail' },
+] as const;
+
+export type EhbPlatform = 'gosellr' | 'jps' | 'hps' | 'ols' | 'wms' | 'obs';
+
+// ─── Profile Roles ────────────────────────────────────────────────────────────
+
+export const PROFILE_ROLES = [
+  { value: 'seller',      label: 'Seller' },
+  { value: 'buyer',       label: 'Buyer' },
+  { value: 'rider',       label: 'Rider / Delivery' },
+  { value: 'chef',        label: 'Chef / Cook' },
+  { value: 'driver',      label: 'Driver' },
+  { value: 'cleaner',     label: 'Cleaner' },
+  { value: 'electrician', label: 'Electrician' },
+  { value: 'plumber',     label: 'Plumber' },
+  { value: 'trainer',     label: 'Trainer / Instructor' },
+  { value: 'worker',      label: 'Worker' },
+  { value: 'employer',    label: 'Employer' },
+  { value: 'freelancer',  label: 'Freelancer' },
+  { value: 'recruiter',   label: 'Recruiter' },
+  { value: 'doctor',      label: 'Doctor' },
+  { value: 'nurse',       label: 'Nurse' },
+  { value: 'lawyer',      label: 'Lawyer' },
+  { value: 'teacher',     label: 'Teacher' },
+  { value: 'other',       label: 'Other' },
+] as const;
 
 export type ProfileRole =
-  | 'worker'
-  | 'employer'
-  | 'freelancer'
-  | 'trainer'
-  | 'recruiter';
+  | 'seller' | 'buyer' | 'rider' | 'chef' | 'driver'
+  | 'cleaner' | 'electrician' | 'plumber' | 'trainer'
+  | 'worker' | 'employer' | 'freelancer' | 'recruiter'
+  | 'doctor' | 'nurse' | 'lawyer' | 'teacher' | 'other';
+
+// ─── Profile Status ───────────────────────────────────────────────────────────
 
 export type ProfileStatus =
   | 'draft'
@@ -15,13 +50,20 @@ export type ProfileStatus =
   | 'rejected'
   | 'resubmit_required';
 
+// ─── Profile ──────────────────────────────────────────────────────────────────
+
 export interface IProfile {
   _id: string;
   user_id: string;
+  platform: EhbPlatform;
   role: ProfileRole;
   display_name: string;
-  bio?: string;
-  role_data: Record<string, unknown>;
+  bio: string;
+  description: string;
+  cnic_front: string | null;
+  cnic_back: string | null;
+  address: string;
+  address_proof: string | null;
   status: ProfileStatus;
   sq_level: number | null;
   pss_request_id: string | null;
@@ -63,11 +105,7 @@ export interface PssSqStatusResponse {
 }
 
 export interface PssBulkStatusResponse {
-  results: Array<{
-    entity_id: string;
-    sq_level: number | null;
-    status: string;
-  }>;
+  results: Array<{ entity_id: string; sq_level: number | null; status: string }>;
 }
 
 export interface PssWebhookPayload {

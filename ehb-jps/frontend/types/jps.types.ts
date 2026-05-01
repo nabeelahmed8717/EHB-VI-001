@@ -1,4 +1,10 @@
-export type ProfileRole = 'worker' | 'employer' | 'freelancer' | 'trainer' | 'recruiter';
+export type EhbPlatform = 'gosellr' | 'jps' | 'hps' | 'ols' | 'wms' | 'obs';
+
+export type ProfileRole =
+  | 'seller' | 'buyer' | 'rider' | 'chef' | 'driver'
+  | 'cleaner' | 'electrician' | 'plumber' | 'trainer'
+  | 'worker' | 'employer' | 'freelancer' | 'recruiter'
+  | 'doctor' | 'nurse' | 'lawyer' | 'teacher' | 'other';
 
 export type ProfileStatus =
   | 'draft'
@@ -11,10 +17,15 @@ export type ProfileStatus =
 export interface IProfile {
   _id: string;
   user_id: string;
+  platform: EhbPlatform;
   role: ProfileRole;
   display_name: string;
   bio: string;
-  role_data: Record<string, unknown>;
+  description: string;
+  cnic_front: string | null;
+  cnic_back: string | null;
+  address: string;
+  address_proof: string | null;
   status: ProfileStatus;
   sq_level: number | null;
   pss_request_id: string | null;

@@ -129,6 +129,31 @@ export class WebhookService {
       `sq.decision received: sq_request=${sq_request_id} platform=${platform_id} decision=${decision}`,
     );
 
+    // ── Build payload and load webhook config BEFORE try block ──────────────
+    // These must be in scope for both the try (enqueue) and catch (direct delivery).
+    const payload: PssWebhookDecisionPayload = {
+      event: 'sq.decision',
+      sq_request_id,
+      entity_id,
+      entity_type,
+      user_id,
+      platform_id,
+      decision,
+      sq_level,
+      decided_by,
+      decided_at: decided_at instanceof Date ? decided_at.toISOString() : String(decided_at),
+      rejection_reason,
+    };
+
+    const webhookConfig = await this.platformsService.getWebhookConfig(platform_id);
+    if (!webhookConfig) {
+      this.logger.warn(
+        `No webhook config for platform=${platform_id}. sq_request=${sq_request_id}. ` +
+        `Delivery skipped — platform may not have a webhook URL configured.`,
+      );
+      return;
+    }
+
     try {
       // ── 1. Audit FIRST — webhook queued ──────────────────────────────────
       this.emitAuditWrite({
@@ -143,32 +168,7 @@ export class WebhookService {
         metadata: { decision, sq_level, decided_by },
       });
 
-      // ── 2. Build canonical payload ────────────────────────────────────────
-      const payload: PssWebhookDecisionPayload = {
-        event: 'sq.decision',
-        sq_request_id,
-        entity_id,
-        entity_type,
-        user_id,
-        platform_id,
-        decision,
-        sq_level,
-        decided_by,
-        decided_at: decided_at instanceof Date ? decided_at.toISOString() : String(decided_at),
-        rejection_reason,
-      };
-
-      // ── 3. Load platform webhook URL (snapshot at queue time) ─────────────
-      const webhookConfig = await this.platformsService.getWebhookConfig(platform_id);
-      if (!webhookConfig) {
-        this.logger.warn(
-          `No webhook config for platform=${platform_id}. sq_request=${sq_request_id}. ` +
-          `Delivery skipped — platform may not have a webhook URL configured.`,
-        );
-        return;
-      }
-
-      // ── 4. Upsert WebhookDelivery — idempotent on sq_request_id ──────────
+      // ── 2. Upsert WebhookDelivery — idempotent on sq_request_id ──────────
       const delivery = await this.deliveryModel.findOneAndUpdate(
         { sq_request_id },
         {
@@ -223,9 +223,12 @@ export class WebhookService {
 
       if (isRedisDown) {
         this.logger.warn(
-          `[WebhookQueue] Redis unavailable — webhook skipped for sq_request=${sq_request_id}. ` +
-          `Start Redis (redis-server or Docker) to enable webhook delivery.`,
+          `[WebhookQueue] Redis unavailable — falling back to direct webhook delivery ` +
+          `for sq_request=${sq_request_id}.`,
         );
+        // Direct delivery (no retry): sign and POST immediately.
+        // This keeps dev working without Redis while still notifying the platform.
+        await this.directDeliver(payload, webhookConfig, sq_request_id);
       } else {
         this.logger.error(
           `Failed to queue webhook for sq_request=${sq_request_id}: ${message}`,
@@ -572,6 +575,54 @@ export class WebhookService {
         attempts: delivery.attempts,
       },
     });
+  }
+
+  /**
+   * Direct webhook delivery — used as a Redis-free fallback in development.
+   * Signs the payload and POSTs immediately without Bull queuing or retry.
+   * On non-2xx, logs a warning but does NOT throw (best-effort only).
+   */
+  private async directDeliver(
+    payload: PssWebhookDecisionPayload,
+    webhookConfig: { webhook_url: string; webhook_secret: string },
+    sq_request_id: string,
+  ): Promise<void> {
+    const bodyStr = JSON.stringify(payload);
+    const signature = this.signPayload(bodyStr, webhookConfig.webhook_secret);
+    try {
+      const result = await this.postWithTimeout(
+        webhookConfig.webhook_url,
+        bodyStr,
+        signature,
+        10_000,
+      );
+      if (result.ok) {
+        this.logger.log(
+          `[DirectDeliver] Webhook delivered: sq_request=${sq_request_id} ` +
+          `url=${webhookConfig.webhook_url} status=${result.statusCode}`,
+        );
+        this.emitAuditWrite({
+          sq_request_id,
+          entity_id: payload.entity_id,
+          entity_type: payload.entity_type,
+          user_id: payload.user_id,
+          platform_id: payload.platform_id,
+          action: 'webhook_delivered',
+          reason: `Direct delivery (no-Redis fallback) to ${webhookConfig.webhook_url} succeeded (HTTP ${result.statusCode}).`,
+          performed_by: 'system',
+        });
+      } else {
+        this.logger.warn(
+          `[DirectDeliver] Non-2xx from platform: sq_request=${sq_request_id} ` +
+          `status=${result.statusCode} body=${result.body.substring(0, 200)}`,
+        );
+      }
+    } catch (err) {
+      this.logger.error(
+        `[DirectDeliver] Network error: sq_request=${sq_request_id} ` +
+        `error=${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
   }
 
   /** Emit an audit.write event via EventEmitter2 */

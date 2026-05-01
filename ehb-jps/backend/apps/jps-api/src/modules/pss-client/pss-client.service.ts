@@ -6,7 +6,7 @@ import {
   PssSubmitResponse,
   PssSqStatusResponse,
   PssBulkStatusResponse,
-} from '../../../../../../libs/jps-types/src';
+} from '@ehb-jps/types';
 
 @Injectable()
 export class PssClientService {

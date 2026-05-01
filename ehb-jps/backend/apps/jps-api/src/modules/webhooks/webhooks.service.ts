@@ -2,7 +2,7 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { ProfilesService } from '../profiles/profiles.service';
-import { PssWebhookPayload } from '../../../../../../libs/jps-types/src';
+import { PssWebhookPayload } from '@ehb-jps/types';
 
 @Injectable()
 export class WebhooksService {
