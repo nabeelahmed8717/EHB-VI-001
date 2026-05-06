@@ -61,7 +61,7 @@ export function NavigationLoader() {
           >
             <circle
               cx="24" cy="24" r="20"
-              stroke="#2563EB" strokeWidth="4" strokeLinecap="round"
+              stroke="#0d9488" strokeWidth="4" strokeLinecap="round"
               strokeDasharray="30 96" strokeDashoffset="0"
             />
           </svg>

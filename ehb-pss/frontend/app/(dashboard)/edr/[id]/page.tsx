@@ -186,7 +186,7 @@ export default function EdrReviewPage() {
         </Button>
         <div>
           <h2 className="text-base font-semibold font-mono">{sq_request.sq_request_id}</h2>
-          <p className="text-xs text-gray-500">{sq_request.entity_type} · {sq_request.platform_id}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{sq_request.entity_type} · {sq_request.platform_id}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <SqStatusPill status={sq_request.status} />
@@ -204,11 +204,11 @@ export default function EdrReviewPage() {
         <div className="col-span-2 space-y-4">
           {/* Franchise summary if escalated */}
           {franchise_review && (
-            <Card className="border-orange-200 bg-orange-50">
+            <Card className="border-orange-200 dark:border-orange-900/50 bg-orange-50 dark:bg-orange-950/30">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-orange-800">Franchise Review Summary</CardTitle>
+                <CardTitle className="text-sm text-orange-800 dark:text-orange-300">Franchise Review Summary</CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-orange-700 space-y-1">
+              <CardContent className="text-sm text-orange-700 dark:text-orange-400 space-y-1">
                 <p>Decision: <strong>{franchise_review.decision ?? 'Escalated'}</strong></p>
                 {franchise_review.rejection_reason && (
                   <p>Reason: {franchise_review.rejection_reason}</p>
@@ -250,9 +250,9 @@ export default function EdrReviewPage() {
               ) : (
                 <div className="grid grid-cols-2 gap-2">
                   {entityFields.map(({ key, value }) => (
-                    <div key={key} className="rounded-lg bg-gray-50 p-2.5">
-                      <span className="text-xs font-medium text-gray-500 uppercase">{key}</span>
-                      <p className="text-sm text-gray-900 mt-0.5 break-all">{value}</p>
+                    <div key={key} className="rounded-lg bg-gray-50 dark:bg-gray-800 p-2.5">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{key}</span>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-0.5 break-all">{value}</p>
                     </div>
                   ))}
                 </div>
@@ -267,7 +267,7 @@ export default function EdrReviewPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
                   {sq_request.criteria_met}/{sq_request.total_criteria} criteria met
                 </span>
                 <SqBadge level={sq_request.sq_level_calculated} />
@@ -287,13 +287,13 @@ export default function EdrReviewPage() {
                   <div key={log._id} className="flex items-start gap-2">
                     <AuditActionBadge action={log.action} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-700 truncate">{log.reason}</p>
-                      <p className="text-xs text-gray-400">{formatDate(log.created_at)}</p>
+                      <p className="text-xs text-gray-700 dark:text-gray-300 truncate">{log.reason}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(log.created_at)}</p>
                     </div>
                   </div>
                 ))}
                 {(!audit_trail || audit_trail.length === 0) && (
-                  <p className="text-xs text-gray-400 text-center py-4">No audit events</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">No audit events</p>
                 )}
               </div>
             </CardContent>
@@ -303,10 +303,10 @@ export default function EdrReviewPage() {
         {/* Right: decision panel */}
         <div className="space-y-4">
           {mode === 'override' ? (
-            <Card className="border-purple-200">
+            <Card className="border-purple-200 dark:border-purple-900/50">
               <CardHeader>
-                <CardTitle className="text-base text-purple-800">EDR Override</CardTitle>
-                <p className="text-xs text-purple-600">Override a previous decision</p>
+                <CardTitle className="text-base text-purple-800 dark:text-purple-300">EDR Override</CardTitle>
+                <p className="text-xs text-purple-600 dark:text-purple-400">Override a previous decision</p>
               </CardHeader>
               <CardContent>
                 <form onSubmit={overrideForm.handleSubmit(onOverride)} className="space-y-4">
@@ -366,7 +366,7 @@ export default function EdrReviewPage() {
               <CardHeader>
                 <CardTitle className="text-base">EDR Decision</CardTitle>
                 {latestEdr && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Source: {latestEdr.source === 'franchise_escalation' ? 'Franchise escalation' : 'Rule engine'}
                   </p>
                 )}
@@ -381,7 +381,7 @@ export default function EdrReviewPage() {
                         <label
                           key={d}
                           className={`flex flex-col items-center rounded-lg border p-3 cursor-pointer text-xs font-medium transition-colors ${
-                            watchedDecision === d ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:bg-gray-50'
+                            watchedDecision === d ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
                           }`}
                         >
                           <input
@@ -459,16 +459,16 @@ export default function EdrReviewPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {edr_reviews.map((rev) => (
-                  <div key={rev._id} className="rounded-lg bg-gray-50 p-2.5 text-xs space-y-1">
+                  <div key={rev._id} className="rounded-lg bg-gray-50 dark:bg-gray-800 p-2.5 text-xs space-y-1">
                     <div className="flex justify-between">
-                      <span className="font-medium capitalize">{rev.decision}</span>
-                      <span className="text-gray-400">{rev.source}</span>
+                      <span className="font-medium capitalize text-gray-900 dark:text-gray-100">{rev.decision}</span>
+                      <span className="text-gray-400 dark:text-gray-500">{rev.source}</span>
                     </div>
-                    {rev.reviewed_by && <p className="text-gray-500">by {rev.reviewed_by}</p>}
+                    {rev.reviewed_by && <p className="text-gray-500 dark:text-gray-400">by {rev.reviewed_by}</p>}
                     {rev.override_notes && (
                       <p className="text-purple-600 italic">{rev.override_notes}</p>
                     )}
-                    <p className="text-gray-400">{formatDate(rev.reviewed_at ?? rev.created_at)}</p>
+                    <p className="text-gray-400 dark:text-gray-500">{formatDate(rev.reviewed_at ?? rev.created_at)}</p>
                   </div>
                 ))}
               </CardContent>

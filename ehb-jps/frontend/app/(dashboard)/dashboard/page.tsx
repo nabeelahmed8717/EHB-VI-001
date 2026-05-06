@@ -54,7 +54,7 @@ export default function DashboardPage() {
         </div>
         <Link
           href="/profiles/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-700 transition-colors"
         >
           <Plus className="h-4 w-4" />
           New Profile
@@ -70,13 +70,13 @@ export default function DashboardPage() {
             placeholder="Search profiles…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-56"
+            className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 w-56 shadow-sm"
           />
         </div>
         <select
           value={roleFilter}
           onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-          className="text-sm border border-gray-200 rounded-lg bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="text-sm border border-gray-200 rounded-lg bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm"
         >
           <option value="">All Roles</option>
           {ROLES.filter(Boolean).map((r) => (
@@ -86,7 +86,7 @@ export default function DashboardPage() {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="text-sm border border-gray-200 rounded-lg bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="text-sm border border-gray-200 rounded-lg bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm"
         >
           <option value="">All Statuses</option>
           {STATUS_OPTIONS.filter(Boolean).map((s) => (
@@ -95,11 +95,11 @@ export default function DashboardPage() {
         </select>
       </div>
 
-      {/* Content */}
+      {/* Loading skeleton */}
       {isLoading && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+            <div key={i} className="rounded-xl border border-gray-100 bg-white p-5 shadow-card space-y-3">
               <div className="skeleton h-4 w-24" />
               <div className="skeleton h-5 w-40" />
               <div className="skeleton h-3 w-full" />
@@ -112,24 +112,26 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Error */}
       {isError && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
           <p className="text-sm text-red-600">Failed to load profiles. Please try again.</p>
         </div>
       )}
 
+      {/* Empty state */}
       {!isLoading && !isError && filtered.length === 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 mx-auto mb-4">
-            <Briefcase className="h-6 w-6 text-gray-400" />
+        <div className="rounded-xl border border-gray-100 bg-white p-12 text-center shadow-card">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-teal-50 mx-auto mb-4">
+            <Briefcase className="h-7 w-7 text-teal-600" />
           </div>
-          <p className="text-sm font-medium text-gray-800">No profiles yet</p>
+          <p className="text-sm font-semibold text-gray-800">No profiles yet</p>
           <p className="text-sm text-gray-500 mt-1">
             Create your first professional profile to get started.
           </p>
           <Link
             href="/profiles/new"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 transition-colors"
           >
             <Plus className="h-4 w-4" />
             Create Profile
@@ -137,6 +139,7 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Profile grid */}
       {!isLoading && !isError && filtered.length > 0 && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -144,14 +147,14 @@ export default function DashboardPage() {
               <Link
                 key={profile._id}
                 href={`/profiles/${profile._id}`}
-                className="group rounded-xl border border-gray-200 bg-white p-5 hover:border-blue-300 hover:shadow-sm transition-all space-y-3"
+                className="group rounded-xl border border-gray-100 bg-white p-5 shadow-card hover:border-teal-200 hover:shadow-md transition-all space-y-3"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-lg">{getRoleIcon(profile.role)}</span>
+                  <span className="text-xl">{getRoleIcon(profile.role)}</span>
                   <StatusBadge status={profile.status} />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  <p className="font-semibold text-gray-900 group-hover:text-teal-600 transition-colors">
                     {profile.display_name}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">

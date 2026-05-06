@@ -4,6 +4,7 @@ import './globals.css';
 import { StoreProvider } from '@/lib/store/StoreProvider';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthProvider';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,12 +21,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <AuthProvider>
-          <StoreProvider>
-            {children}
-            <Toaster />
-          </StoreProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <StoreProvider>
+              {children}
+              <Toaster />
+            </StoreProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

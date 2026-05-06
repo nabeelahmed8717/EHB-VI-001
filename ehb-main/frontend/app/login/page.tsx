@@ -70,7 +70,6 @@ function LoginForm() {
           window.location.href = url;
           return;
         }
-        // Env var not set yet — fall through to show the login form
       }
       setCheckingSession(false);
     });
@@ -93,59 +92,87 @@ function LoginForm() {
 
   if (checkingSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center space-y-4">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Loader2 className="h-5 w-5 animate-spin text-green-500" />
-            Checking session…
-          </div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#191A27' }}>
+        <div className="flex items-center gap-2 text-sm" style={{ color: '#9EA3C0' }}>
+          <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#7C6EFF' }} />
+          Checking session…
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-white">
+    <div className="min-h-screen flex" style={{ background: '#191A27' }}>
+
       {/* ── LEFT: Form Panel ── */}
       <div className="flex flex-col justify-center w-full lg:w-1/2 px-8 sm:px-16 xl:px-24 py-12">
         <div className="max-w-sm w-full mx-auto space-y-7">
+
+          {/* Logo mark */}
+          <div className="flex items-center gap-2.5 mb-2">
+            <div
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-sm font-bold"
+              style={{ background: 'linear-gradient(135deg, #7C6EFF 0%, #B59BF5 100%)', color: '#fff' }}
+            >
+              E
+            </div>
+            <span className="font-bold" style={{ fontSize: 16, color: '#EEEEF8' }}>EHB Portal</span>
+          </div>
+
           {/* Heading */}
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
-              Welcome back!
+            <h1 className="font-bold tracking-tight" style={{ fontSize: 30, color: '#EEEEF8' }}>
+              Welcome back
             </h1>
-            <p className="text-sm text-gray-500 leading-relaxed">
+            <p className="leading-relaxed" style={{ fontSize: 13, color: '#7070A0' }}>
               Simplify your workflow and boost your productivity with{' '}
-              <span className="font-semibold text-gray-700">EHB&apos;s App</span>.
+              <span style={{ color: '#A0A3C4', fontWeight: 600 }}>EHB&apos;s App</span>.
               Get started for free.
             </p>
           </div>
 
           {/* Banners */}
           {justRegistered && (
-            <div className="rounded-xl bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
+            <div
+              className="rounded-xl px-4 py-2.5 text-sm"
+              style={{ background: 'rgba(76,175,80,0.10)', border: '1px solid rgba(76,175,80,0.25)', color: '#4CAF50' }}
+            >
               Account created! Please sign in.
             </div>
           )}
           {platformLabel && (
-            <div className="rounded-xl bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
+            <div
+              className="rounded-xl px-4 py-2.5 text-sm"
+              style={{ background: 'rgba(124,110,255,0.10)', border: '1px solid rgba(124,110,255,0.30)', color: '#B59BF5' }}
+            >
               Redirected from <span className="font-semibold">{platformLabel}</span>
             </div>
           )}
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
             {/* Email */}
             <div>
               <input
                 id="email"
                 type="email"
-                placeholder="Username"
+                placeholder="Email address"
                 {...register('email')}
-                className="w-full rounded-full border border-gray-200 bg-white px-5 py-3.5 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition"
+                className="w-full outline-none transition"
+                style={{
+                  background: '#1D1E2E',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 12,
+                  padding: '12px 16px',
+                  fontSize: 13,
+                  color: '#EEEEF8',
+                }}
+                onFocus={e => { e.currentTarget.style.border = '1px solid rgba(124,110,255,0.5)'; }}
+                onBlur={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)'; }}
               />
               {errors.email && (
-                <p className="mt-1 ml-2 text-xs text-red-500">{errors.email.message}</p>
+                <p className="mt-1 ml-1 text-xs" style={{ color: '#EF4444' }}>{errors.email.message}</p>
               )}
             </div>
 
@@ -157,52 +184,82 @@ function LoginForm() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Password"
                   {...register('password')}
-                  className="w-full rounded-full border border-gray-200 bg-white px-5 py-3.5 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition pr-12"
+                  className="w-full outline-none transition pr-12"
+                  style={{
+                    background: '#1D1E2E',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 12,
+                    padding: '12px 16px',
+                    fontSize: 13,
+                    color: '#EEEEF8',
+                  }}
+                  onFocus={e => { e.currentTarget.style.border = '1px solid rgba(124,110,255,0.5)'; }}
+                  onBlur={e => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)'; }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 transition"
+                  style={{ color: '#454670' }}
                   tabIndex={-1}
                 >
                   {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 ml-2 text-xs text-red-500">{errors.password.message}</p>
+                <p className="mt-1 ml-1 text-xs" style={{ color: '#EF4444' }}>{errors.password.message}</p>
               )}
             </div>
 
             {/* Forgot Password */}
             <div className="flex justify-end">
-              <button type="button" className="text-xs text-gray-500 hover:text-gray-700 transition">
+              <button
+                type="button"
+                className="text-xs transition"
+                style={{ color: '#7070A0' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#B59BF5'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#7070A0'; }}
+              >
                 Forgot Password?
               </button>
             </div>
 
             {/* Root error */}
             {errors.root && (
-              <p className="rounded-xl bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-600">
+              <div
+                className="rounded-xl px-4 py-2.5 text-sm"
+                style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.25)', color: '#EF4444' }}
+              >
                 {errors.root.message}
-              </p>
+              </div>
             )}
 
             {/* Submit */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-full bg-gray-900 text-white py-3.5 text-sm font-semibold hover:bg-gray-800 active:scale-[0.98] transition disabled:opacity-60 flex items-center justify-center gap-2"
+              className="w-full font-semibold flex items-center justify-center gap-2 transition"
+              style={{
+                borderRadius: 12,
+                padding: '13px 0',
+                fontSize: 14,
+                background: isSubmitting ? 'rgba(196,181,253,0.5)' : '#C4B5FD',
+                color: '#160D30',
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                border: 'none',
+                letterSpacing: '0.02em',
+              }}
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isSubmitting ? 'Signing in…' : 'Login'}
+              {isSubmitting ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
 
           {/* Divider */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-400">or continue with</span>
-            <div className="flex-1 h-px bg-gray-200" />
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+            <span className="text-xs" style={{ color: '#454670' }}>or continue with</span>
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
           </div>
 
           {/* Social buttons */}
@@ -210,7 +267,8 @@ function LoginForm() {
             {/* Google */}
             <button
               type="button"
-              className="h-12 w-12 rounded-full bg-gray-900 flex items-center justify-center hover:bg-gray-700 transition"
+              className="h-12 w-12 rounded-xl flex items-center justify-center transition"
+              style={{ background: '#1D1E2E', border: '1px solid rgba(255,255,255,0.08)' }}
               aria-label="Continue with Google"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white">
@@ -224,7 +282,8 @@ function LoginForm() {
             {/* Apple */}
             <button
               type="button"
-              className="h-12 w-12 rounded-full bg-gray-900 flex items-center justify-center hover:bg-gray-700 transition"
+              className="h-12 w-12 rounded-xl flex items-center justify-center transition"
+              style={{ background: '#1D1E2E', border: '1px solid rgba(255,255,255,0.08)' }}
               aria-label="Continue with Apple"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white">
@@ -235,7 +294,8 @@ function LoginForm() {
             {/* Facebook */}
             <button
               type="button"
-              className="h-12 w-12 rounded-full bg-gray-900 flex items-center justify-center hover:bg-gray-700 transition"
+              className="h-12 w-12 rounded-xl flex items-center justify-center transition"
+              style={{ background: '#1D1E2E', border: '1px solid rgba(255,255,255,0.08)' }}
               aria-label="Continue with Facebook"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white">
@@ -245,11 +305,12 @@ function LoginForm() {
           </div>
 
           {/* Register link */}
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm" style={{ color: '#7070A0' }}>
             Not a member?{' '}
             <Link
               href={redirectPlatform ? `/register?redirect=${redirectPlatform}` : '/register'}
-              className="font-semibold text-green-600 hover:text-green-700 transition"
+              className="font-semibold transition"
+              style={{ color: '#B59BF5' }}
             >
               Register now
             </Link>
@@ -257,15 +318,64 @@ function LoginForm() {
         </div>
       </div>
 
-      {/* ── RIGHT: Placeholder Panel ── */}
-      <div className="hidden lg:flex items-center justify-center w-1/2 bg-[#edf7ed] rounded-3xl m-4">
-        <div className="flex flex-col items-center justify-center gap-3 text-gray-400">
-          <div className="h-24 w-24 rounded-2xl bg-green-100 border-2 border-dashed border-green-300 flex items-center justify-center">
-            <svg className="h-10 w-10 text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+      {/* ── RIGHT: Dark Branded Panel ── */}
+      <div
+        className="hidden lg:flex items-center justify-center w-1/2 m-4 rounded-3xl relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #13141F 0%, #181030 50%, #1E1245 100%)',
+          border: '1px solid rgba(124,110,255,0.15)',
+        }}
+      >
+        {/* Glow blobs */}
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: 320,
+            height: 320,
+            top: -60,
+            right: -60,
+            background: 'radial-gradient(circle, rgba(124,110,255,0.20) 0%, transparent 70%)',
+          }}
+        />
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: 220,
+            height: 220,
+            bottom: -40,
+            left: -40,
+            background: 'radial-gradient(circle, rgba(181,155,245,0.12) 0%, transparent 70%)',
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative flex flex-col items-center text-center px-10 gap-6">
+          <div
+            className="h-20 w-20 rounded-2xl flex items-center justify-center font-bold text-3xl"
+            style={{ background: 'linear-gradient(135deg, #7C6EFF 0%, #B59BF5 100%)', color: '#fff' }}
+          >
+            E
           </div>
-          <p className="text-sm text-green-400 font-medium">Image placeholder</p>
+          <div>
+            <p className="font-bold" style={{ fontSize: 24, color: '#EEEEF8' }}>EHB Portal</p>
+            <p className="mt-2 leading-relaxed" style={{ fontSize: 13, color: '#7070A0', maxWidth: 280 }}>
+              Your unified identity across all EHB platforms — GoSellr, OLS, HPS, and more.
+            </p>
+          </div>
+
+          {/* Feature pills */}
+          <div className="flex flex-col gap-2 w-full mt-2">
+            {['Single sign-on across all platforms', 'Secure JWT-based authentication', 'Manage all your EHB services'].map((feat) => (
+              <div
+                key={feat}
+                className="flex items-center gap-2.5 px-4 py-3 rounded-xl"
+                style={{ background: 'rgba(124,110,255,0.08)', border: '1px solid rgba(124,110,255,0.15)' }}
+              >
+                <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: '#7C6EFF' }} />
+                <span style={{ fontSize: 12, color: '#A0A3C4' }}>{feat}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

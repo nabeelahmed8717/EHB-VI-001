@@ -109,12 +109,12 @@ function ActionBadge({ action }: { action: RuleAction }) {
       className={cn(
         'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
         action === 'auto_approve'
-          ? 'bg-green-100 text-green-700'
+          ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
           : action === 'franchise'
-          ? 'bg-blue-100 text-blue-700'
+          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
           : action === 'edr'
-          ? 'bg-purple-100 text-purple-700'
-          : 'bg-red-100 text-red-700',
+          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+          : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
       )}
     >
       {action === 'auto_approve'
@@ -226,7 +226,7 @@ function RuleSlideOver({
             <Label htmlFor="rule_name">Rule Name</Label>
             <input
               id="rule_name"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="e.g. High-score auto-approve"
               {...register('rule_name')}
             />
@@ -240,7 +240,7 @@ function RuleSlideOver({
             <Label>Criteria Threshold</Label>
             <div className="flex gap-2">
               <select
-                className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                 value={operator}
                 onChange={(e) => setValue('operator', e.target.value as RuleOperator)}
               >
@@ -251,14 +251,14 @@ function RuleSlideOver({
               </select>
               <input
                 type="number"
-                className="w-24 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-24 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                 placeholder="Min"
                 {...register('criteria_threshold')}
               />
               {operator === 'between' && (
                 <input
                   type="number"
-                  className="w-24 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-24 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                   placeholder="Max"
                   {...register('threshold_max')}
                 />
@@ -285,13 +285,13 @@ function RuleSlideOver({
                     'rounded-lg border px-3 py-2 text-sm font-medium transition-colors text-left',
                     action === a
                       ? a === 'auto_approve'
-                        ? 'border-green-500 bg-green-50 text-green-700'
+                        ? 'border-green-500 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                         : a === 'franchise'
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                         : a === 'edr'
-                        ? 'border-purple-500 bg-purple-50 text-purple-700'
-                        : 'border-red-500 bg-red-50 text-red-700'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                        : 'border-red-500 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800',
                   )}
                 >
                   {a === 'auto_approve'
@@ -319,8 +319,8 @@ function RuleSlideOver({
                     className={cn(
                       'rounded-lg border px-3 py-1.5 text-sm font-medium',
                       watch('sq_level_assigned') === lvl
-                        ? 'border-green-500 bg-green-50 text-green-700'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300',
+                        ? 'border-green-500 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600',
                     )}
                   >
                     SQ{lvl}
@@ -340,7 +340,7 @@ function RuleSlideOver({
               <textarea
                 id="rejection_reason"
                 rows={2}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                 placeholder="Reason sent to the platform when auto-rejected…"
                 {...register('rejection_reason')}
               />
@@ -356,7 +356,7 @@ function RuleSlideOver({
             <input
               id="priority"
               type="number"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               {...register('priority')}
             />
             {errors.priority && (
@@ -415,37 +415,37 @@ function RuleCard({
       className={cn(
         'flex items-start gap-4 rounded-xl border p-4 transition-all',
         rule.active
-          ? 'border-gray-200 bg-white hover:border-gray-300'
-          : 'border-dashed border-gray-200 bg-gray-50 opacity-60',
+          ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
+          : 'border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 opacity-60',
       )}
     >
       <div className="flex flex-col items-center gap-1 pt-1">
-        <GripVertical className="h-4 w-4 text-gray-300" />
-        <span className="text-xs font-bold text-gray-400">#{rule.priority}</span>
+        <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-600" />
+        <span className="text-xs font-bold text-gray-400 dark:text-gray-500">#{rule.priority}</span>
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-2">
-          <span className="font-medium text-gray-900 text-sm">{rule.rule_name}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">{rule.rule_name}</span>
           <ActionBadge action={rule.action} />
           {!rule.active && (
-            <span className="text-xs text-gray-400 italic">disabled</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 italic">disabled</span>
           )}
         </div>
-        <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+        <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
           <span className="flex items-center gap-1">
-            <span className="font-medium text-gray-700">Criteria:</span>
+            <span className="font-medium text-gray-700 dark:text-gray-300">Criteria:</span>
             {operatorLabel(rule.operator, rule.criteria_threshold, rule.threshold_max)}
           </span>
           {rule.sq_level_assigned && (
             <span className="flex items-center gap-1">
-              <span className="font-medium text-gray-700">SQ Level:</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">SQ Level:</span>
               SQ{rule.sq_level_assigned}
             </span>
           )}
           {rule.rejection_reason && (
             <span className="max-w-xs truncate">
-              <span className="font-medium text-gray-700">Reason:</span>{' '}
+              <span className="font-medium text-gray-700 dark:text-gray-300">Reason:</span>{' '}
               {rule.rejection_reason}
             </span>
           )}
@@ -530,7 +530,7 @@ export default function RuleEnginePage() {
   return (
     <div className="space-y-4">
       {/* Platform selector header */}
-      <div className="flex items-center gap-3 rounded-lg border bg-white p-4">
+      <div className="flex items-center gap-3 rounded-lg border dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
         <Zap className="h-4 w-4 text-yellow-500 shrink-0" />
         <Select value={selectedPlatform} onValueChange={handlePlatformChange}>
           <SelectTrigger className="w-56">
@@ -547,7 +547,7 @@ export default function RuleEnginePage() {
 
         {selectedPlatform && (
           <>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
               {sortedRules.length} rule{sortedRules.length !== 1 ? 's' : ''} ·{' '}
               {sortedRules.filter((r) => r.active).length} active
             </span>
@@ -561,10 +561,10 @@ export default function RuleEnginePage() {
 
       {/* Rules list */}
       {!selectedPlatform ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white py-20 text-center">
-          <Zap className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-gray-500 font-medium">Select a platform</p>
-          <p className="text-sm text-gray-400 mt-1">
+        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-20 text-center">
+          <Zap className="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600 mb-3" />
+          <p className="text-gray-500 dark:text-gray-400 font-medium">Select a platform</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
             Choose a platform above to view and manage its rules
           </p>
         </div>
@@ -575,10 +575,10 @@ export default function RuleEnginePage() {
           ))}
         </div>
       ) : sortedRules.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white py-20 text-center">
-          <Zap className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-gray-500 font-medium">No rules configured</p>
-          <p className="text-sm text-gray-400 mt-1">
+        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-20 text-center">
+          <Zap className="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600 mb-3" />
+          <p className="text-gray-500 dark:text-gray-400 font-medium">No rules configured</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
             Add rules to automate SQ request routing
           </p>
           <Button className="mt-4" onClick={openAdd}>
@@ -589,7 +589,7 @@ export default function RuleEnginePage() {
       ) : (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-500">
+            <CardTitle className="text-sm text-gray-500 dark:text-gray-400">
               Rules are evaluated in priority order (lowest number first). First match wins.
             </CardTitle>
           </CardHeader>

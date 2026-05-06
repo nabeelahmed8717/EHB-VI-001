@@ -54,17 +54,17 @@ function CriterionRow({
   const needsValue = criterion.check_type !== 'presence';
 
   return (
-    <div className="grid grid-cols-12 gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3 items-start">
+    <div className="grid grid-cols-12 gap-2 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3 items-start">
       {/* Index */}
       <div className="col-span-1 flex items-center justify-center pt-2">
-        <span className="text-xs font-bold text-gray-400">{index + 1}</span>
+        <span className="text-xs font-bold text-gray-400 dark:text-gray-500">{index + 1}</span>
       </div>
 
       {/* Label */}
       <div className="col-span-3 space-y-1">
         <Label className="text-xs">Label</Label>
         <input
-          className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
+          className="w-full rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
           placeholder="e.g. Verified email"
           value={criterion.label}
           onChange={(e) => onChange({ ...criterion, label: e.target.value })}
@@ -75,7 +75,7 @@ function CriterionRow({
       <div className="col-span-2 space-y-1">
         <Label className="text-xs">Field Key</Label>
         <input
-          className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs font-mono focus:border-blue-500 focus:outline-none"
+          className="w-full rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-xs font-mono focus:border-blue-500 focus:outline-none"
           placeholder="entity_data.email"
           value={criterion.field_key}
           onChange={(e) => onChange({ ...criterion, field_key: e.target.value })}
@@ -86,7 +86,7 @@ function CriterionRow({
       <div className="col-span-2 space-y-1">
         <Label className="text-xs">Check Type</Label>
         <select
-          className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
+          className="w-full rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
           value={criterion.check_type}
           onChange={(e) =>
             onChange({
@@ -108,7 +108,7 @@ function CriterionRow({
       <div className="col-span-1 space-y-1">
         <Label className="text-xs">Value</Label>
         <input
-          className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none disabled:opacity-40"
+          className="w-full rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none disabled:opacity-40"
           placeholder={
             criterion.check_type === 'min_length'
               ? '3'
@@ -128,7 +128,7 @@ function CriterionRow({
       <div className="col-span-1 space-y-1">
         <Label className="text-xs">SQ Min</Label>
         <select
-          className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
+          className="w-full rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
           value={criterion.sq_min}
           onChange={(e) => onChange({ ...criterion, sq_min: Number(e.target.value) as SqLevel })}
         >
@@ -239,15 +239,15 @@ function CriteriaSetCard({
             className={cn(
               'rounded-full px-2 py-0.5 text-xs font-medium',
               criteriaSet.active
-                ? 'bg-green-100 text-green-700'
-                : 'bg-gray-100 text-gray-500',
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
             )}
           >
             {criteriaSet.active ? 'Active' : 'Inactive'}
           </span>
-          <span className="text-xs text-gray-400">{criteria.length} criteria</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{criteria.length} criteria</span>
           {dirty && (
-            <span className="text-xs text-orange-600 font-medium bg-orange-50 px-2 py-0.5 rounded-full">
+            <span className="text-xs text-orange-600 dark:text-orange-400 font-medium bg-orange-50 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">
               Unsaved changes
             </span>
           )}
@@ -266,9 +266,9 @@ function CriteriaSetCard({
             onClick={() => setExpanded((e) => !e)}
           >
             {expanded ? (
-              <ChevronUp className="h-4 w-4 text-gray-400" />
+              <ChevronUp className="h-4 w-4 text-gray-400 dark:text-gray-500" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-gray-400" />
+              <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
             )}
           </Button>
         </div>
@@ -278,7 +278,7 @@ function CriteriaSetCard({
         <CardContent className="space-y-2">
           {/* Column headers */}
           {criteria.length > 0 && (
-            <div className="grid grid-cols-12 gap-2 px-3 text-xs font-medium text-gray-400 uppercase tracking-wide">
+            <div className="grid grid-cols-12 gap-2 px-3 text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">
               <div className="col-span-1">#</div>
               <div className="col-span-3">Label</div>
               <div className="col-span-2">Field Key</div>
@@ -302,8 +302,8 @@ function CriteriaSetCard({
           ))}
 
           {criteria.length === 0 && (
-            <div className="rounded-lg border border-dashed border-gray-200 py-8 text-center">
-              <p className="text-sm text-gray-400">No criteria defined yet</p>
+            <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 py-8 text-center">
+              <p className="text-sm text-gray-400 dark:text-gray-500">No criteria defined yet</p>
             </div>
           )}
 
@@ -353,7 +353,7 @@ function NewCriteriaSetForm({
   };
 
   return (
-    <Card className="border-dashed border-blue-200 bg-blue-50">
+    <Card className="border-dashed border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/20">
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <div className="flex-1 space-y-1">
@@ -362,7 +362,7 @@ function NewCriteriaSetForm({
             </Label>
             <input
               id="new-entity-type"
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               placeholder="e.g. rider, driver, restaurant"
               value={entityType}
               onChange={(e) => setEntityType(e.target.value)}
@@ -415,7 +415,7 @@ export default function CriteriaPage() {
   return (
     <div className="space-y-4">
       {/* Platform + entity type selector */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-white p-4">
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
         <ListChecks className="h-4 w-4 text-indigo-500 shrink-0" />
         <Select value={selectedPlatform} onValueChange={handlePlatformChange}>
           <SelectTrigger className="w-56">
@@ -469,10 +469,10 @@ export default function CriteriaPage() {
 
       {/* Content */}
       {!selectedPlatform ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white py-20 text-center">
-          <ListChecks className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-gray-500 font-medium">Select a platform</p>
-          <p className="text-sm text-gray-400 mt-1">
+        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-20 text-center">
+          <ListChecks className="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600 mb-3" />
+          <p className="text-gray-500 dark:text-gray-400 font-medium">Select a platform</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
             Choose a platform to view and edit its criteria sets
           </p>
         </div>
@@ -483,10 +483,10 @@ export default function CriteriaPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white py-20 text-center">
-          <ListChecks className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-gray-500 font-medium">No criteria sets found</p>
-          <p className="text-sm text-gray-400 mt-1">
+        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-20 text-center">
+          <ListChecks className="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600 mb-3" />
+          <p className="text-gray-500 dark:text-gray-400 font-medium">No criteria sets found</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
             Create a new entity type to define SQ criteria
           </p>
           <Button className="mt-4" onClick={() => setAddingNew(true)}>

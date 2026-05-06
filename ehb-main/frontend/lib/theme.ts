@@ -1,53 +1,58 @@
 /**
  * EHB Design System — Color Tokens
+ * Palette matched to Stakent reference image.
  * All UI colors must be sourced from here. No hardcoded hex values in components.
  */
 
 export const colors = {
-  /* ── Backgrounds ─────────────────────────────── */
+  /* ── Backgrounds — Stakent exact palette ────────────────────── */
   bg: {
-    page:    '#141414',   // root page background
-    sidebar: '#1D1D1D',   // sidebar, header, right panel
-    card:    '#282828',   // cards, panels, surfaces
-    input:   '#323232',   // input fields, search
-    hover:   '#333333',   // hover state on interactive items
-    active:  '#383838',   // active/selected nav item bg
+    page:    '#05060F',   // main content area — dark navy-charcoal
+    sidebar: '#05060F',   // sidebar, slightly darker than page
+    card:    '#11121B',   // elevated card surfaces
+    input:   '#252538',   // input fields, search boxes
+    hover:   '#23243A',   // hover state on interactive items
+    active:  '#1E2035',   // active/selected nav item bg
   },
 
   /* ── Borders ─────────────────────────────────── */
   border: {
-    subtle:  'rgba(255,255,255,0.06)',  // default card/panel border
-    medium:  'rgba(255,255,255,0.10)',  // stronger divider
-    dashed:  'rgba(255,255,255,0.12)',  // placeholder dashed border
+    subtle:  'rgba(255,255,255,0.06)',
+    medium:  'rgba(255,255,255,0.09)',
+    dashed:  'rgba(124,110,255,0.25)',
+    accent:  'rgba(124,110,255,0.45)',
   },
 
   /* ── Text ────────────────────────────────────── */
   text: {
-    primary:   '#F0F0F0',  // headings, active labels
-    secondary: '#C0C0C0',  // body, descriptions
-    muted:     '#a4a4a4',  // placeholders, disabled
-    inverse:   '#141414',  // text on light bg
+    primary:   '#f1f1f1',   // headings, active labels
+    secondary: '#8890AA',   // body, descriptions
+    muted:     '#8c8c8c',   // placeholders, disabled
+    inverse:   '#13141F',   // text on light bg
   },
 
   /* ── Icons ───────────────────────────────────── */
   icon: {
-    active:   '#B59BF5',  // active nav icon
-    inactive: '#555555',  // default nav icon
-    muted:    '#404040',  // very subtle icon
+    active:   '#ffffff',   // active nav icon — light lavender
+    inactive: '#7A787B',   // default nav icon
+    muted:    '#2E3048',   // very subtle
   },
 
   /* ── Nav ─────────────────────────────────────── */
   nav: {
-    activeBg:   '#383838',
-    activeText: '#F0F0F0',
-    inactiveText: '#9c9c9c',
+    activeBg:     '#22243C',   // active nav item bg (elevated)
+    activeBorder: '#7C6EFF',   // purple left indicator
+    activeText:   '#F0F1F8',   // active label
+    inactiveText: '#7A787B',   // inactive label
   },
 
-  /* ── Accent (single, minimal) ────────────────── */
+  /* ── Accent — Stakent "Deposit" button style ─── */
   accent: {
-    DEFAULT: '#505050',   // buttons, focus rings
-    hover:   '#5E5E5E',
-    text:    '#E0E0E0',
+    DEFAULT: '#C4B5FD',              // light lavender fill
+    hover:   '#D0C4FF',
+    muted:   'rgba(124,110,255,0.15)',
+    text:    '#160D30',              // dark text on lavender
+    purple:  '#7C6EFF',              // pure purple for borders / rings
   },
 
   /* ── Semantic ───────────────────────────────── */
@@ -58,6 +63,6 @@ export const colors = {
     info:    '#60A5FA',
   },
 
-  /* ── Progress ring colors (right sidebar) ────── */
-  progress: ['#C0C0C0', '#A0A0A0', '#808080', '#606060', '#E0E0E0'],
+  /* ── Progress ring colors ────────────────────── */
+  progress: ['#7C6EFF', '#B59BF5', '#60A5FA', '#4CAF50', '#F59E0B'],
 } as const;

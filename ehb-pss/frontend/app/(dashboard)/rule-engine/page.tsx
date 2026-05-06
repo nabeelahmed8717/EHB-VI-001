@@ -27,10 +27,10 @@ export default function RuleEngineIndexPage() {
 
   if (!platforms || platforms.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 bg-white py-20 text-center">
-        <Zap className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-        <p className="text-gray-500 font-medium">No platforms registered</p>
-        <p className="text-sm text-gray-400 mt-1">
+      <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 py-20 text-center">
+        <Zap className="mx-auto h-10 w-10 text-gray-300 dark:text-gray-600 mb-3" />
+        <p className="text-gray-500 dark:text-gray-400 font-medium">No platforms registered</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
           Register a platform first to configure rules
         </p>
       </div>

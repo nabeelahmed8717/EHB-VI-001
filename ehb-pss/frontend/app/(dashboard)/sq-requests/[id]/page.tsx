@@ -59,8 +59,8 @@ export default function SqRequestDetailPage() {
           Back
         </Button>
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 font-mono">{request.sq_request_id}</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 font-mono">{request.sq_request_id}</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {request.entity_type} · {request.platform_id}
           </p>
         </div>
@@ -94,17 +94,17 @@ export default function SqRequestDetailPage() {
               },
             ].map(({ label, value }) => (
               <div key={label} className="flex justify-between text-sm">
-                <span className="text-gray-500 font-medium">{label}</span>
-                <span className="text-gray-900 text-right max-w-[60%] break-all">
+                <span className="text-gray-500 dark:text-gray-400 font-medium">{label}</span>
+                <span className="text-gray-900 dark:text-gray-100 text-right max-w-[60%] break-all">
                   {value}
                 </span>
               </div>
             ))}
 
             {request.rejection_reason && (
-              <div className="mt-3 rounded-lg bg-red-50 border border-red-200 p-3">
-                <p className="text-xs font-semibold text-red-700">Rejection Reason</p>
-                <p className="text-sm text-red-600 mt-1">{request.rejection_reason}</p>
+              <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 p-3">
+                <p className="text-xs font-semibold text-red-700 dark:text-red-400">Rejection Reason</p>
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">{request.rejection_reason}</p>
               </div>
             )}
           </CardContent>
@@ -118,16 +118,16 @@ export default function SqRequestDetailPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Criteria Met</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Criteria Met</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {request.criteria_met}
-                  <span className="text-lg text-gray-400">/{request.total_criteria}</span>
+                  <span className="text-lg text-gray-400 dark:text-gray-500">/{request.total_criteria}</span>
                 </p>
               </div>
               <SqBadge level={request.sq_level_calculated} size="lg" />
             </div>
             <Progress value={criteriaPercent} className="h-3" />
-            <p className="text-sm text-gray-500 text-center">{criteriaPercent}% criteria satisfied</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">{criteriaPercent}% criteria satisfied</p>
 
             {/* Action buttons based on status */}
             {request.status === 'pending_edr' && (
@@ -159,11 +159,11 @@ export default function SqRequestDetailPage() {
           <CardContent>
             <div className="grid grid-cols-2 gap-2">
               {entityFields.map(({ key, value }) => (
-                <div key={key} className="flex flex-col rounded-lg bg-gray-50 p-3">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <div key={key} className="flex flex-col rounded-lg bg-gray-50 dark:bg-gray-800 p-3">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     {key}
                   </span>
-                  <span className="text-sm text-gray-900 mt-0.5 break-all">{value}</span>
+                  <span className="text-sm text-gray-900 dark:text-gray-100 mt-0.5 break-all">{value}</span>
                 </div>
               ))}
             </div>
@@ -184,31 +184,31 @@ export default function SqRequestDetailPage() {
               ))}
             </div>
           ) : !auditLogs || auditLogs.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">No audit events recorded</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-6">No audit events recorded</p>
           ) : (
             <div className="relative">
-              <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200" />
+              <div className="absolute left-4 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700" />
               <div className="space-y-4">
                 {auditLogs.map((log, i) => (
                   <div key={log._id} className="flex gap-4 pl-10 relative">
-                    <div className="absolute left-3.5 top-1.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-white" />
+                    <div className="absolute left-3.5 top-1.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-white dark:ring-gray-900" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <AuditActionBadge action={log.action} />
-                        <span className="text-xs text-gray-400 shrink-0">
+                        <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
                           {formatDate(log.created_at)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 mt-1">{log.reason}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{log.reason}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                         by {log.performed_by}
                       </p>
                       {log.metadata && Object.keys(log.metadata).length > 0 && (
                         <details className="mt-2">
-                          <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
+                          <summary className="text-xs text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300">
                             Metadata
                           </summary>
-                          <pre className="mt-1 rounded bg-gray-50 p-2 text-xs text-gray-600 overflow-auto">
+                          <pre className="mt-1 rounded bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-600 dark:text-gray-300 overflow-auto">
                             {JSON.stringify(log.metadata, null, 2)}
                           </pre>
                         </details>

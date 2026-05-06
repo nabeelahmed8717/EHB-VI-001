@@ -42,10 +42,10 @@ function PlatformStatusBadge({ status }: { status: PlatformStatus }) {
       className={cn(
         'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
         status === 'active'
-          ? 'bg-green-100 text-green-700'
+          ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
           : status === 'suspended'
-          ? 'bg-red-100 text-red-700'
-          : 'bg-yellow-100 text-yellow-700',
+          ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+          : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
       )}
     >
       {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -145,11 +145,11 @@ function RegisterModal({
         {newApiKey ? (
           /* Step 2: Show API key */
           <div className="space-y-4">
-            <div className="rounded-lg bg-green-50 border border-green-200 p-4">
-              <p className="text-sm font-semibold text-green-800 mb-1">
+            <div className="rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900/50 p-4">
+              <p className="text-sm font-semibold text-green-800 dark:text-green-300 mb-1">
                 Platform registered!
               </p>
-              <p className="text-xs text-green-700">
+              <p className="text-xs text-green-700 dark:text-green-400">
                 Copy and securely store this API key. It will not be shown again.
               </p>
             </div>
@@ -186,7 +186,7 @@ function RegisterModal({
                 <Label htmlFor="platform_id">Platform ID</Label>
                 <input
                   id="platform_id"
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none"
                   placeholder="my_platform_01"
                   {...register('platform_id')}
                 />
@@ -199,7 +199,7 @@ function RegisterModal({
                 <Label htmlFor="platform_name">Platform Name</Label>
                 <input
                   id="platform_name"
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                   placeholder="My Platform"
                   {...register('platform_name')}
                 />
@@ -214,7 +214,7 @@ function RegisterModal({
               <input
                 id="webhook_url"
                 type="url"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none"
                 placeholder="https://api.myplatform.com/webhooks/pss"
                 {...register('webhook_url')}
               />
@@ -230,7 +230,7 @@ function RegisterModal({
               </Label>
               <input
                 id="entity_types_raw"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                 placeholder="driver, restaurant, courier"
                 {...register('entity_types_raw')}
               />
@@ -244,7 +244,7 @@ function RegisterModal({
               <input
                 id="contact_email"
                 type="email"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                 placeholder="admin@myplatform.com"
                 {...register('contact_email')}
               />
@@ -275,14 +275,14 @@ const columns: ColumnDef<Platform, unknown>[] = [
     accessorKey: 'platform_id',
     header: 'Platform ID',
     cell: ({ row }) => (
-      <span className="font-mono text-xs text-gray-700">{row.original.platform_id}</span>
+      <span className="font-mono text-xs text-gray-700 dark:text-gray-300">{row.original.platform_id}</span>
     ),
   },
   {
     accessorKey: 'platform_name',
     header: 'Name',
     cell: ({ row }) => (
-      <span className="font-medium text-gray-900">{row.original.platform_name}</span>
+      <span className="font-medium text-gray-900 dark:text-gray-100">{row.original.platform_name}</span>
     ),
   },
   {
@@ -293,7 +293,7 @@ const columns: ColumnDef<Platform, unknown>[] = [
         {row.original.entity_types.map((et) => (
           <span
             key={et}
-            className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700"
+            className="rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:text-indigo-300"
           >
             {et}
           </span>
@@ -310,14 +310,14 @@ const columns: ColumnDef<Platform, unknown>[] = [
     accessorKey: 'contact_email',
     header: 'Contact',
     cell: ({ row }) => (
-      <span className="text-xs text-gray-500">{row.original.contact_email}</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">{row.original.contact_email}</span>
     ),
   },
   {
     accessorKey: 'created_at',
     header: 'Registered',
     cell: ({ row }) => (
-      <span className="text-xs text-gray-400">{formatDate(row.original.created_at)}</span>
+      <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(row.original.created_at)}</span>
     ),
   },
   {
@@ -346,23 +346,23 @@ export default function PlatformsPage() {
   return (
     <div className="space-y-4">
       {/* Header stats */}
-      <div className="flex items-center justify-between rounded-lg border bg-white p-4">
+      <div className="flex items-center justify-between rounded-lg border dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <Globe className="h-5 w-5 text-blue-600" />
             <div>
-              <p className="text-xs text-gray-500">Total Platforms</p>
-              <p className="text-xl font-bold text-gray-900">{platforms?.length ?? 0}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Total Platforms</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{platforms?.length ?? 0}</p>
             </div>
           </div>
-          <div className="h-8 w-px bg-gray-200" />
+          <div className="h-8 w-px bg-gray-200 dark:bg-gray-700" />
           <div>
-            <p className="text-xs text-gray-500">Active</p>
-            <p className="text-lg font-semibold text-green-700">{active}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Active</p>
+            <p className="text-lg font-semibold text-green-700 dark:text-green-400">{active}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Suspended</p>
-            <p className="text-lg font-semibold text-red-600">{suspended}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Suspended</p>
+            <p className="text-lg font-semibold text-red-600 dark:text-red-400">{suspended}</p>
           </div>
         </div>
 

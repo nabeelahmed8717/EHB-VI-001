@@ -25,10 +25,10 @@ function SourceBadge({ source }: { source: EdrReview['source'] }) {
       className={cn(
         'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
         source === 'franchise_escalation'
-          ? 'bg-red-100 text-red-700'
+          ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
           : source === 'override'
-          ? 'bg-purple-100 text-purple-700'
-          : 'bg-gray-100 text-gray-700',
+          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+          : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
       )}
     >
       {source === 'franchise_escalation'
@@ -46,12 +46,12 @@ function DecisionBadge({ decision }: { decision: EdrReview['decision'] }) {
       className={cn(
         'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
         decision === 'approved'
-          ? 'bg-green-100 text-green-700'
+          ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
           : decision === 'rejected'
-          ? 'bg-red-100 text-red-700'
+          ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
           : decision === 'conditional'
-          ? 'bg-blue-100 text-blue-700'
-          : 'bg-yellow-100 text-yellow-700',
+          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+          : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
       )}
     >
       {decision.charAt(0).toUpperCase() + decision.slice(1)}
@@ -67,14 +67,14 @@ export default function EdrQueuePage() {
       accessorKey: 'entity_id',
       header: 'Entity ID',
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-gray-700">{row.original.entity_id}</span>
+        <span className="font-mono text-xs text-gray-700 dark:text-gray-300">{row.original.entity_id}</span>
       ),
     },
     {
       accessorKey: 'entity_type',
       header: 'Type',
       cell: ({ row }) => (
-        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium">
+        <span className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-300">
           {row.original.entity_type}
         </span>
       ),
@@ -100,7 +100,7 @@ export default function EdrQueuePage() {
       accessorKey: 'created_at',
       header: 'Created',
       cell: ({ row }) => (
-        <span className="text-xs text-gray-500">{formatDate(row.original.created_at)}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(row.original.created_at)}</span>
       ),
     },
     {
@@ -141,8 +141,8 @@ export default function EdrQueuePage() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex items-center gap-3 rounded-lg border bg-white p-4">
-        <Filter className="h-4 w-4 text-gray-400 shrink-0" />
+      <div className="flex items-center gap-3 rounded-lg border dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="Decision" />
@@ -175,7 +175,7 @@ export default function EdrQueuePage() {
         </Button>
 
         {statusFilter === 'pending' && (
-          <span className="ml-auto text-xs text-orange-600 font-medium bg-orange-50 px-3 py-1 rounded-full">
+          <span className="ml-auto text-xs text-orange-600 dark:text-orange-400 font-medium bg-orange-50 dark:bg-orange-900/30 px-3 py-1 rounded-full">
             Franchise escalations shown first
           </span>
         )}

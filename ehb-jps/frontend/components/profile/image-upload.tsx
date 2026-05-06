@@ -94,12 +94,12 @@ export function ImageUpload({
           onClick={() => inputRef.current?.click()}
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
-          className="flex flex-col items-center justify-center gap-2 w-full h-36 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-colors"
+          className="flex flex-col items-center justify-center gap-2 w-full h-36 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 hover:border-teal-400 hover:bg-teal-50 cursor-pointer transition-colors"
         >
           {isLoading ? (
             <>
-              <Loader2 className="h-6 w-6 text-blue-500 animate-spin" />
-              <p className="text-xs text-blue-500">Uploading…</p>
+              <Loader2 className="h-6 w-6 text-teal-500 animate-spin" />
+              <p className="text-xs text-teal-500">Uploading…</p>
             </>
           ) : (
             <>

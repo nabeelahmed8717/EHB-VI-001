@@ -61,10 +61,10 @@ type WebhookFormValues = z.infer<typeof webhookSchema>;
 
 function DeliveryStatusBadge({ status }: { status: DeliveryStatus }) {
   const config = {
-    delivered: { icon: CheckCircle2, color: 'text-green-600 bg-green-50', label: 'Delivered' },
-    pending: { icon: Clock, color: 'text-yellow-600 bg-yellow-50', label: 'Pending' },
-    retrying: { icon: RefreshCw, color: 'text-blue-600 bg-blue-50', label: 'Retrying' },
-    failed: { icon: XCircle, color: 'text-red-600 bg-red-50', label: 'Failed' },
+    delivered: { icon: CheckCircle2, color: 'text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400', label: 'Delivered' },
+    pending: { icon: Clock, color: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-400', label: 'Pending' },
+    retrying: { icon: RefreshCw, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400', label: 'Retrying' },
+    failed: { icon: XCircle, color: 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400', label: 'Failed' },
   };
 
   const { icon: Icon, color, label } = config[status] ?? config.failed;
@@ -88,19 +88,19 @@ function DeliveryRow({ delivery }: { delivery: WebhookDelivery }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="border-b border-gray-100 last:border-0">
+    <div className="border-b border-gray-100 dark:border-gray-800 last:border-0">
       <button
-        className="w-full flex items-center gap-4 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center gap-4 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         onClick={() => setExpanded((e) => !e)}
       >
         <DeliveryStatusBadge status={delivery.status} />
-        <span className="font-mono text-xs text-gray-600 flex-1 truncate">
+        <span className="font-mono text-xs text-gray-600 dark:text-gray-300 flex-1 truncate">
           {delivery.sq_request_id}
         </span>
-        <span className="text-xs text-gray-400 shrink-0">
+        <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
           {delivery.attempts} attempt{delivery.attempts !== 1 ? 's' : ''}
         </span>
-        <span className="text-xs text-gray-400 shrink-0">
+        <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
           {formatDate(delivery.created_at)}
         </span>
       </button>
@@ -108,21 +108,21 @@ function DeliveryRow({ delivery }: { delivery: WebhookDelivery }) {
       {expanded && (
         <div className="px-4 pb-3 space-y-2">
           {delivery.error_message && (
-            <div className="rounded-lg bg-red-50 border border-red-100 p-2">
-              <p className="text-xs font-medium text-red-700">Error</p>
-              <p className="text-xs text-red-600 mt-0.5 font-mono">{delivery.error_message}</p>
+            <div className="rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 p-2">
+              <p className="text-xs font-medium text-red-700 dark:text-red-400">Error</p>
+              <p className="text-xs text-red-600 dark:text-red-400 mt-0.5 font-mono">{delivery.error_message}</p>
             </div>
           )}
           {delivery.delivered_at && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               Delivered at: <span className="font-medium">{formatDate(delivery.delivered_at)}</span>
             </p>
           )}
           <details>
-            <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
+            <summary className="text-xs text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300">
               Payload
             </summary>
-            <pre className="mt-1 rounded bg-gray-50 p-2 text-xs text-gray-600 overflow-auto max-h-40">
+            <pre className="mt-1 rounded bg-gray-50 dark:bg-gray-800 p-2 text-xs text-gray-600 dark:text-gray-300 overflow-auto max-h-40">
               {JSON.stringify(delivery.payload, null, 2)}
             </pre>
           </details>
@@ -247,17 +247,17 @@ export default function PlatformDetailPage() {
           Back
         </Button>
         <div className="flex-1">
-          <h2 className="text-lg font-semibold text-gray-900">{platform.platform_name}</h2>
-          <p className="text-sm text-gray-500 font-mono">{platform.platform_id}</p>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{platform.platform_name}</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">{platform.platform_id}</p>
         </div>
         <span
           className={cn(
             'rounded-full px-3 py-1 text-sm font-medium',
             platform.status === 'active'
-              ? 'bg-green-100 text-green-700'
+              ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
               : platform.status === 'suspended'
-              ? 'bg-red-100 text-red-700'
-              : 'bg-yellow-100 text-yellow-700',
+              ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
           )}
         >
           {platform.status}
@@ -282,8 +282,8 @@ export default function PlatformDetailPage() {
               { label: 'Last Updated', value: formatDate(platform.updated_at) },
             ].map(({ label, value, mono }) => (
               <div key={label} className="flex justify-between text-sm">
-                <span className="text-gray-500 font-medium">{label}</span>
-                <span className={cn('text-gray-900', mono && 'font-mono text-xs')}>
+                <span className="text-gray-500 dark:text-gray-400 font-medium">{label}</span>
+                <span className={cn('text-gray-900 dark:text-gray-100', mono && 'font-mono text-xs')}>
                   {value}
                 </span>
               </div>
@@ -292,14 +292,14 @@ export default function PlatformDetailPage() {
             <Separator />
 
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 Entity Types
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {platform.entity_types.map((et) => (
                   <span
                     key={et}
-                    className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700"
+                    className="rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-300"
                   >
                     {et}
                   </span>
@@ -340,9 +340,9 @@ export default function PlatformDetailPage() {
             </div>
 
             {newApiKey && (
-              <div className="rounded-lg bg-green-50 border border-green-200 p-3">
-                <p className="text-xs font-semibold text-green-800 mb-1">New API Key (copy now)</p>
-                <code className="block text-xs font-mono text-green-700 break-all">
+              <div className="rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900/50 p-3">
+                <p className="text-xs font-semibold text-green-800 dark:text-green-300 mb-1">New API Key (copy now)</p>
+                <code className="block text-xs font-mono text-green-700 dark:text-green-400 break-all">
                   {newApiKey}
                 </code>
               </div>
@@ -366,8 +366,8 @@ export default function PlatformDetailPage() {
             {/* Status toggle */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-900">Platform Status</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Platform Status</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {platform.status === 'active'
                     ? 'Platform is accepting SQ requests'
                     : 'Platform is suspended — no new requests'}
@@ -416,7 +416,7 @@ export default function PlatformDetailPage() {
               <input
                 id="webhook_url"
                 type="url"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 {...register('webhook_url')}
               />
               {errors.webhook_url && (
@@ -441,7 +441,7 @@ export default function PlatformDetailPage() {
                 <Send className="h-3.5 w-3.5 mr-1.5" />
                 {pinging ? 'Sending…' : 'Test Ping'}
               </Button>
-              <div className="ml-auto text-xs text-gray-400 flex items-center gap-1.5">
+              <div className="ml-auto text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
                 <AlertCircle className="h-3.5 w-3.5" />
                 Deliveries signed with HMAC-SHA256
               </div>
@@ -454,9 +454,9 @@ export default function PlatformDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Send className="h-4 w-4 text-gray-500" />
+            <Send className="h-4 w-4 text-gray-500 dark:text-gray-400" />
             Webhook Delivery History
-            <span className="text-xs text-gray-400 font-normal">(last 20)</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 font-normal">(last 20)</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -468,7 +468,7 @@ export default function PlatformDetailPage() {
             </div>
           ) : !deliveries || deliveries.length === 0 ? (
             <div className="py-10 text-center">
-              <p className="text-sm text-gray-400">No webhook deliveries recorded yet</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">No webhook deliveries recorded yet</p>
             </div>
           ) : (
             <div>

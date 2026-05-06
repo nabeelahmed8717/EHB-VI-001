@@ -14,7 +14,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Account card */}
-      <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100">
+      <div className="rounded-xl border border-gray-100 bg-white shadow-card divide-y divide-gray-50">
         <div className="px-6 py-4">
           <h3 className="text-sm font-semibold text-gray-700">Account</h3>
         </div>
@@ -22,7 +22,7 @@ export default function SettingsPage() {
         <div className="px-6 py-4">
           {/* Avatar + name */}
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 text-teal-700 text-sm font-semibold">
               {user?.full_name
                 ? user.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
                 : 'U'}
@@ -49,7 +49,7 @@ export default function SettingsPage() {
       </div>
 
       {/* About JPS card */}
-      <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100">
+      <div className="rounded-xl border border-gray-100 bg-white shadow-card divide-y divide-gray-50">
         <div className="px-6 py-4">
           <h3 className="text-sm font-semibold text-gray-700">About JPS</h3>
         </div>

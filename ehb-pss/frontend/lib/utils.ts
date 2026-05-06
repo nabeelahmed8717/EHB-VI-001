@@ -41,12 +41,12 @@ export function formatDateShort(dateStr: string | null | undefined): string {
 // ── SQ Level colors ───────────────────────────────────────────────────────────
 
 export function getSqLevelColor(level: SqLevel | number | null): string {
-  if (level === null || level === undefined) return 'bg-gray-100 text-gray-700';
-  if (level <= 3) return 'bg-gray-100 text-gray-700';
-  if (level === 5) return 'bg-blue-100 text-blue-700';
-  if (level === 7) return 'bg-purple-100 text-purple-700';
-  if (level === 10) return 'bg-amber-100 text-amber-700';
-  return 'bg-gray-100 text-gray-700';
+  if (level === null || level === undefined) return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+  if (level <= 3) return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+  if (level === 5) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300';
+  if (level === 7) return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
+  if (level === 10) return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300';
+  return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
 }
 
 export function getSqLevelLabel(level: SqLevel | number | null): string {
@@ -66,14 +66,14 @@ export function getSqLevelLabel(level: SqLevel | number | null): string {
 
 export function getSqStatusColor(status: SqStatus | string): string {
   const map: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-700',
-    pending_franchise: 'bg-orange-100 text-orange-700',
-    pending_edr: 'bg-red-100 text-red-700',
-    approved: 'bg-green-100 text-green-700',
-    conditional: 'bg-blue-100 text-blue-700',
-    rejected: 'bg-red-100 text-red-700',
+    pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
+    pending_franchise: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+    pending_edr: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+    approved: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
+    conditional: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    rejected: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
   };
-  return map[status] ?? 'bg-gray-100 text-gray-700';
+  return map[status] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
 }
 
 export function getSqStatusLabel(status: SqStatus | string): string {
@@ -91,16 +91,16 @@ export function getSqStatusLabel(status: SqStatus | string): string {
 // ── Audit action badge colors ─────────────────────────────────────────────────
 
 export function getAuditActionColor(action: AuditAction | string): string {
-  if (action === 'sq_submitted') return 'bg-gray-100 text-gray-700';
-  if (action === 'sq_auto_approved') return 'bg-green-100 text-green-700';
-  if (action === 'sq_rule_rejected') return 'bg-red-100 text-red-700';
-  if (action.startsWith('sq_forwarded')) return 'bg-orange-100 text-orange-700';
-  if (action === 'no_rule_matched') return 'bg-yellow-100 text-yellow-700';
-  if (action === 'rule_engine_error') return 'bg-red-100 text-red-700';
-  if (action.startsWith('franchise')) return 'bg-blue-100 text-blue-700';
-  if (action.startsWith('edr')) return 'bg-purple-100 text-purple-700';
-  if (action.startsWith('webhook')) return 'bg-teal-100 text-teal-700';
-  return 'bg-gray-100 text-gray-700';
+  if (action === 'sq_submitted') return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+  if (action === 'sq_auto_approved') return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300';
+  if (action === 'sq_rule_rejected') return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+  if (action.startsWith('sq_forwarded')) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300';
+  if (action === 'no_rule_matched') return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300';
+  if (action === 'rule_engine_error') return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+  if (action.startsWith('franchise')) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300';
+  if (action.startsWith('edr')) return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
+  if (action.startsWith('webhook')) return 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300';
+  return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
 }
 
 // ── Truncate string ───────────────────────────────────────────────────────────

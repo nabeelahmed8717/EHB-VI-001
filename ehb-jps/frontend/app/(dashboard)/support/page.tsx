@@ -34,7 +34,7 @@ export default function SupportPage() {
       </div>
 
       {/* FAQs */}
-      <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100">
+      <div className="rounded-xl border border-gray-100 bg-white shadow-card divide-y divide-gray-50">
         <div className="px-6 py-4 flex items-center gap-2">
           <HelpCircle className="h-4 w-4 text-gray-400" />
           <h3 className="text-sm font-semibold text-gray-700">Frequently Asked Questions</h3>
@@ -48,7 +48,7 @@ export default function SupportPage() {
       </div>
 
       {/* Contact */}
-      <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-100">
+      <div className="rounded-xl border border-gray-100 bg-white shadow-card divide-y divide-gray-50">
         <div className="px-6 py-4 flex items-center gap-2">
           <Mail className="h-4 w-4 text-gray-400" />
           <h3 className="text-sm font-semibold text-gray-700">Contact</h3>
@@ -59,7 +59,7 @@ export default function SupportPage() {
           </p>
           <a
             href="mailto:support@ehb.com"
-            className="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline"
+            className="inline-flex items-center gap-2 text-sm text-teal-600 hover:underline"
           >
             support@ehb.com
             <ExternalLink className="h-3.5 w-3.5" />

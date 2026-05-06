@@ -43,7 +43,7 @@ export function formatDateShort(dateStr: string | null | undefined): string {
 export function getSqLevelColor(level: number | null | undefined): string {
   if (level === null || level === undefined) return 'bg-gray-100 text-gray-600';
   if (level <= 3) return 'bg-gray-100 text-gray-700';
-  if (level === 5) return 'bg-blue-100 text-blue-700';
+  if (level === 5) return 'bg-teal-100 text-teal-700';
   if (level === 7) return 'bg-purple-100 text-purple-700';
   if (level === 10) return 'bg-amber-100 text-amber-700';
   return 'bg-gray-100 text-gray-700';
@@ -67,7 +67,7 @@ export function getSqLevelLabel(level: number | null | undefined): string {
 export function getStatusColor(status: ProfileStatus | string): string {
   const map: Record<string, string> = {
     draft: 'bg-gray-100 text-gray-600',
-    submitted: 'bg-blue-100 text-blue-700',
+    submitted: 'bg-teal-100 text-teal-700',
     under_review: 'bg-yellow-100 text-yellow-700',
     approved: 'bg-green-100 text-green-700',
     rejected: 'bg-red-100 text-red-700',

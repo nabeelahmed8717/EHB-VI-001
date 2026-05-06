@@ -41,11 +41,11 @@ function StatCard({
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">{title}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
               {isLoading ? (
                 <Skeleton className="h-8 w-16 mt-1" />
               ) : (
-                <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{value}</p>
               )}
             </div>
             <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}`}>
@@ -136,7 +136,7 @@ export default function OverviewPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Clock className="h-4 w-4 text-gray-500" />
+                <Clock className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 Recent Audit Activity
               </CardTitle>
               <Link href="/audit" className="text-xs text-blue-600 hover:underline">
@@ -151,20 +151,20 @@ export default function OverviewPage() {
                   ))}
                 </div>
               ) : auditData?.data?.length === 0 ? (
-                <p className="text-sm text-gray-400 py-8 text-center">No recent activity</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 py-8 text-center">No recent activity</p>
               ) : (
                 <div className="space-y-3">
                   {auditData?.data?.slice(0, 10).map((log) => (
                     <div
                       key={log._id}
-                      className="flex items-start gap-3 rounded-lg p-3 hover:bg-gray-50"
+                      className="flex items-start gap-3 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
                       <div className="flex-shrink-0 mt-0.5">
                         <AuditActionBadge action={log.action} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-600 truncate">{log.reason}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{log.reason}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                           {log.entity_id} · {log.platform_id} · {formatDate(log.created_at)}
                         </p>
                       </div>
@@ -181,7 +181,7 @@ export default function OverviewPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-gray-500" />
+                <TrendingUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 Active Platforms
               </CardTitle>
             </CardHeader>
@@ -201,21 +201,21 @@ export default function OverviewPage() {
                       <Link
                         key={platform.platform_id}
                         href={`/platforms/${platform.platform_id}`}
-                        className="flex items-center justify-between rounded-lg p-2 hover:bg-gray-50"
+                        className="flex items-center justify-between rounded-lg p-2 hover:bg-gray-50 dark:hover:bg-gray-800"
                       >
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {platform.platform_name}
                           </p>
-                          <p className="text-xs text-gray-400">{platform.platform_id}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">{platform.platform_id}</p>
                         </div>
-                        <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs font-medium">
+                        <span className="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 text-xs font-medium">
                           Active
                         </span>
                       </Link>
                     ))}
                   {(platforms?.filter((p) => p.status === 'active').length ?? 0) === 0 && (
-                    <p className="text-sm text-gray-400 text-center py-4">
+                    <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
                       No active platforms
                     </p>
                   )}
@@ -237,19 +237,19 @@ export default function OverviewPage() {
                     <Link
                       key={req._id}
                       href={`/sq-requests/${req.sq_request_id}`}
-                      className="flex items-center justify-between rounded-lg p-2 hover:bg-gray-50"
+                      className="flex items-center justify-between rounded-lg p-2 hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-mono text-gray-700 truncate">
+                        <p className="text-xs font-mono text-gray-700 dark:text-gray-300 truncate">
                           {req.entity_id}
                         </p>
-                        <p className="text-xs text-gray-400">{req.entity_type}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">{req.entity_type}</p>
                       </div>
                       <SqStatusPill status={req.status} />
                     </Link>
                   ))}
                   {(sqData?.data?.length ?? 0) === 0 && (
-                    <p className="text-sm text-gray-400 text-center py-4">No pending requests</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">No pending requests</p>
                   )}
                 </div>
               )}

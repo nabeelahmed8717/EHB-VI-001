@@ -4,12 +4,13 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gray-50 text-gray-900 antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
   }
 }
 
 @layer utilities {
   .skeleton {
-    @apply animate-pulse rounded bg-gray-200;
+    @apply animate-pulse rounded-lg bg-gray-100;
   }
 }

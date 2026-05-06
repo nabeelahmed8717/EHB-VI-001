@@ -90,7 +90,7 @@ export default function EditProfilePage() {
     return (
       <div className="max-w-2xl mx-auto space-y-5">
         <div className="skeleton h-8 w-48" />
-        <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-4">
+        <div className="rounded-xl border border-gray-100 bg-white shadow-card p-6 space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="skeleton h-10 w-full" />
           ))}
@@ -122,7 +122,7 @@ export default function EditProfilePage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* ── Basic Info ─────────────────────────────────────────────────────── */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 space-y-5">
+        <section className="rounded-xl border border-gray-100 bg-white shadow-card p-6 space-y-5">
           <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
             Basic Information
           </h3>
@@ -134,7 +134,7 @@ export default function EditProfilePage() {
             </label>
             <input
               {...register('display_name')}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
             {errors.display_name && (
               <p className="text-xs text-red-500 mt-1">{errors.display_name.message}</p>
@@ -148,7 +148,7 @@ export default function EditProfilePage() {
               {...register('bio')}
               rows={2}
               placeholder="A short one-liner about yourself"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
             />
             {errors.bio && <p className="text-xs text-red-500 mt-1">{errors.bio.message}</p>}
           </div>
@@ -162,7 +162,7 @@ export default function EditProfilePage() {
               {...register('description')}
               rows={4}
               placeholder="Describe your experience, skills, and what you're looking for…"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
             />
             {errors.description && (
               <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>
@@ -171,7 +171,7 @@ export default function EditProfilePage() {
         </section>
 
         {/* ── Identity Documents ───────────────────────────────────────────────── */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 space-y-5">
+        <section className="rounded-xl border border-gray-100 bg-white shadow-card p-6 space-y-5">
           <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
             Identity Documents
           </h3>
@@ -207,7 +207,7 @@ export default function EditProfilePage() {
         </section>
 
         {/* ── Address ──────────────────────────────────────────────────────────── */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 space-y-5">
+        <section className="rounded-xl border border-gray-100 bg-white shadow-card p-6 space-y-5">
           <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Address</h3>
 
           <div>
@@ -216,7 +216,7 @@ export default function EditProfilePage() {
               {...register('address')}
               rows={2}
               placeholder="Your current residential address"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
             />
             {errors.address && (
               <p className="text-xs text-red-500 mt-1">{errors.address.message}</p>
@@ -260,7 +260,7 @@ export default function EditProfilePage() {
           <button
             type="submit"
             disabled={isSaving}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50 transition-colors"
           >
             <Save className="h-4 w-4" />
             {isSaving ? 'Saving…' : 'Save Changes'}

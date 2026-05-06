@@ -111,7 +111,7 @@ function SelectField({
     <div>
       <FieldLabel required={required}>{label}</FieldLabel>
       <select
-        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+        className="w-full rounded-lg border border-gray-100 bg-white shadow-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-900"
         {...props}
       >
         {children}
@@ -177,7 +177,7 @@ export default function NewProfilePage() {
           <ChevronLeft className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white">
             <Briefcase className="h-4 w-4" />
           </div>
           <div>
@@ -189,7 +189,7 @@ export default function NewProfilePage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* ── Basic Info ─────────────────────────────────────────────────────── */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 space-y-5">
+        <section className="rounded-xl border border-gray-100 bg-white shadow-card p-6 space-y-5">
           <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
             Basic Information
           </h3>
@@ -200,7 +200,7 @@ export default function NewProfilePage() {
             <input
               {...register('display_name')}
               placeholder="Your professional name"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
             <FieldError message={errors.display_name?.message} />
           </div>
@@ -212,7 +212,7 @@ export default function NewProfilePage() {
               {...register('bio')}
               rows={2}
               placeholder="A short one-liner about yourself (max 500 characters)"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
             />
             <FieldError message={errors.bio?.message} />
           </div>
@@ -224,14 +224,14 @@ export default function NewProfilePage() {
               {...register('description')}
               rows={4}
               placeholder="Describe your experience, skills, and what you're looking for…"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
             />
             <FieldError message={errors.description?.message} />
           </div>
         </section>
 
         {/* ── Platform & Role ─────────────────────────────────────────────────── */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 space-y-5">
+        <section className="rounded-xl border border-gray-100 bg-white shadow-card p-6 space-y-5">
           <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
             Platform &amp; Role
           </h3>
@@ -241,7 +241,7 @@ export default function NewProfilePage() {
             <FieldLabel required>Select Platform</FieldLabel>
             <select
               {...register('platform')}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              className="w-full rounded-lg border border-gray-100 bg-white shadow-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-900"
               defaultValue=""
             >
               <option value="" disabled>Choose an EHB platform…</option>
@@ -269,8 +269,8 @@ export default function NewProfilePage() {
                         onClick={() => field.onChange(r.value)}
                         className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-left text-sm transition-all ${
                           field.value === r.value
-                            ? 'border-blue-600 bg-blue-50 text-blue-900'
-                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                            ? 'border-teal-600 bg-teal-50 text-teal-900'
+                            : 'border-gray-100 bg-white shadow-card text-gray-700 hover:border-gray-300'
                         }`}
                       >
                         <span className="text-base leading-none">{r.icon}</span>
@@ -286,7 +286,7 @@ export default function NewProfilePage() {
         </section>
 
         {/* ── Identity Documents ───────────────────────────────────────────────── */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 space-y-5">
+        <section className="rounded-xl border border-gray-100 bg-white shadow-card p-6 space-y-5">
           <div>
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
               Identity Documents
@@ -330,7 +330,7 @@ export default function NewProfilePage() {
         </section>
 
         {/* ── Address ──────────────────────────────────────────────────────────── */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 space-y-5">
+        <section className="rounded-xl border border-gray-100 bg-white shadow-card p-6 space-y-5">
           <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
             Address
           </h3>
@@ -342,7 +342,7 @@ export default function NewProfilePage() {
               {...register('address')}
               rows={2}
               placeholder="Your current residential address"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
             />
             <FieldError message={errors.address?.message} />
           </div>
@@ -364,8 +364,8 @@ export default function NewProfilePage() {
         </section>
 
         {/* ── Draft notice ─────────────────────────────────────────────────────── */}
-        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
-          <p className="text-xs text-blue-700">
+        <div className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-3">
+          <p className="text-xs text-teal-700">
             Your profile will be saved as a <strong>draft</strong>. You can review and submit it
             for PSS SQ verification whenever you&apos;re ready.
           </p>
@@ -390,7 +390,7 @@ export default function NewProfilePage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? 'Creating…' : 'Create Profile'}
           </button>

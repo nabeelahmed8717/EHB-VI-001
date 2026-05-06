@@ -32,14 +32,14 @@ const columns: ColumnDef<AuditLog, unknown>[] = [
     accessorKey: 'entity_id',
     header: 'Entity ID',
     cell: ({ row }) => (
-      <span className="font-mono text-xs text-gray-600">{row.original.entity_id}</span>
+      <span className="font-mono text-xs text-gray-600 dark:text-gray-300">{row.original.entity_id}</span>
     ),
   },
   {
     accessorKey: 'entity_type',
     header: 'Type',
     cell: ({ row }) => (
-      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium">
+      <span className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-300">
         {row.original.entity_type}
       </span>
     ),
@@ -48,21 +48,21 @@ const columns: ColumnDef<AuditLog, unknown>[] = [
     accessorKey: 'platform_id',
     header: 'Platform',
     cell: ({ row }) => (
-      <span className="text-xs font-medium text-gray-700">{row.original.platform_id}</span>
+      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{row.original.platform_id}</span>
     ),
   },
   {
     accessorKey: 'performed_by',
     header: 'Performed By',
     cell: ({ row }) => (
-      <span className="text-xs text-gray-500">{row.original.performed_by}</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">{row.original.performed_by}</span>
     ),
   },
   {
     accessorKey: 'reason',
     header: 'Reason',
     cell: ({ row }) => (
-      <span className="text-xs text-gray-600 line-clamp-2 max-w-xs">
+      <span className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 max-w-xs">
         {row.original.reason}
       </span>
     ),
@@ -81,14 +81,14 @@ const columns: ColumnDef<AuditLog, unknown>[] = [
           </pre>
         </details>
       ) : (
-        <span className="text-gray-300 text-xs">—</span>
+        <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
       ),
   },
   {
     accessorKey: 'created_at',
     header: 'Timestamp',
     cell: ({ row }) => (
-      <span className="text-xs text-gray-400 whitespace-nowrap">
+      <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
         {formatDate(row.original.created_at)}
       </span>
     ),
@@ -174,15 +174,15 @@ export default function AuditPage() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="rounded-lg border bg-white p-4 space-y-3">
+      <div className="rounded-lg border dark:border-gray-800 bg-white dark:bg-gray-900 p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-gray-400 shrink-0" />
-          <span className="text-sm font-medium text-gray-700">Filters</span>
+          <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters</span>
           {hasFilters && (
             <Button
               variant="ghost"
               size="sm"
-              className="ml-auto h-7 px-2 text-xs text-gray-500"
+              className="ml-auto h-7 px-2 text-xs text-gray-500 dark:text-gray-400"
               onClick={clearFilters}
             >
               <X className="h-3 w-3 mr-1" />
@@ -233,7 +233,7 @@ export default function AuditPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             <input
               type="text"
-              className="rounded-lg border border-gray-200 pl-8 pr-3 py-2 text-sm w-44 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 pl-8 pr-3 py-2 text-sm w-44 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Performed by…"
               value={performedBy}
               onChange={(e) => setPerformedBy(e.target.value)}
@@ -244,7 +244,7 @@ export default function AuditPage() {
           <div className="flex items-center gap-2">
             <input
               type="date"
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
               title="From date"
@@ -252,7 +252,7 @@ export default function AuditPage() {
             <span className="text-gray-400 text-sm">→</span>
             <input
               type="date"
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
               title="To date"
@@ -275,7 +275,7 @@ export default function AuditPage() {
 
         {/* Result count */}
         {!isLoading && (
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
             <span>
               {data?.total ?? 0} log{(data?.total ?? 0) !== 1 ? 's' : ''} found
             </span>

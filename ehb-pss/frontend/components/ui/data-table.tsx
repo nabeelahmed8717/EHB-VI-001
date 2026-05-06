@@ -81,7 +81,7 @@ export function DataTable<TData>({
 
   if (isLoading) {
     return (
-      <div className="w-full rounded-lg border bg-white shadow-sm overflow-hidden">
+      <div className="w-full rounded-lg border dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
         <div className="p-4 space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-10 w-full" />
@@ -96,9 +96,9 @@ export function DataTable<TData>({
   const totalDisplayed = totalRows ?? table.getFilteredRowModel().rows.length;
 
   return (
-    <div className="w-full rounded-lg border bg-white shadow-sm overflow-hidden">
+    <div className="w-full rounded-lg border dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
       {enableGlobalFilter && (
-        <div className="p-4 border-b">
+        <div className="p-4 border-b dark:border-gray-800">
           <Input
             placeholder="Search..."
             value={globalFilter}
@@ -110,15 +110,15 @@ export function DataTable<TData>({
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((header) => (
                   <th
                     key={header.id}
                     className={cn(
-                      'px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide',
-                      header.column.getCanSort() && 'cursor-pointer select-none hover:text-gray-900',
+                      'px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide',
+                      header.column.getCanSort() && 'cursor-pointer select-none hover:text-gray-900 dark:hover:text-gray-100',
                     )}
                     onClick={header.column.getToggleSortingHandler()}
                     style={{ width: header.getSize() }}
@@ -128,7 +128,7 @@ export function DataTable<TData>({
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
                       {header.column.getCanSort() && (
-                        <span className="text-gray-400">
+                        <span className="text-gray-400 dark:text-gray-500">
                           {header.column.getIsSorted() === 'asc' ? (
                             <ChevronUp className="h-3 w-3" />
                           ) : header.column.getIsSorted() === 'desc' ? (
@@ -145,12 +145,12 @@ export function DataTable<TData>({
             ))}
           </thead>
 
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-16 text-center text-sm text-gray-400"
+                  className="py-16 text-center text-sm text-gray-400 dark:text-gray-500"
                 >
                   {emptyMessage}
                 </td>
@@ -160,13 +160,13 @@ export function DataTable<TData>({
                 <tr
                   key={row.id}
                   className={cn(
-                    'hover:bg-gray-50 transition-colors',
+                    'hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors',
                     onRowClick && 'cursor-pointer',
                   )}
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3 text-gray-700">
+                    <td key={cell.id} className="px-4 py-3 text-gray-700 dark:text-gray-300">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
@@ -178,8 +178,8 @@ export function DataTable<TData>({
       </div>
 
       {/* Pagination footer */}
-      <div className="flex items-center justify-between border-t px-4 py-3 bg-gray-50">
-        <p className="text-sm text-gray-500">
+      <div className="flex items-center justify-between border-t dark:border-gray-800 px-4 py-3 bg-gray-50 dark:bg-gray-800">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {totalDisplayed > 0
             ? `Page ${currentPage} of ${Math.max(pageCount, 1)} · ${totalDisplayed} total`
             : 'No results'}

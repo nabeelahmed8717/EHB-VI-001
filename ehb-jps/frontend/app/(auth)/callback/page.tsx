@@ -56,7 +56,7 @@ function CallbackContent() {
       <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white shadow-sm p-8 text-center space-y-4">
         {/* Logo */}
         <div className="flex justify-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-600 text-white">
             <Briefcase className="h-6 w-6" />
           </div>
         </div>
@@ -69,14 +69,14 @@ function CallbackContent() {
             </div>
             <a
               href={`${EHB_URL}/login?redirect=jps`}
-              className="inline-block text-sm text-blue-600 hover:underline"
+              className="inline-block text-sm text-teal-600 hover:underline"
             >
               ← Back to login
             </a>
           </div>
         ) : (
           <div className="space-y-2 pt-2">
-            <Loader2 className="h-6 w-6 animate-spin text-blue-600 mx-auto" />
+            <Loader2 className="h-6 w-6 animate-spin text-teal-600 mx-auto" />
             <p className="text-sm text-gray-500">Completing sign-in…</p>
           </div>
         )}

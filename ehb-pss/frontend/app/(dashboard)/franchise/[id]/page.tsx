@@ -153,7 +153,7 @@ function DecisionModal({
         </DialogHeader>
 
         {review && (
-          <div className="mb-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-600 font-mono">
+          <div className="mb-2 rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-xs text-gray-600 dark:text-gray-300 font-mono">
             {review.sq_request_id} · {review.entity_type}
           </div>
         )}
@@ -172,11 +172,11 @@ function DecisionModal({
                     'rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
                     decision === d
                       ? d === 'approve'
-                        ? 'border-green-500 bg-green-50 text-green-700'
+                        ? 'border-green-500 bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300'
                         : d === 'reject'
-                        ? 'border-red-500 bg-red-50 text-red-700'
-                        : 'border-orange-500 bg-orange-50 text-orange-700'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50',
+                        ? 'border-red-500 bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300'
+                        : 'border-orange-500 bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800',
                   )}
                 >
                   {d === 'approve' ? 'Approve' : d === 'reject' ? 'Reject' : 'Escalate'}
@@ -201,8 +201,8 @@ function DecisionModal({
                     className={cn(
                       'rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
                       watch('sq_level_assigned') === lvl
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300',
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600',
                     )}
                   >
                     SQ{lvl}
@@ -222,7 +222,7 @@ function DecisionModal({
               <textarea
                 id="rejection_reason"
                 rows={3}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 placeholder="Explain the reason for rejection…"
                 {...register('rejection_reason')}
               />
@@ -234,8 +234,8 @@ function DecisionModal({
 
           {/* Escalate note */}
           {decision === 'escalate' && (
-            <div className="rounded-lg bg-orange-50 border border-orange-200 p-3">
-              <p className="text-xs text-orange-700 font-medium">
+            <div className="rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 p-3">
+              <p className="text-xs text-orange-700 dark:text-orange-400 font-medium">
                 This review will be escalated to the EDR team for further assessment.
               </p>
             </div>
@@ -247,7 +247,7 @@ function DecisionModal({
             <input
               id="reviewed_by"
               type="text"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Your name / employee ID"
               {...register('reviewed_by')}
             />
@@ -303,14 +303,14 @@ export default function FranchiseDetailPage() {
       accessorKey: 'entity_id',
       header: 'Entity ID',
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-gray-700">{row.original.entity_id}</span>
+        <span className="font-mono text-xs text-gray-700 dark:text-gray-300">{row.original.entity_id}</span>
       ),
     },
     {
       accessorKey: 'entity_type',
       header: 'Type',
       cell: ({ row }) => (
-        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium">
+        <span className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-300">
           {row.original.entity_type}
         </span>
       ),
@@ -415,19 +415,19 @@ export default function FranchiseDetailPage() {
           Back
         </Button>
         <div className="flex-1">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {franchise.area} — {franchise.region}
           </h2>
-          <p className="text-sm text-gray-500 font-mono">{franchise._id}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">{franchise._id}</p>
         </div>
         <span
           className={cn(
             'rounded-full px-3 py-1 text-sm font-medium',
             franchise.status === 'active'
-              ? 'bg-green-100 text-green-700'
+              ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
               : franchise.status === 'suspended'
-              ? 'bg-red-100 text-red-700'
-              : 'bg-gray-100 text-gray-600',
+              ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
           )}
         >
           {franchise.status}
@@ -439,12 +439,12 @@ export default function FranchiseDetailPage() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-                <Globe className="h-5 w-5 text-blue-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50">
+                <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Platform</p>
-                <p className="font-semibold text-gray-900 text-sm">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Platform</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                   {franchise.platform_id}
                 </p>
               </div>
@@ -454,12 +454,12 @@ export default function FranchiseDetailPage() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50">
-                <MapPin className="h-5 w-5 text-purple-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950/50">
+                <MapPin className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Area / Region</p>
-                <p className="font-semibold text-gray-900 text-sm">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Area / Region</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
                   {franchise.area} / {franchise.region}
                 </p>
               </div>
@@ -469,12 +469,12 @@ export default function FranchiseDetailPage() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-50">
-                <Clock className="h-5 w-5 text-orange-500" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-50 dark:bg-orange-950/50">
+                <Clock className="h-5 w-5 text-orange-500 dark:text-orange-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Pending Reviews</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Pending Reviews</p>
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                   {franchise.pending_review_count}
                 </p>
               </div>
@@ -484,12 +484,12 @@ export default function FranchiseDetailPage() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 dark:bg-green-950/50">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Total Assigned</p>
-                <p className="text-2xl font-bold text-green-700">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Total Assigned</p>
+                <p className="text-2xl font-bold text-green-700 dark:text-green-400">
                   {franchise.total_reviews_assigned}
                 </p>
               </div>
@@ -505,7 +505,7 @@ export default function FranchiseDetailPage() {
             <Clock className="h-4 w-4 text-orange-500" />
             Pending Reviews
             {pending.length > 0 && (
-              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+              <span className="rounded-full bg-orange-100 dark:bg-orange-900/40 px-2 py-0.5 text-xs font-medium text-orange-700 dark:text-orange-300">
                 {pending.length}
               </span>
             )}
@@ -529,7 +529,7 @@ export default function FranchiseDetailPage() {
             <CardTitle className="text-base flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-gray-400" />
               Decided / Escalated
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+              <span className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-400">
                 {decided.length}
               </span>
             </CardTitle>

@@ -30,17 +30,17 @@ export function Breadcrumb() {
   });
 
   return (
-    <nav className="flex items-center gap-1 px-6 py-2 text-sm text-gray-500 border-b bg-gray-50">
-      <Link href="/overview" className="hover:text-gray-900 flex items-center">
+    <nav className="flex items-center gap-1 px-6 py-2 text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/60">
+      <Link href="/overview" className="hover:text-gray-900 dark:hover:text-gray-100 flex items-center">
         <Home className="h-3.5 w-3.5" />
       </Link>
       {crumbs.map((crumb) => (
         <span key={crumb.href} className="flex items-center gap-1">
           <ChevronRight className="h-3.5 w-3.5" />
           {crumb.isLast ? (
-            <span className={cn('font-medium text-gray-900')}>{crumb.label}</span>
+            <span className={cn('font-medium text-gray-900 dark:text-gray-100')}>{crumb.label}</span>
           ) : (
-            <Link href={crumb.href} className="hover:text-gray-900">
+            <Link href={crumb.href} className="hover:text-gray-900 dark:hover:text-gray-100">
               {crumb.label}
             </Link>
           )}

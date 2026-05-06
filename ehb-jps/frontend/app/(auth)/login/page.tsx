@@ -21,7 +21,7 @@ export default function LoginPage() {
         {/* Header */}
         <div className="px-8 pt-8 pb-6 text-center space-y-3">
           <div className="flex justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-600 text-white">
               <Briefcase className="h-6 w-6" />
             </div>
           </div>
@@ -38,7 +38,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={handleEhbLogin}
-            className="w-full flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 active:bg-blue-800 transition-colors"
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-3 text-sm font-semibold text-white hover:bg-teal-700 active:bg-teal-800 transition-colors"
           >
             <Shield className="h-4 w-4" />
             Login with EHB
@@ -56,7 +56,7 @@ export default function LoginPage() {
               Don&apos;t have an EHB account?{' '}
               <a
                 href={`${EHB_URL}/register?redirect=jps`}
-                className="font-medium text-blue-600 hover:underline"
+                className="font-medium text-teal-600 hover:underline"
               >
                 Register on EHB
               </a>

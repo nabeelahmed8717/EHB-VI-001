@@ -43,14 +43,14 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'flex h-full flex-col border-r border-gray-200 bg-white transition-all duration-200',
+        'flex h-full flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 transition-all duration-200',
         collapsed ? 'w-[60px]' : 'w-[220px]',
       )}
     >
       {/* Logo */}
       <div
         className={cn(
-          'flex h-14 items-center border-b border-gray-100 px-4',
+          'flex h-14 items-center border-b border-gray-100 dark:border-gray-800 px-4',
           collapsed ? 'justify-center' : 'gap-2.5',
         )}
       >
@@ -59,10 +59,10 @@ export function Sidebar() {
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-gray-900 leading-tight">
+            <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight">
               PSS Admin
             </p>
-            <p className="truncate text-[11px] text-gray-400 leading-tight">
+            <p className="truncate text-[11px] text-gray-400 dark:text-gray-500 leading-tight">
               EHB Platform Services
             </p>
           </div>
@@ -87,14 +87,14 @@ export function Sidebar() {
                     'flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
                     collapsed && 'justify-center px-0',
                     isActive
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800',
+                      ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200',
                   )}
                 >
                   <Icon
                     className={cn(
                       'h-4 w-4 shrink-0',
-                      isActive ? 'text-blue-600' : 'text-gray-400',
+                      isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500',
                     )}
                   />
                   {!collapsed && <span>{item.label}</span>}
@@ -106,17 +106,17 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-gray-100 px-2 py-2 space-y-0.5">
+      <div className="border-t border-gray-100 dark:border-gray-800 px-2 py-2 space-y-0.5">
         {/* Sign Out */}
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
           title={collapsed ? 'Sign Out' : undefined}
           className={cn(
-            'flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors',
+            'flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-colors',
             collapsed && 'justify-center px-0',
           )}
         >
-          <LogOut className="h-4 w-4 shrink-0 text-gray-400" />
+          <LogOut className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
           {!collapsed && <span>Sign Out</span>}
         </button>
 
@@ -125,15 +125,15 @@ export function Sidebar() {
           onClick={() => setCollapsed((prev) => !prev)}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className={cn(
-            'flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors',
+            'flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-colors',
             collapsed && 'justify-center px-0',
           )}
         >
           {collapsed ? (
-            <PanelLeftOpen className="h-4 w-4 shrink-0 text-gray-400" />
+            <PanelLeftOpen className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
           ) : (
             <>
-              <PanelLeftClose className="h-4 w-4 shrink-0 text-gray-400" />
+              <PanelLeftClose className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
               <span>Collapse</span>
             </>
           )}
