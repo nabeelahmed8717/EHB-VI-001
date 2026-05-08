@@ -9,10 +9,12 @@ import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { EhbClientService } from './ehb-client.service';
 import { UsersModule } from '../users/users.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     UsersModule,
+    EmailModule,
     HttpModule.register({ timeout: 10_000, maxRedirects: 3 }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

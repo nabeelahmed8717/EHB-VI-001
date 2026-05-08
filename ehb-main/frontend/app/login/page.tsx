@@ -26,12 +26,19 @@ const platformLabels: Record<string, string> = {
   obs: 'OBS — Book Retail',
 };
 
-/** Returns null if the env var for this platform is not configured. */
+// Static lookup so Next.js can inline each NEXT_PUBLIC_* var at build time.
+// (Dynamic process.env[key] access is never inlined by the Next.js bundler.)
+const PLATFORM_CALLBACK_URLS: Record<string, string> = {
+  gosellr: process.env.NEXT_PUBLIC_CALLBACK_GOSELLR ?? 'http://localhost:4002/callback',
+  ols:     process.env.NEXT_PUBLIC_CALLBACK_OLS     ?? 'http://localhost:4003/callback',
+  jps:     process.env.NEXT_PUBLIC_CALLBACK_JPS     ?? 'http://localhost:4006/callback',
+  hps:     process.env.NEXT_PUBLIC_CALLBACK_HPS     ?? 'http://localhost:4004/callback',
+  wms:     process.env.NEXT_PUBLIC_CALLBACK_WMS     ?? 'http://localhost:4005/callback',
+  obs:     process.env.NEXT_PUBLIC_CALLBACK_OBS     ?? 'http://localhost:4007/callback',
+};
+
 function buildCallbackUrl(platformId: string, token: string): string | null {
-  const callbackBase =
-    process.env[`NEXT_PUBLIC_CALLBACK_${platformId.toUpperCase()}`];
-  if (!callbackBase) return null;
-  return `${callbackBase}?ehb_token=${encodeURIComponent(token)}`;
+  return `${PLATFORM_CALLBACK_URLS[platformId] ?? 'http://localhost:4002/callback'}?ehb_token=${encodeURIComponent(token)}`;
 }
 
 function LoginForm() {

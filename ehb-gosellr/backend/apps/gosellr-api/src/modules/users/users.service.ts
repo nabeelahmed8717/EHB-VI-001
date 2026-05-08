@@ -9,6 +9,7 @@ export interface CreateUserDto {
   password: string;
   full_name: string;
   role: UserRole;
+  phone?: string;
 }
 
 @Injectable()
@@ -29,49 +30,33 @@ export class UsersService {
     return this.userModel.findOne({ ehb_user_id: ehbUserId }).exec();
   }
 
-  /**
-   * Find or create a GoSellr user from an EHB identity.
-   * Called by the EHB callback flow — user comes from EHB with verified identity.
-   *
-   * Idempotency rules (in priority order):
-   *  1. Found by ehb_user_id       → return as-is (already linked)
-   *  2. Found by email, no ehb_id  → link by writing ehb_user_id onto existing record
-   *  3. Not found at all           → create new user
-   *
-   * This prevents E11000 duplicate-key errors when a user who registered
-   * locally before EHB integration later signs in via EHB.
-   */
   async createFromEhb(dto: {
     ehb_user_id: string;
     email: string;
     full_name: string;
     role: UserRole;
   }): Promise<UserDocument> {
-    // 1. Already fully linked
     const byEhbId = await this.findByEhbUserId(dto.ehb_user_id);
     if (byEhbId) return byEhbId;
 
-    // 2. Email exists but not yet linked to EHB — link it
     const byEmail = await this.findByEmail(dto.email);
     if (byEmail) {
       byEmail.ehb_user_id = dto.ehb_user_id;
       return byEmail.save();
     }
 
-    // 3. Brand new user — create
     const user = new this.userModel({
       email: dto.email.toLowerCase().trim(),
-      password: '', // no local password — auth is via EHB
+      password: '',
       full_name: dto.full_name,
       role: dto.role,
       ehb_user_id: dto.ehb_user_id,
+      is_email_verified: true,
     });
 
     try {
       return await user.save();
     } catch (err: unknown) {
-      // E11000: two concurrent requests raced past the check-then-insert.
-      // Recover by returning whichever document won the insert race.
       if ((err as { code?: number }).code === 11000) {
         const recovered =
           (await this.findByEhbUserId(dto.ehb_user_id)) ??
@@ -82,27 +67,21 @@ export class UsersService {
     }
   }
 
-  /**
-   * Increment token_version to invalidate all current GoSellr sessions for this user.
-   */
   async incrementTokenVersion(userId: string): Promise<void> {
-    await this.userModel.findByIdAndUpdate(
-      userId,
-      { $inc: { token_version: 1 } },
-    ).exec();
+    await this.userModel.findByIdAndUpdate(userId, { $inc: { token_version: 1 } }).exec();
   }
 
   async createUser(dto: CreateUserDto): Promise<UserDocument> {
     const existing = await this.findByEmail(dto.email);
-    if (existing) {
-      throw new ConflictException('Email already registered');
-    }
+    if (existing) throw new ConflictException('Email already registered');
     const hashed = await hashPassword(dto.password);
     const user = new this.userModel({
       email: dto.email.toLowerCase().trim(),
       password: hashed,
       full_name: dto.full_name,
       role: dto.role,
+      phone: dto.phone ?? null,
+      is_email_verified: false,
     });
     return user.save();
   }
@@ -111,14 +90,33 @@ export class UsersService {
     await this.userModel.findByIdAndUpdate(userId, { password: newHashedPassword }).exec();
   }
 
-  /** Strip password — safe to send to client */
+  async updateRole(userId: string, role: UserRole): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, { role }).exec();
+  }
+
+  async saveOtp(userId: string, otpCode: string, expiresAt: Date): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, {
+      otp_code: otpCode,
+      otp_expires_at: expiresAt,
+    }).exec();
+  }
+
+  async markEmailVerified(userId: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, {
+      otp_code: null,
+      otp_expires_at: null,
+      is_email_verified: true,
+    }).exec();
+  }
+
   toPublic(user: UserDocument) {
     return {
       id: (user._id as unknown as { toString(): string }).toString(),
       email: user.email,
       full_name: user.full_name,
       role: user.role,
-      /** true if the user has a local password set (can log in without EHB) */
+      phone: user.phone ?? null,
+      is_email_verified: user.is_email_verified,
       has_password: !!user.password,
     };
   }

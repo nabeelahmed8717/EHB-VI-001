@@ -40,8 +40,15 @@ function CallbackContent() {
       .unwrap()
       .then((res) => {
         dispatch(setCredentials({ user: res.user, token: res.access_token }));
-        // Route based on role
-        const dest = res.user.role === 'seller' ? '/dashboard' : '/browse';
+        // Check if there's a pending next path (set before EHB redirect)
+        const next = typeof window !== 'undefined' ? localStorage.getItem('gosellr_next') : null;
+        if (next) localStorage.removeItem('gosellr_next');
+        // Route: use next hint → role default → browse
+        let dest = next ?? '/browse';
+        if (!next) {
+          if (res.user.role === 'seller') dest = '/dashboard';
+          else if (res.user.role === 'rider') dest = '/dashboard/rider';
+        }
         router.replace(dest);
       })
       .catch((err: unknown) => {
@@ -55,7 +62,7 @@ function CallbackContent() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-surface-alt p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-2">

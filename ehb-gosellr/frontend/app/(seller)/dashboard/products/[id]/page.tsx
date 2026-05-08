@@ -65,7 +65,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const isPending = ['pending', 'pending_franchise', 'pending_edr'].includes(product.sq_status);
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center gap-2">
         <Link href="/dashboard/products">
           <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4 mr-1" />Back</Button>
@@ -117,7 +117,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                   return (
                     <div key={cid} className="flex items-center gap-2 text-sm">
                       {passed
-                        ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ? <CheckCircle2 className="h-4 w-4 text-success-500" />
                         : <AlertCircle className="h-4 w-4 text-yellow-500" />}
                       <span className={passed ? '' : 'text-muted-foreground'}>{label}</span>
                     </div>
@@ -147,7 +147,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               <div className="flex justify-center">
                 <SqBadge level={product.sq_level} label={product.sq_badge_label} size="lg" />
               </div>
-              <p className="text-sm text-green-700 font-medium">Your product is now visible to buyers</p>
+              <p className="text-sm text-success-700 font-medium">Your product is now visible to buyers</p>
               {product.sq_decided_at && (
                 <p className="text-xs text-muted-foreground">
                   Approved on {new Date(product.sq_decided_at).toLocaleDateString()}
@@ -159,9 +159,9 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           {/* REJECTED */}
           {product.sq_status === 'rejected' && (
             <div className="space-y-4">
-              <div className="rounded-md bg-red-50 border border-red-200 p-4">
-                <p className="text-sm font-medium text-red-800 mb-1">Rejection Reason</p>
-                <p className="text-sm text-red-700">{product.sq_rejection_reason ?? 'No reason provided'}</p>
+              <div className="rounded-md bg-destructive/10 border border-destructive/30 p-4">
+                <p className="text-sm font-medium text-destructive mb-1">Rejection Reason</p>
+                <p className="text-sm text-destructive">{product.sq_rejection_reason ?? 'No reason provided'}</p>
               </div>
               <p className="text-xs text-muted-foreground">
                 Fix the issues above, then resubmit for approval.

@@ -1,15 +1,22 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { UserDocument, UserRole } from '../users/user.schema';
 import { comparePassword, hashPassword } from '../../../../../libs/gosellr-utils/src';
 import { EhbClientService } from './ehb-client.service';
+import { EmailService } from '../email/email.service';
 
 export interface RegisterDto {
   email: string;
   password: string;
   full_name: string;
   role: UserRole;
+  phone?: string;
 }
 
 export interface LoginDto {
@@ -23,6 +30,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly ehbClient: EhbClientService,
+    private readonly emailService: EmailService,
   ) {}
 
   private signToken(user: UserDocument): string {
@@ -34,36 +42,95 @@ export class AuthService {
     });
   }
 
+  private generateOtp(): string {
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+
   async register(dto: RegisterDto) {
     const user = await this.usersService.createUser(dto);
-    const token = this.signToken(user);
+
+    const otp = this.generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await this.usersService.saveOtp(
+      (user._id as unknown as { toString(): string }).toString(),
+      otp,
+      expiresAt,
+    );
+    void this.emailService.sendOtp(user.email, otp).catch(() => undefined);
+
     return {
-      access_token: token,
+      message: 'Registration successful. Check your email for the OTP verification code.',
       user: this.usersService.toPublic(user),
+    };
+  }
+
+  async sendOtp(email: string): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) throw new NotFoundException('No account found with that email');
+
+    if (user.is_email_verified) {
+      return { message: 'Email is already verified' };
+    }
+
+    const otp = this.generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await this.usersService.saveOtp(
+      (user._id as unknown as { toString(): string }).toString(),
+      otp,
+      expiresAt,
+    );
+    await this.emailService.sendOtp(user.email, otp);
+    return { message: 'OTP sent to your email address' };
+  }
+
+  async verifyOtp(
+    email: string,
+    otp: string,
+  ): Promise<{ access_token: string; user: ReturnType<UsersService['toPublic']> }> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) throw new NotFoundException('No account found with that email');
+
+    if (user.is_email_verified) {
+      return { access_token: this.signToken(user), user: this.usersService.toPublic(user) };
+    }
+
+    if (!user.otp_code || !user.otp_expires_at) {
+      throw new BadRequestException('No OTP pending. Call /auth/otp/send first.');
+    }
+    if (new Date() > user.otp_expires_at) {
+      throw new BadRequestException('OTP has expired. Request a new one via /auth/otp/send.');
+    }
+    if (user.otp_code !== otp) {
+      throw new BadRequestException('Invalid OTP code.');
+    }
+
+    const userId = (user._id as unknown as { toString(): string }).toString();
+    await this.usersService.markEmailVerified(userId);
+
+    const verified = await this.usersService.findById(userId);
+    return {
+      access_token: this.signToken(verified!),
+      user: this.usersService.toPublic(verified!),
     };
   }
 
   async login(dto: LoginDto) {
     const user = await this.usersService.findByEmail(dto.email);
-    if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
-    // EHB-linked users have no local password — must authenticate via EHB
+    if (!user) throw new UnauthorizedException('Invalid email or password');
+
     if (!user.password) {
       throw new UnauthorizedException('This account uses EHB login. Please sign in via EHB.');
     }
     const valid = await comparePassword(dto.password, user.password);
-    if (!valid) {
-      throw new UnauthorizedException('Invalid email or password');
+    if (!valid) throw new UnauthorizedException('Invalid email or password');
+
+    if (!user.is_active) throw new UnauthorizedException('Account is inactive');
+
+    if (!user.is_email_verified) {
+      throw new UnauthorizedException('Email not verified. Check your inbox for the OTP.');
     }
-    if (!user.is_active) {
-      throw new UnauthorizedException('Account is inactive');
-    }
-    const token = this.signToken(user);
-    return {
-      access_token: token,
-      user: this.usersService.toPublic(user),
-    };
+
+    return { access_token: this.signToken(user), user: this.usersService.toPublic(user) };
   }
 
   async getMe(userId: string) {
@@ -72,24 +139,6 @@ export class AuthService {
     return this.usersService.toPublic(user);
   }
 
-  /**
-   * EHB OAuth-style callback.
-   *
-   * Flow:
-   * 1. Verify ehb_token with EHB Main identity API
-   * 2. Find or create a GoSellr user mapped to that EHB identity
-   * 3. Notify EHB to add 'gosellr' to user.registered_platforms
-   * 4. Issue a GoSellr JWT
-   */
-  /**
-   * Change (or first-time set) a user's local GoSellr password.
-   *
-   * Rules:
-   *  - EHB users (no local password):  `current_password` is NOT required.
-   *    They are simply setting a password for the first time.
-   *  - Local users (password already set): `current_password` IS required and
-   *    must match before the new password is accepted.
-   */
   async changePassword(
     userId: string,
     dto: { current_password?: string; new_password: string },
@@ -97,10 +146,7 @@ export class AuthService {
     const user = await this.usersService.findById(userId);
     if (!user) throw new UnauthorizedException('User not found');
 
-    const hasLocalPassword = !!user.password;
-
-    if (hasLocalPassword) {
-      // Must supply and verify current password
+    if (user.password) {
       if (!dto.current_password) {
         throw new BadRequestException('current_password is required');
       }
@@ -113,9 +159,6 @@ export class AuthService {
     return { message: 'Password updated successfully' };
   }
 
-  /**
-   * Logout — revoke all GoSellr sessions for this user by incrementing token_version.
-   */
   async logout(userId: string): Promise<{ success: true; message: string }> {
     await this.usersService.incrementTokenVersion(userId);
     return { success: true, message: 'Logged out. All GoSellr sessions revoked.' };
@@ -125,25 +168,41 @@ export class AuthService {
     access_token: string;
     user: ReturnType<UsersService['toPublic']>;
   }> {
-    // 1. Verify EHB token
     const ehbUser = await this.ehbClient.verifyToken(ehbToken);
 
-    // 2. Find or create GoSellr user
     const gosellrUser = await this.usersService.createFromEhb({
       ehb_user_id: ehbUser.ehb_user_id,
       email: ehbUser.email,
       full_name: ehbUser.full_name,
-      role: 'buyer' as UserRole, // default role — user can upgrade to seller in dashboard
+      role: 'buyer' as UserRole,
     });
 
-    // 3. Link platform in EHB (best-effort, non-blocking)
     void this.ehbClient.linkPlatform(ehbToken);
 
-    // 4. Issue GoSellr JWT
-    const token = this.signToken(gosellrUser);
     return {
-      access_token: token,
+      access_token: this.signToken(gosellrUser),
       user: this.usersService.toPublic(gosellrUser),
+    };
+  }
+
+  /**
+   * Switch the authenticated user's active role (buyer ↔ seller ↔ rider).
+   * Updates role in the DB and re-signs a fresh JWT so subsequent API calls
+   * carry the correct role claim.
+   */
+  async switchRole(
+    userId: string,
+    targetRole: 'buyer' | 'seller' | 'rider',
+  ): Promise<{ access_token: string; user: ReturnType<UsersService['toPublic']> }> {
+    const user = await this.usersService.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.usersService.updateRole(userId, targetRole as UserRole);
+    user.role = targetRole as UserRole; // update in-memory so signToken picks it up
+
+    return {
+      access_token: this.signToken(user),
+      user: this.usersService.toPublic(user),
     };
   }
 }

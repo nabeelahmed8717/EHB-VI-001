@@ -16,7 +16,15 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength, IsJWT, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsOptional,
+  Length,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -37,9 +45,31 @@ class RegisterDto {
   @IsNotEmpty()
   full_name: string;
 
-  @ApiProperty({ enum: ['seller', 'buyer'], example: 'seller' })
-  @IsEnum(['seller', 'buyer'])
-  role: 'seller' | 'buyer';
+  @ApiProperty({ enum: ['seller', 'buyer', 'rider'], example: 'buyer' })
+  @IsEnum(['seller', 'buyer', 'rider'])
+  role: 'seller' | 'buyer' | 'rider';
+
+  @ApiProperty({ example: '+923001234567', required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+}
+
+class SendOtpDto {
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
+}
+
+class VerifyOtpDto {
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: '482910', description: '6-digit OTP code' })
+  @IsString()
+  @Length(6, 6)
+  otp: string;
 }
 
 class LoginDto {
@@ -53,6 +83,12 @@ class LoginDto {
   password: string;
 }
 
+class SwitchRoleDto {
+  @ApiProperty({ enum: ['buyer', 'seller', 'rider'], example: 'buyer' })
+  @IsEnum(['buyer', 'seller', 'rider'])
+  role: 'buyer' | 'seller' | 'rider';
+}
+
 class EhbCallbackDto {
   @ApiProperty({ description: 'EHB JWT issued by EHB Main identity platform' })
   @IsString()
@@ -61,10 +97,7 @@ class EhbCallbackDto {
 }
 
 class ChangePasswordDto {
-  @ApiProperty({
-    description: 'Current password. Required only if a local password is already set. Omit for EHB-only users setting a password for the first time.',
-    required: false,
-  })
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   current_password?: string;
@@ -86,18 +119,36 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Register a new user (seller or buyer)' })
-  @ApiResponse({ status: HttpStatus.CREATED, description: 'User registered, JWT returned' })
-  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Email already registered' })
+  @ApiOperation({ summary: 'Register a new user (buyer, seller, or rider)' })
+  @ApiResponse({ status: 201, description: 'User created; OTP sent to email' })
+  @ApiResponse({ status: 409, description: 'Email already registered' })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
+  }
+
+  @Post('otp/send')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send (or resend) OTP to registered email' })
+  @ApiResponse({ status: 200, description: 'OTP sent' })
+  @ApiResponse({ status: 404, description: 'No account found with that email' })
+  sendOtp(@Body() dto: SendOtpDto) {
+    return this.authService.sendOtp(dto.email);
+  }
+
+  @Post('otp/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify OTP and activate account' })
+  @ApiResponse({ status: 200, description: 'JWT returned; account activated' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
+  verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyOtp(dto.email, dto.otp);
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email + password' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'JWT returned' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid credentials' })
+  @ApiResponse({ status: 200, description: 'JWT returned' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials or email not verified' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
@@ -106,7 +157,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current authenticated user profile' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Current user returned' })
+  @ApiResponse({ status: 200, description: 'Current user returned' })
   getMe(@Request() req: AuthenticatedRequest) {
     const userId = (req.user._id as unknown as { toString(): string }).toString();
     return this.authService.getMe(userId);
@@ -116,15 +167,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Change or set a local password',
-    description:
-      'EHB-linked users (no local password) can set one without supplying current_password. ' +
-      'Users with a local password must supply their current_password to change it.',
-  })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Password updated' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'current_password required but missing' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Current password incorrect' })
+  @ApiOperation({ summary: 'Change or set a local password' })
+  @ApiResponse({ status: 200, description: 'Password updated' })
   changePassword(
     @Request() req: AuthenticatedRequest,
     @Body() dto: ChangePasswordDto,
@@ -137,13 +181,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Logout — revoke all GoSellr sessions',
-    description:
-      'Increments token_version in DB. All existing GoSellr JWTs for this user become invalid immediately.',
-  })
-  @ApiResponse({ status: HttpStatus.OK, description: '{ success: true, message: "..." }' })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid or expired token' })
+  @ApiOperation({ summary: 'Logout — revoke all GoSellr sessions' })
+  @ApiResponse({ status: 200, description: 'Logged out' })
   logout(@Request() req: AuthenticatedRequest) {
     const userId = (req.user._id as unknown as { toString(): string }).toString();
     return this.authService.logout(userId);
@@ -151,19 +190,23 @@ export class AuthController {
 
   @Post('ehb-callback')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'EHB OAuth callback — exchange EHB token for GoSellr JWT',
-    description:
-      'Called by the GoSellr frontend callback page after EHB auth. ' +
-      'Verifies the EHB token, finds or creates a GoSellr user, and returns a GoSellr JWT.',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'GoSellr JWT and user returned',
-  })
-  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid EHB token' })
+  @ApiOperation({ summary: 'EHB OAuth callback — exchange EHB token for GoSellr JWT' })
+  @ApiResponse({ status: 200, description: 'GoSellr JWT and user returned' })
+  @ApiResponse({ status: 401, description: 'Invalid EHB token' })
   ehbCallback(@Body() dto: EhbCallbackDto) {
     if (!dto.ehb_token) throw new UnauthorizedException('Missing ehb_token');
     return this.authService.ehbCallback(dto.ehb_token);
+  }
+
+  @Post('switch-role')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Switch active role (buyer ↔ seller ↔ rider). Returns a fresh JWT.' })
+  @ApiResponse({ status: 200, description: 'Role updated; new JWT returned' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  switchRole(@Request() req: AuthenticatedRequest, @Body() dto: SwitchRoleDto) {
+    const userId = (req.user._id as unknown as { toString(): string }).toString();
+    return this.authService.switchRole(userId, dto.role);
   }
 }

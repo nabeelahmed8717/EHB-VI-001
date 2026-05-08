@@ -36,12 +36,12 @@ export default function ProductDetailBuyerPage({ params }: { params: { id: strin
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Image */}
-        <div className="rounded-lg overflow-hidden bg-gray-100 h-80 flex items-center justify-center">
+        <div className="rounded-lg overflow-hidden bg-surface-alt h-80 flex items-center justify-center">
           {mainImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={mainImage} alt={product.title} className="h-full w-full object-cover" />
           ) : (
-            <Package className="h-16 w-16 text-gray-400" />
+            <Package className="h-16 w-16 text-muted-foreground" />
           )}
         </div>
 
@@ -63,9 +63,9 @@ export default function ProductDetailBuyerPage({ params }: { params: { id: strin
             )}
           </div>
 
-          <div className="bg-green-50 border border-green-200 rounded-md p-3">
-            <p className="text-xs font-medium text-green-800">✓ SQ Verified Product</p>
-            <p className="text-xs text-green-700 mt-0.5">
+          <div className="bg-success-50 border border-success-100 rounded-md p-3">
+            <p className="text-xs font-medium text-success-700">✓ SQ Verified Product</p>
+            <p className="text-xs text-success-700 mt-0.5">
               This product has been verified through the EHB Seller Qualification process.
               {product.sq_badge_label && ` Level: ${product.sq_badge_label}`}
             </p>

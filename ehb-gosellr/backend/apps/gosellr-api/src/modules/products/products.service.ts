@@ -33,6 +33,18 @@ export interface GetProductsQuery {
   category?: string;
   page?: number;
   limit?: number;
+  /** Free-text search across title + description */
+  q?: string;
+  /** Sort order. Defaults to `newest`. */
+  sort?: 'newest' | 'popular' | 'price_asc' | 'price_desc';
+  /** Filter by seller_id (used by brand-store pages). */
+  seller_id?: string;
+  /**
+   * SQ status filter:
+   *   'approved' (default) — only SQ-verified products
+   *   'all'                — every active product, including pending/rejected/not_submitted
+   */
+  status?: 'approved' | 'all';
 }
 
 function getSqBadgeLabel(level: number | null): string {
@@ -57,17 +69,34 @@ export class ProductsService {
     private readonly pssClient: PssClientService,
   ) {}
 
-  // ── Public: approved products for buyers ─────────────────────────────────
+  // ── Public: products for buyers ──────────────────────────────────────────
 
   async getApprovedProducts(query: GetProductsQuery) {
-    const { category, page = 1, limit = 20 } = query;
-    const filter: Record<string, unknown> = { sq_status: 'approved', is_active: true };
+    const { category, page = 1, limit = 20, q, sort = 'newest', seller_id, status = 'approved' } = query;
+    const filter: Record<string, unknown> = { is_active: true };
+    if (status === 'approved') filter['sq_status'] = 'approved';
     if (category) filter['category'] = category;
+    if (seller_id && Types.ObjectId.isValid(seller_id)) {
+      filter['seller_id'] = new Types.ObjectId(seller_id);
+    }
+    if (q && q.trim().length > 0) {
+      const safe = q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const rx = new RegExp(safe, 'i');
+      filter['$or'] = [{ title: rx }, { description: rx }];
+    }
+
+    const sortMap: Record<string, Record<string, 1 | -1>> = {
+      newest:     { sq_decided_at: -1, created_at: -1 },
+      popular:    { sq_level: -1, sq_decided_at: -1 },
+      price_asc:  { price: 1 },
+      price_desc: { price: -1 },
+    };
+    const sortClause = sortMap[sort] ?? sortMap['newest'];
 
     const [data, total] = await Promise.all([
       this.productModel
         .find(filter)
-        .sort({ sq_decided_at: -1 })
+        .sort(sortClause)
         .skip((page - 1) * limit)
         .limit(limit)
         .lean()
@@ -76,6 +105,20 @@ export class ProductsService {
     ]);
 
     return { data, total, page, limit, total_pages: Math.ceil(total / limit) };
+  }
+
+  /**
+   * Returns the distinct categories present in approved products,
+   * with product counts. Used by the landing page Popular Categories carousel.
+   */
+  async getCategoriesWithCounts(): Promise<Array<{ name: string; count: number }>> {
+    const result = await this.productModel.aggregate([
+      { $match: { is_active: true } },
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $project: { _id: 0, name: '$_id', count: 1 } },
+      { $sort: { count: -1, name: 1 } },
+    ]).exec();
+    return result as Array<{ name: string; count: number }>;
   }
 
   async getProductById(id: string): Promise<ProductDocument> {
@@ -155,7 +198,7 @@ export class ProductsService {
       images: product.images,
       stock: product.stock,
       seller_id: sellerId,
-      area: 'lahore', // hardcoded for testing
+      area: 'lahore',
     };
 
     const result = await this.pssClient.submitForSQ(
@@ -168,16 +211,12 @@ export class ProductsService {
     const pssUnavailable =
       'error' in result && (result as { error?: string }).error === 'PSS unavailable';
 
-    // Hard PSS rejection (not just connectivity) — fail fast
     if (!result.success && !pssUnavailable) {
       throw new BadRequestException(
         (result as { error?: string }).error ?? result.message ?? 'PSS submission failed',
       );
     }
 
-    // Mark pending locally regardless of PSS reachability.
-    // If PSS was down the product stays pending; once PSS is back it will
-    // process the request and send the decision via webhook.
     product.sq_status = 'pending';
     product.sq_request_id = (!pssUnavailable && result.sq_request_id)
       ? result.sq_request_id
@@ -208,16 +247,6 @@ export class ProductsService {
 
   // ── Get SQ Status ─────────────────────────────────────────────────────────
 
-  /**
-   * Pull-based status reconciliation. Called by the "Refresh Status" button
-   * on the product detail page.
-   *
-   * This is the fallback when the push-based webhook flow fails (e.g. Redis
-   * is down and Bull couldn't queue the webhook, or the webhook request
-   * itself failed). We query PSS for the authoritative status and, if it
-   * differs from what we have locally, write it back to the product
-   * document so subsequent reads return the fresh state.
-   */
   async getSQStatus(productId: string, sellerId: string) {
     const product = await this.getProductById(productId);
     if (product.seller_id.toString() !== sellerId) {
@@ -226,7 +255,6 @@ export class ProductsService {
 
     const pssStatus = await this.pssClient.getSQStatus(productId);
 
-    // If PSS was reachable, reconcile its authoritative state into our DB.
     const pssOk = !('error' in pssStatus);
     if (pssOk) {
       const synced = await this.syncFromPss(product, pssStatus as {
@@ -256,20 +284,8 @@ export class ProductsService {
     };
   }
 
-  /**
-   * Map a PssSqStatusResponse onto the local product document and persist any
-   * differences. Returns { from, to } if a change was written, or null if
-   * the local state already matches PSS.
-   *
-   * PSS status values → product.sq_status mapping:
-   *   approved / conditional → 'approved'
-   *   rejected               → 'rejected'
-   *   pending                → 'pending'
-   *   pending_franchise      → 'pending_franchise'
-   *   pending_edr            → 'pending_edr'
-   *
-   * Anything else (unknown) is ignored to avoid corrupting the product.
-   */
+  // ── PSS sync helper ───────────────────────────────────────────────────────
+
   private async syncFromPss(
     product: ProductDocument,
     pss: {
@@ -295,12 +311,10 @@ export class ProductsService {
     } else if (pss.status === 'pending_edr') {
       next = 'pending_edr';
     } else {
-      return null; // unknown status — do not touch local state
+      return null;
     }
 
-    // Nothing to do if local state already reflects PSS
     if (prev === next) {
-      // Still update sq_level if it moved (e.g. terminal-decision refinement)
       if (next === 'approved' && product.sq_level !== pss.sq_level) {
         product.sq_level = pss.sq_level;
         product.sq_badge_label = pss.badge_label ?? getSqBadgeLabel(pss.sq_level);
@@ -322,47 +336,39 @@ export class ProductsService {
       product.sq_rejection_reason = pss.rejection_reason ?? null;
       product.sq_decided_at = pss.rejected_at ? new Date(pss.rejected_at) : new Date();
     }
-    // For pending states we just update sq_status; other fields stay null.
 
     await product.save();
     return { from: prev, to: next };
   }
 
-  // ── Called by Webhook Handler ─────────────────────────────────────────────
+  // ── Webhook handler ───────────────────────────────────────────────────────
 
   async updateSqFromWebhook(
-    entityId: string,
-    event: string,
+    productId: string,
+    _event: string,
     decision: string,
     sqLevel: number | null,
-    rejectionReason: string | null,
-    decidedAt: string | null,
+    rejectionReason: string | null | undefined,
+    decidedAt: string | undefined,
   ): Promise<void> {
-    const product = await this.productModel.findById(entityId).exec();
-    if (!product) {
-      this.logger.warn(`Webhook: product ${entityId} not found — skipping`);
+    if (!Types.ObjectId.isValid(productId)) {
+      this.logger.warn('Webhook for invalid product id ignored: ' + productId);
       return;
     }
-
-    if (decision === 'approved') {
-      product.sq_status = 'approved';
-      product.sq_level = sqLevel;
-      product.sq_badge_label = getSqBadgeLabel(sqLevel);
-      product.sq_decided_at = decidedAt ? new Date(decidedAt) : new Date();
-      product.sq_rejection_reason = null;
-    } else if (decision === 'rejected') {
-      product.sq_status = 'rejected';
-      product.sq_level = null;
-      product.sq_rejection_reason = rejectionReason;
-      product.sq_decided_at = decidedAt ? new Date(decidedAt) : new Date();
-      product.sq_badge_label = null;
-    } else if (event === 'sq.forwarded_franchise') {
-      product.sq_status = 'pending_franchise';
-    } else if (event === 'sq.forwarded_edr') {
-      product.sq_status = 'pending_edr';
+    const product = await this.productModel.findById(productId).exec();
+    if (!product) {
+      this.logger.warn('Webhook for unknown product ignored: ' + productId);
+      return;
     }
-
-    await product.save();
-    this.logger.log(`Webhook updated product ${entityId} → ${product.sq_status}`);
+    const synced = await this.syncFromPss(product, {
+      status: decision,
+      sq_level: sqLevel,
+      approved_at: decision === 'approved' ? decidedAt : undefined,
+      rejected_at: decision === 'rejected' ? decidedAt : undefined,
+      rejection_reason: rejectionReason ?? undefined,
+    });
+    if (synced) {
+      this.logger.log('Webhook applied to product ' + productId + ': ' + synced.from + ' to ' + synced.to);
+    }
   }
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '@/lib/store/auth.slice';
@@ -31,7 +30,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  /** Redirect to EHB login — carries ?redirect=gosellr so EHB sends the user back here */
   const handleEhbLogin = () => {
     window.location.href = `${EHB_URL}/login?redirect=gosellr`;
   };
@@ -42,8 +40,17 @@ export default function LoginPage() {
     try {
       const result = await login({ email, password }).unwrap();
       dispatch(setCredentials({ user: result.user, token: result.access_token }));
-      if (result.user.role === 'seller') {
+      // Honour the saved destination (e.g. /cart) that the buyer layout stored
+      // before redirecting to login, then clear it.
+      const next =
+        typeof window !== 'undefined' ? localStorage.getItem('gosellr_next') : null;
+      if (next) localStorage.removeItem('gosellr_next');
+      if (next) {
+        router.push(next);
+      } else if (result.user.role === 'seller') {
         router.push('/dashboard');
+      } else if (result.user.role === 'rider') {
+        router.push('/dashboard/rider');
       } else {
         router.push('/browse');
       }
@@ -51,11 +58,9 @@ export default function LoginPage() {
       const msg =
         (err as { data?: { message?: string } })?.data?.message ??
         'Login failed. Check your credentials.';
-      // Backend returns this exact message for EHB-only accounts (no local password)
       const isEhbOnly =
         typeof msg === 'string' && msg.toLowerCase().includes('ehb login');
       if (isEhbOnly) {
-        // Auto-redirect — user must authenticate via EHB
         window.location.href = `${EHB_URL}/login?redirect=gosellr`;
         return;
       }
@@ -64,11 +69,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-sm shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-surface-alt px-4">
+      <Card className="w-full max-w-sm shadow-lg border-border">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-2">
-            <ShoppingBag className="h-8 w-8 text-primary" />
+            <div className="w-12 h-12 rounded-pill bg-accent/10 flex items-center justify-center">
+              <ShoppingBag className="h-6 w-6 text-accent" />
+            </div>
           </div>
           <CardTitle className="text-2xl">Sign in to GoSellr</CardTitle>
           <CardDescription>
@@ -77,32 +84,30 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent className="space-y-4 pt-2">
-          {/* ── Login with EHB (primary CTA) ──────────────────────── */}
           <Button
             type="button"
-            className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+            variant="primary"
+            className="w-full gap-2"
             onClick={handleEhbLogin}
           >
             <Shield className="h-4 w-4" />
             Login with EHB
           </Button>
 
-          {/* ── Divider ───────────────────────────────────────────── */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-muted-foreground">
+              <span className="bg-card px-2 text-muted-foreground">
                 or continue with email
               </span>
             </div>
           </div>
 
-          {/* ── Local email/password form (legacy users) ──────────── */}
           <form onSubmit={handleSubmit} className="space-y-3">
             {error && (
-              <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+              <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -162,12 +167,13 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col gap-2 pt-0">
           <p className="text-sm text-center text-muted-foreground">
             Don&apos;t have an account?{' '}
-            <Link
-              href="/register"
-              className="text-primary hover:underline font-medium"
+            <button
+              type="button"
+              onClick={() => { window.location.href = `${EHB_URL}/register?redirect=gosellr`; }}
+              className="text-accent hover:underline font-semibold"
             >
-              Register on EHB
-            </Link>
+              Create account on EHB
+            </button>
           </p>
         </CardFooter>
       </Card>

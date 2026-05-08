@@ -6,8 +6,9 @@ export interface UserPublic {
   id: string;
   email: string;
   full_name: string;
-  role: 'seller' | 'buyer';
-  /** true = has a local password (can use GoSellr login directly) */
+  role: 'seller' | 'buyer' | 'rider';
+  phone: string | null;
+  is_email_verified: boolean;
   has_password?: boolean;
 }
 
@@ -15,11 +16,6 @@ export interface AuthState {
   user: UserPublic | null;
   token: string | null;
   isAuthenticated: boolean;
-  /**
-   * false on first SSR render (localStorage not available yet).
-   * Flips to true after AuthHydrator runs on the client.
-   * Layouts must NOT redirect until isHydrated === true.
-   */
   isHydrated: boolean;
 }
 
@@ -47,18 +43,13 @@ const initialState: AuthState = {
   user: null,
   token: null,
   isAuthenticated: false,
-  isHydrated: false, // always false at startup — AuthHydrator sets it to true on mount
+  isHydrated: false,
 };
 
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    /**
-     * Called once by AuthHydrator on client mount.
-     * Reads localStorage and marks the store as hydrated so layouts
-     * can safely check isAuthenticated without causing false redirects.
-     */
     hydrate(state) {
       const saved = loadFromStorage();
       state.user = saved.user;
@@ -78,6 +69,20 @@ export const authSlice = createSlice({
       }
     },
 
+    /**
+     * Update just the user record without changing the token. Used after
+     * actions that change role server-side (e.g. seller/rider profile
+     * creation, where the backend auto-promotes user.role) so the UI
+     * picks up the new role without forcing a logout/login cycle.
+     */
+    setUser(state, action: PayloadAction<UserPublic>) {
+      state.user = action.payload;
+      state.isAuthenticated = true;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(USER_KEY, JSON.stringify(action.payload));
+      }
+    },
+
     logout(state) {
       state.user = null;
       state.token = null;
@@ -91,5 +96,11 @@ export const authSlice = createSlice({
   },
 });
 
-export const { hydrate, setCredentials, logout } = authSlice.actions;
+export const { hydrate, setCredentials, setUser, logout } = authSlice.actions;
 export default authSlice.reducer;
+
+// Selectors
+export const selectCurrentUser = (state: { auth: AuthState }) => state.auth.user;
+export const selectToken = (state: { auth: AuthState }) => state.auth.token;
+export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
+export const selectIsHydrated = (state: { auth: AuthState }) => state.auth.isHydrated;

@@ -61,12 +61,38 @@ export interface SubmitSqResponse {
   message: string;
 }
 
+export type ProductSort = 'newest' | 'popular' | 'price_asc' | 'price_desc';
+export type ProductStatusFilter = 'approved' | 'all';
+
+export interface GetProductsArgs {
+  category?: string;
+  page?: number;
+  limit?: number;
+  q?: string;
+  sort?: ProductSort;
+  seller_id?: string;
+  /**
+   * 'approved' (default) — only SQ-verified products
+   * 'all'                — every active product, including pending verification
+   */
+  status?: ProductStatusFilter;
+}
+
+export interface CategoryWithCount {
+  name: string;
+  count: number;
+}
+
 export const productsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    getProducts: build.query<PaginatedProducts, { category?: string; page?: number; limit?: number }>({
-      query: ({ category, page = 1, limit = 20 }) => {
+    getProducts: build.query<PaginatedProducts, GetProductsArgs>({
+      query: ({ category, page = 1, limit = 20, q, sort, seller_id, status } = {}) => {
         const params = new URLSearchParams({ page: String(page), limit: String(limit) });
         if (category) params.set('category', category);
+        if (q && q.trim()) params.set('q', q.trim());
+        if (sort) params.set('sort', sort);
+        if (seller_id) params.set('seller_id', seller_id);
+        if (status) params.set('status', status);
         return `/products?${params.toString()}`;
       },
       providesTags: (result) =>
@@ -75,17 +101,26 @@ export const productsApi = baseApi.injectEndpoints({
           : ['Product'],
     }),
 
-    getMyProducts: build.query<PaginatedProducts, { page?: number; limit?: number } | void>({
-      query: (args) => {
-        const { page = 1, limit = 20 } = args ?? {};
-        return `/products/my?page=${page}&limit=${limit}`;
-      },
+    getCategories: build.query<CategoryWithCount[], void>({
+      query: () => '/products/categories',
       providesTags: ['Product'],
     }),
 
-    getProductById: build.query<Product, string>({
+    getProduct: build.query<Product, string>({
       query: (id) => `/products/${id}`,
       providesTags: (_result, _err, id) => [{ type: 'Product', id }],
+    }),
+
+    getMyProducts: build.query<PaginatedProducts, { page?: number; limit?: number } | void>({
+      query: (args) => {
+        const { page = 1, limit = 20 } = args ?? {};
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        return `/products/my?${params.toString()}`;
+      },
+      providesTags: (result) =>
+        result
+          ? [...result.data.map(({ _id }) => ({ type: 'Product' as const, id: _id })), 'Product']
+          : ['Product'],
     }),
 
     createProduct: build.mutation<Product, CreateProductBody>({
@@ -95,27 +130,31 @@ export const productsApi = baseApi.injectEndpoints({
 
     updateProduct: build.mutation<Product, { id: string; body: UpdateProductBody }>({
       query: ({ id, body }) => ({ url: `/products/${id}`, method: 'PATCH', body }),
-      invalidatesTags: (_result, _err, { id }) => [{ type: 'Product', id }],
+      invalidatesTags: (_r, _e, { id }) => [{ type: 'Product', id }, 'Product'],
     }),
 
     submitForSQ: build.mutation<SubmitSqResponse, string>({
       query: (id) => ({ url: `/products/${id}/submit-sq`, method: 'POST' }),
-      invalidatesTags: (_result, _err, id) => [{ type: 'Product', id }],
+      invalidatesTags: (_r, _e, id) => [{ type: 'Product', id }, 'Product'],
     }),
 
-    getSQStatus: build.query<{ product_sq_status: SqStatus; pss_status: unknown }, string>({
+    getSqStatus: build.query<unknown, string>({
       query: (id) => `/products/${id}/sq-status`,
     }),
   }),
-  overrideExisting: false,
 });
 
 export const {
   useGetProductsQuery,
+  useGetCategoriesQuery,
+  useGetProductQuery,
   useGetMyProductsQuery,
-  useGetProductByIdQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
   useSubmitForSQMutation,
-  useGetSQStatusQuery,
+  useGetSqStatusQuery,
 } = productsApi;
+
+// Backwards-compatible aliases for legacy call sites that used the older names.
+export const useGetProductByIdQuery = productsApi.useGetProductQuery;
+export const useGetSQStatusQuery = productsApi.useGetSqStatusQuery;

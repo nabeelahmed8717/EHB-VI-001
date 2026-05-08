@@ -32,9 +32,9 @@ function getStep2Label(status: SqStatus): string {
 }
 
 function StepIcon({ state }: { state: StepState }) {
-  if (state === 'complete') return <CheckCircle2 className="h-6 w-6 text-green-500" />;
+  if (state === 'complete') return <CheckCircle2 className="h-6 w-6 text-success-500" />;
   if (state === 'active') return <Clock className="h-6 w-6 text-yellow-500 animate-pulse" />;
-  return <Circle className="h-6 w-6 text-gray-300" />;
+  return <Circle className="h-6 w-6 text-muted-foreground" />;
 }
 
 export function SqTimeline({ status, decidedBy, sqRequestId }: SqTimelineProps) {
@@ -61,7 +61,7 @@ export function SqTimeline({ status, decidedBy, sqRequestId }: SqTimelineProps) 
               {step.label}
             </p>
             {i < steps.length - 1 && (
-              <div className={cn('h-0.5 w-full mt-2', step.state === 'complete' ? 'bg-green-300' : 'bg-gray-200')} />
+              <div className={cn('h-0.5 w-full mt-2', step.state === 'complete' ? 'bg-success-500' : 'bg-surface-muted')} />
             )}
           </div>
         ))}

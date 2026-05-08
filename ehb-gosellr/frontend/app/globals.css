@@ -2,54 +2,139 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ====================================================================
+   GoSellr Design Tokens — CSS variables
+   --------------------------------------------------------------------
+   Mirrors lib/theme.ts. To re-theme the entire app, change these vars.
+   All values are HSL triplets (no hsl() wrapper) for shadcn compat,
+   except shadow / radius which are raw values.
+   ==================================================================== */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    /* Surfaces */
+    --background:        220 30% 98%;   /* page background */
+    --foreground:        222 47% 11%;   /* main text */
+    --surface:             0  0% 100%;   /* card / surface */
+    --surface-alt:       220 30% 96%;   /* subtle alt panel */
+    --surface-muted:     220 25% 94%;   /* muted panel */
+
+    --card:                0  0% 100%;
+    --card-foreground:   222 47% 11%;
+    --popover:             0  0% 100%;
+    --popover-foreground:222 47% 11%;
+
+    /* Brand — Navy primary */
+    --primary:           219 71% 14%;   /* #0B1E3D */
+    --primary-foreground:  0  0% 100%;
+
+    /* Action — Bright blue */
+    --accent:            215 84% 52%;   /* #1F6FEB */
+    --accent-foreground:   0  0% 100%;
+
+    /* Secondary surfaces */
+    --secondary:         220 25% 95%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted:             220 16% 93%;
+    --muted-foreground:  215 16% 47%;
+
+    --destructive:         0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border:            220 16% 90%;
+    --input:             220 16% 90%;
+    --ring:              215 84% 52%;
+
+    --radius: 14px;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --background:        222 47%  6%;
+    --foreground:        210 40% 96%;
+    --surface:           222 47%  9%;
+    --surface-alt:       222 38% 12%;
+    --surface-muted:     222 28% 16%;
+
+    --card:              222 47%  9%;
+    --card-foreground:   210 40% 96%;
+    --popover:           222 47%  9%;
+    --popover-foreground:210 40% 96%;
+
+    --primary:           215 84% 52%;
+    --primary-foreground:  0  0% 100%;
+
+    --accent:            215 84% 60%;
+    --accent-foreground:   0  0% 100%;
+
+    --secondary:         222 28% 16%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted:             222 28% 16%;
+    --muted-foreground:  215 16% 65%;
+
+    --destructive:         0 62% 41%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border:            222 28% 18%;
+    --input:             222 28% 18%;
+    --ring:              215 84% 52%;
   }
 }
 
 @layer base {
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+  }
+  /* Hide scrollbar utility */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Focus ring helper */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+@layer components {
+  /* Marketplace section title row — title left, "View all" link right */
+  .section-title {
+    @apply flex items-end justify-between gap-4 mb-4;
+  }
+  .section-title h2 {
+    @apply text-xl md:text-2xl font-bold text-foreground;
+  }
+  .view-all {
+    @apply text-sm font-semibold text-accent hover:text-accent-700 transition-colors flex items-center gap-1;
+  }
+
+  /* Generic card surface used across modules */
+  .surface-card {
+    @apply bg-card rounded-lg border border-border shadow-card;
+  }
+
+  /* Pill button (used in nav bottom row, filters, chips) */
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-xs font-semibold transition-colors;
+  }
+  .chip-default {
+    @apply bg-surface-alt text-muted-foreground hover:bg-surface-muted;
+  }
+  .chip-primary {
+    @apply bg-accent/10 text-accent hover:bg-accent/15;
+  }
+
+  /* Image placeholder (when no product image) */
+  .img-placeholder {
+    @apply bg-surface-alt flex items-center justify-center text-muted-foreground;
+  }
 }

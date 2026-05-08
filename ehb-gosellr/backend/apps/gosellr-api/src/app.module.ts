@@ -6,6 +6,13 @@ import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { PssClientModule } from './modules/pss-client/pss-client.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { EmailModule } from './modules/email/email.module';
+import { SellerModule } from './modules/seller/seller.module';
+import { RiderModule } from './modules/rider/rider.module';
+import { CartModule } from './modules/cart/cart.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { HomeModule } from './modules/home/home.module';
+import { WishlistModule } from './modules/wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -21,6 +28,13 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
     ProductsModule,
     PssClientModule,
     WebhooksModule,
+    EmailModule,
+    SellerModule,
+    RiderModule,
+    CartModule,
+    OrdersModule,
+    HomeModule,
+    WishlistModule,
   ],
 })
 export class AppModule {}
