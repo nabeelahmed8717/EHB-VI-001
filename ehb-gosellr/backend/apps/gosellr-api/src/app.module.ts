@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { PssClientModule } from './modules/pss-client/pss-client.module';
+import { JpsClientModule } from './modules/jps-client/jps-client.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { EmailModule } from './modules/email/email.module';
 import { SellerModule } from './modules/seller/seller.module';
@@ -27,6 +28,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module';
     UsersModule,
     ProductsModule,
     PssClientModule,
+    JpsClientModule,
     WebhooksModule,
     EmailModule,
     SellerModule,

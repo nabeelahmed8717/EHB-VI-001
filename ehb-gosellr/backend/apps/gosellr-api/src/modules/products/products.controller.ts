@@ -74,7 +74,7 @@ export class ProductsController {
     @Query('seller_id') seller_id?: string,
     @Query('status') status?: 'approved' | 'all',
   ) {
-    return this.productsService.getApprovedProducts({
+    return this.productsService.getApprovedProductsWithOwner({
       category, page, limit, q, sort, seller_id, status,
     });
   }
@@ -102,7 +102,7 @@ export class ProductsController {
   @ApiOperation({ summary: 'Get single product detail (public)' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
   getProduct(@Param('id') id: string) {
-    return this.productsService.getProductById(id);
+    return this.productsService.getProductByIdWithOwner(id);
   }
 
   @Post()

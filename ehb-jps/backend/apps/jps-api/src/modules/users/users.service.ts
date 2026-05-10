@@ -15,6 +15,10 @@ export class UsersService {
     return this.userModel.findOne({ ehb_user_id }).exec();
   }
 
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ email: email.toLowerCase() }).exec();
+  }
+
   /**
    * Find-or-create a JPS user from EHB identity.
    * Called on every EHB SSO callback.

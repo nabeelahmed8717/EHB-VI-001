@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Request,
   UseGuards,
@@ -21,7 +22,6 @@ import {
   IsOptional,
   IsArray,
   ValidateNested,
-  IsUrl,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -113,8 +113,19 @@ class UpdateSellerProfileDto {
   bank_info?: BankInfoDto;
 }
 
+class AttachJpsProfileDto {
+  @ApiProperty({ example: '672a5f8b1c1f4d2c3a8b9d01' })
+  @IsString()
+  @IsNotEmpty()
+  jps_profile_id: string;
+}
+
 interface AuthRequest extends Request {
   user: UserDocument;
+}
+
+function emailFromUser(req: AuthRequest): string {
+  return (req.user.email ?? '').toLowerCase();
 }
 
 @ApiTags('Seller')
@@ -135,7 +146,6 @@ export class SellerController {
   @ApiResponse({ status: 409, description: 'Seller profile already exists' })
   async register(@Request() req: AuthRequest, @Body() dto: CreateSellerProfileDto) {
     const userId = (req.user._id as unknown as { toString(): string }).toString();
-    // Upgrade user role to seller if not already
     if (req.user.role !== 'seller') {
       await this.usersService.updateRole(userId, 'seller');
     }
@@ -183,5 +193,65 @@ export class SellerController {
   async submitToPss(@Request() req: AuthRequest) {
     const userId = (req.user._id as unknown as { toString(): string }).toString();
     return this.sellerService.manualSubmitToPss(userId);
+  }
+
+  // ── JPS profile linkage ────────────────────────────────────────────────────
+
+  @Get('jps-profile/eligible')
+  @ApiOperation({ summary: 'List my JPS profiles eligible for GoSellr seller linkage' })
+  @ApiResponse({ status: 200, description: 'List returned' })
+  async listEligibleJpsProfiles(@Request() req: AuthRequest) {
+    const userId = (req.user._id as unknown as { toString(): string }).toString();
+    const email = emailFromUser(req);
+    return this.sellerService.listEligibleJpsProfiles(userId, email);
+  }
+
+  @Get('jps-profile')
+  @ApiOperation({ summary: 'Get the JPS profile currently linked to this seller account' })
+  @ApiResponse({ status: 200, description: 'Linked profile or null' })
+  async getLinkedJpsProfile(@Request() req: AuthRequest) {
+    const userId = (req.user._id as unknown as { toString(): string }).toString();
+    const email = emailFromUser(req);
+    return this.sellerService.getLinkedJpsProfile(userId, email);
+  }
+
+  @Post('jps-profile/attach')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Attach an existing JPS profile (must be platform=gosellr role=seller, owned by you)' })
+  @ApiResponse({ status: 200, description: 'Attached' })
+  @ApiResponse({ status: 400, description: 'Profile is wrong platform/role' })
+  @ApiResponse({ status: 404, description: 'JPS profile not found or not yours' })
+  @ApiResponse({ status: 409, description: 'Profile already linked to another GoSellr seller' })
+  async attachJpsProfile(@Request() req: AuthRequest, @Body() dto: AttachJpsProfileDto) {
+    const userId = (req.user._id as unknown as { toString(): string }).toString();
+    const email = emailFromUser(req);
+    return this.sellerService.attachJpsProfile(userId, email, dto.jps_profile_id);
+  }
+
+  @Post('jps-profile/return')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Deep-link return from JPS — auto-attaches the user\'s newest unlinked gosellr+seller profile',
+    description:
+      'Called by the GoSellr frontend after the user has come back from JPS\'s ' +
+      '"Create new profile" flow. Looks at the calling user\'s eligible profiles ' +
+      'and attaches the most recent unclaimed one.',
+  })
+  @ApiResponse({ status: 200, description: 'Newly created JPS profile attached' })
+  @ApiResponse({ status: 404, description: 'No eligible profile found in JPS' })
+  async jpsReturnAutoAttach(@Request() req: AuthRequest) {
+    const userId = (req.user._id as unknown as { toString(): string }).toString();
+    const email = emailFromUser(req);
+    return this.sellerService.autoAttachLatestJpsProfile(userId, email);
+  }
+
+  @Delete('jps-profile')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unlink the current JPS profile (only allowed with zero products)' })
+  @ApiResponse({ status: 200, description: 'Unlinked' })
+  @ApiResponse({ status: 409, description: 'Cannot unlink while products exist' })
+  async unlinkJpsProfile(@Request() req: AuthRequest) {
+    const userId = (req.user._id as unknown as { toString(): string }).toString();
+    return this.sellerService.unlinkJpsProfile(userId);
   }
 }

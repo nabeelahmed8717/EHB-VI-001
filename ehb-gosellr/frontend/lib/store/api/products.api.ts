@@ -8,6 +8,55 @@ export type SqStatus =
   | 'approved'
   | 'rejected';
 
+/**
+ * Buyer-safe view of the GoSellr seller's store, hydrated on product reads.
+ * This is the BUSINESS profile (business_name, category) — distinct from the
+ * JPS owner profile (the human's identity card).
+ */
+export interface ProductStore {
+  business_name: string;
+  business_category: string;
+  business_type: string;
+  store_description: string;
+  store_logo_url: string | null;
+  sq_status: string;
+  sq_level: number | null;
+  sq_badge_label: string | null;
+}
+
+/** Compact store summary for product list cards. */
+export interface ProductStoreSummary {
+  business_name: string;
+  business_category: string;
+  sq_badge_label: string | null;
+  sq_status: string;
+}
+
+/**
+ * Buyer-safe view of the JPS profile linked to a product's seller.
+ * Hydrated server-side by the GoSellr backend on every product read.
+ */
+export interface ProductOwner {
+  id: string;
+  platform: string;
+  role: string;
+  display_name: string;
+  bio: string;
+  description: string;
+  status: string;
+  sq_level: number | null;
+  sq_badge_label: string | null;
+  is_verified: boolean;
+}
+
+/** Compact owner summary for product list cards. */
+export interface ProductOwnerSummary {
+  id: string;
+  display_name: string;
+  sq_badge_label: string | null;
+  is_verified: boolean;
+}
+
 export interface Product {
   _id: string;
   seller_id: string;
@@ -26,6 +75,14 @@ export interface Product {
   sq_badge_label: string | null;
   created_at: string;
   updated_at: string;
+  /** GoSellr store — present on GET /products/:id only */
+  store?: ProductStore | null;
+  /** Compact store summary — present on GET /products list only */
+  store_summary?: ProductStoreSummary | null;
+  /** Full JPS owner profile — present on GET /products/:id only */
+  owner?: ProductOwner | null;
+  /** Compact JPS owner summary — present on GET /products list only */
+  owner_summary?: ProductOwnerSummary | null;
 }
 
 export interface PaginatedProducts {

@@ -11,6 +11,8 @@ import { Model } from 'mongoose';
 import { Profile, ProfileDocument } from './profile.schema';
 import { ProfileStatus } from '@ehb-jps/types';
 import { PssClientService } from '../pss-client/pss-client.service';
+import { JpsProfilePublicDto, toJpsProfilePublic } from './profile-public.dto';
+import { UsersService } from '../users/users.service';
 
 // ── State machine ─────────────────────────────────────────────────────────────
 
@@ -30,6 +32,7 @@ export class ProfilesService {
   constructor(
     @InjectModel(Profile.name) private profileModel: Model<ProfileDocument>,
     private readonly pssClient: PssClientService,
+    private readonly usersService: UsersService,
   ) {}
 
   private baseQuery(userId: string) {
@@ -60,6 +63,110 @@ export class ProfilesService {
     ]);
 
     return { profiles, total, page, limit, has_more: total > page * limit };
+  }
+
+  /**
+   * Service-to-service read of a single profile, returning ONLY the
+   * buyer-safe fields. Used by other EHB platforms (e.g. GoSellr) to
+   * render an "owner" card next to a product or listing.
+   *
+   * No CNIC, no full address, no PSS internal IDs.
+   * 404 if not found or soft-deleted.
+   */
+  async findPublic(id: string): Promise<JpsProfilePublicDto> {
+    const profile = await this.profileModel
+      .findOne({ _id: id, deleted_at: null })
+      .exec();
+    if (!profile) throw new NotFoundException('Profile not found');
+    return toJpsProfilePublic(profile);
+  }
+
+
+  /**
+   * Service-to-service lookup: find a user's profiles by email.
+   * Used by other EHB platforms (e.g. GoSellr) to resolve which JPS profile
+   * belongs to a given user without sharing a JWT secret. Filters by
+   * (platform, role) when supplied.
+   *
+   * Returns an array (empty if no JPS user exists for the email yet).
+   * Excludes soft-deleted profiles.
+   */
+  async findEligibleByEmail(
+    email: string,
+    platform?: string,
+    role?: string,
+  ): Promise<Array<Record<string, unknown>>> {
+    this.logger.log(`[svc-lookup] email="${email}" platform="${platform ?? '*'}" role="${role ?? '*'}"`);
+    const user = await this.usersService.findByEmail(email.toLowerCase());
+    if (!user) {
+      this.logger.warn(`[svc-lookup] no JPS user found for email "${email.toLowerCase()}"`);
+      return [];
+    }
+    const userIdStr = (user._id as unknown as { toString(): string }).toString();
+    this.logger.log(`[svc-lookup] found JPS user _id="${userIdStr}" email="${user.email}"`);
+
+    const filter: Record<string, unknown> = {
+      user_id: userIdStr,
+      deleted_at: null,
+    };
+    if (platform) filter['platform'] = platform;
+    if (role) filter['role'] = role;
+
+    const profiles = await this.profileModel
+      .find(filter)
+      .sort({ created_at: -1 })
+      .limit(50)
+      .lean()
+      .exec();
+    this.logger.log(`[svc-lookup] matched ${profiles.length} profile(s) for user_id="${userIdStr}"`);
+    if (profiles.length === 0) {
+      // Debug: how many profiles does this user have IGNORING platform/role filter?
+      const allForUser = await this.profileModel
+        .find({ user_id: userIdStr, deleted_at: null })
+        .select('platform role status')
+        .lean()
+        .exec();
+      this.logger.warn(
+        `[svc-lookup] user has ${allForUser.length} other profile(s) total: ` +
+        JSON.stringify(allForUser),
+      );
+    }
+
+    // Strip internals before returning to a foreign service.
+    return profiles.map((p) => {
+      const { user_id: _u, deleted_at: _d, pss_request_id: _r, ...safe } = p;
+      void _u; void _d; void _r;
+      return safe;
+    });
+  }
+
+  /**
+   * Service-to-service lookup: fetch a single profile by id, but ONLY when
+   * the supplied email matches the profile's owning user. Used when GoSellr
+   * needs the full owner view of a JPS profile during the attach flow.
+   *
+   * Returns null if not found, soft-deleted, or owned by a different user
+   * (caller should treat as 404 either way).
+   */
+  async findOwnedByEmail(
+    profileId: string,
+    email: string,
+  ): Promise<Record<string, unknown> | null> {
+    const user = await this.usersService.findByEmail(email.toLowerCase());
+    if (!user) return null;
+
+    const profile = await this.profileModel
+      .findOne({
+        _id: profileId,
+        user_id: (user._id as unknown as { toString(): string }).toString(),
+        deleted_at: null,
+      })
+      .lean()
+      .exec();
+    if (!profile) return null;
+    const { user_id: _u, deleted_at: _d, pss_request_id: _r, ...safe } = profile;
+    void _u; void _d; void _r;
+    return safe;
   }
 
   async findOne(id: string, userId: string): Promise<ProfileDocument> {

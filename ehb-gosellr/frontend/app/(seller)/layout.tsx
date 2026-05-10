@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '@/lib/store';
 import Link from 'next/link';
 import {
-  LayoutDashboard, Package, ShoppingBag, Star, Settings, LogOut, Store, Loader2, Home,
+  LayoutDashboard, Package, ShoppingBag, Star, Settings, LogOut, Store, Loader2, Home, ShieldCheck,
 } from 'lucide-react';
 import { logout } from '@/lib/store/auth.slice';
 import { useLogoutServerMutation } from '@/lib/store/api/auth.api';
@@ -16,6 +16,7 @@ import { RoleSwitchModal } from '@/components/role-switch-modal';
 const NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/products', label: 'Products', icon: Package },
+  { href: '/dashboard/jps-profile', label: 'JPS Profile', icon: ShieldCheck },
   { href: '/dashboard/orders', label: 'Orders', icon: ShoppingBag },
   { href: '/dashboard/sq-status', label: 'Trust Score', icon: Star },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },

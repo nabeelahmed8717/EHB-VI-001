@@ -74,6 +74,28 @@ export class Seller {
 
   @Prop({ type: Boolean, default: true })
   is_active: boolean;
+
+  // ── JPS profile linkage ────────────────────────────────────────────────────
+  // Required before this seller can upload products.
+  // Stores ONLY the JPS profile id — the source of truth for display_name,
+  // bio, and sq_level lives in JPS. GoSellr fetches it through jps-client
+  // every time it renders a product (with a 5-minute in-memory cache).
+  //
+  // Linked profile must satisfy (platform=gosellr, role=seller).
+  // Any JPS status (draft / submitted / approved) is accepted.
+
+  @Prop({ type: String, default: null })
+  jps_profile_id: string | null;
+
+  @Prop({ type: Date, default: null })
+  jps_profile_linked_at: Date | null;
 }
 
 export const SellerSchema = SchemaFactory.createForClass(Seller);
+
+// Prevent two GoSellr sellers from claiming the same JPS profile.
+// Partial filter so multiple sellers without a linked profile remain valid.
+SellerSchema.index(
+  { jps_profile_id: 1 },
+  { unique: true, partialFilterExpression: { jps_profile_id: { $type: 'string' } } },
+);

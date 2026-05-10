@@ -68,6 +68,10 @@ const sellerSchema = new mongoose.Schema(
     sq_rejection_reason: { type: String, default: null },
     sq_badge_label: { type: String, default: 'SQ Verified' },
     is_active: { type: Boolean, default: true },
+    // JPS profile linkage — populated by the seed below so the demo
+    // seller can upload products without needing a live JPS instance.
+    jps_profile_id: { type: String, default: null },
+    jps_profile_linked_at: { type: Date, default: null },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }, collection: 'sellers' },
 );
@@ -177,6 +181,11 @@ async function seed() {
       sq_status: 'approved',
       sq_level: 4,
       sq_badge_label: 'SQ L4 Verified',
+      // Link to a deterministic JPS profile ObjectId. The matching profile
+      // should be seeded in JPS via ehb-jps's seed (or stubbed by jps-client
+      // when JPS is unreachable — buyer page degrades gracefully).
+      jps_profile_id: '672a5f8b1c1f4d2c3a8b9d01',
+      jps_profile_linked_at: new Date(),
     });
     console.log('✅ Created seller profile');
   }
@@ -205,6 +214,8 @@ async function seed() {
   console.log('  RIDER   rider@gosellr.test   / Test1234');
   console.log('');
   console.log(`  ${SAMPLE_PRODUCTS.length} sample products (sq_status: approved)`);
+  console.log('  Seller is linked to JPS profile id: 672a5f8b1c1f4d2c3a8b9d01');
+  console.log('  → Make sure ehb-jps seed creates a Profile with this _id.');
   console.log('─────────────────────────────────────────');
 
   await mongoose.disconnect();

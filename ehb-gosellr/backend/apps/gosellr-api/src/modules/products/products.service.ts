@@ -3,12 +3,16 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Product, ProductDocument, SqStatus } from './product.schema';
+import { Seller, SellerDocument } from '../seller/seller.schema';
 import { PssClientService } from '../pss-client/pss-client.service';
+import { JpsClientService } from '../jps-client/jps-client.service';
+import { JpsProfilePublic } from '../../../../../libs/gosellr-types/src';
 
 export interface CreateProductDto {
   title: string;
@@ -66,7 +70,9 @@ export class ProductsService {
 
   constructor(
     @InjectModel(Product.name) private readonly productModel: Model<ProductDocument>,
+    @InjectModel(Seller.name) private readonly sellerModel: Model<SellerDocument>,
     private readonly pssClient: PssClientService,
+    private readonly jpsClient: JpsClientService,
   ) {}
 
   // ── Public: products for buyers ──────────────────────────────────────────
@@ -127,6 +133,122 @@ export class ProductsService {
     return product;
   }
 
+  /**
+   * Buyer-facing product detail with the linked seller's JPS profile attached.
+   * Returns the lean product object + an `owner` field (or null when JPS is
+   * unavailable or the seller hasn't linked a profile).
+   */
+  async getProductByIdWithOwner(id: string) {
+    const product = await this.productModel.findById(id).lean().exec();
+    if (!product) throw new NotFoundException('Product not found');
+    const [store, owner] = await Promise.all([
+      this.getStoreForSeller(product.seller_id),
+      this.getOwnerForSeller(product.seller_id),
+    ]);
+    return { ...product, store, owner };
+  }
+
+  /**
+   * Buyer-safe view of the seller's STORE (GoSellr business profile).
+   * Returns null when the seller has no profile (shouldn't happen for an
+   * active product but the type is permissive for safety).
+   */
+  async getStoreForSeller(sellerUserId: string | Types.ObjectId) {
+    const userId = typeof sellerUserId === 'string'
+      ? new Types.ObjectId(sellerUserId)
+      : sellerUserId;
+    const seller = await this.sellerModel
+      .findOne({ user_id: userId })
+      .select(
+        'business_name business_category business_type store_description ' +
+        'store_logo_url sq_status sq_level sq_badge_label',
+      )
+      .lean()
+      .exec();
+    if (!seller) return null;
+    return {
+      business_name: seller.business_name,
+      business_category: seller.business_category,
+      business_type: seller.business_type,
+      store_description: seller.store_description ?? '',
+      store_logo_url: seller.store_logo_url ?? null,
+      sq_status: seller.sq_status,
+      sq_level: seller.sq_level ?? null,
+      sq_badge_label: seller.sq_badge_label ?? null,
+    };
+  }
+
+  /**
+   * Buyer-facing browse list with a compact owner summary on each item.
+   * One JPS public-profile lookup per UNIQUE seller in the page (cached
+   * 5 min in jps-client) — typical 20-item page hits at most ~20 ids,
+   * usually far fewer thanks to repeat sellers.
+   */
+  async getApprovedProductsWithOwner(query: GetProductsQuery) {
+    const result = await this.getApprovedProducts(query);
+    const sellerUserIds = Array.from(
+      new Set(
+        result.data
+          .map((p: { seller_id?: Types.ObjectId | string }) =>
+            p.seller_id?.toString() ?? '',
+          )
+          .filter(Boolean),
+      ),
+    );
+    if (sellerUserIds.length === 0) return result;
+
+    const sellers = await this.sellerModel
+      .find({ user_id: { $in: sellerUserIds.map((id) => new Types.ObjectId(id)) } })
+      .select('user_id jps_profile_id')
+      .lean()
+      .exec();
+    const userIdToJpsProfileId = new Map(
+      sellers
+        .filter((s) => s.jps_profile_id)
+        .map((s) => [s.user_id.toString(), s.jps_profile_id as string]),
+    );
+
+    const profileIds = Array.from(new Set(userIdToJpsProfileId.values()));
+    const profiles = await this.jpsClient.getManyPublic(profileIds);
+
+    // Also pull each seller's compact store summary (business name + badge)
+    // so the card shows the real store name instead of "Owner's Store".
+    const sellerStores = await this.sellerModel
+      .find({ user_id: { $in: sellerUserIds.map((id) => new Types.ObjectId(id)) } })
+      .select('user_id business_name business_category sq_badge_label sq_status')
+      .lean()
+      .exec();
+    const userIdToStore = new Map(
+      sellerStores.map((s) => [
+        s.user_id.toString(),
+        {
+          business_name: s.business_name,
+          business_category: s.business_category,
+          sq_badge_label: s.sq_badge_label ?? null,
+          sq_status: s.sq_status,
+        },
+      ]),
+    );
+
+    const data = result.data.map((p: { seller_id?: Types.ObjectId | string } & Record<string, unknown>) => {
+      const sid = p.seller_id?.toString() ?? '';
+      const jpsId = userIdToJpsProfileId.get(sid);
+      const full = jpsId ? profiles[jpsId] : undefined;
+      const owner_summary = full
+        ? {
+            id: full.id,
+            display_name: full.display_name,
+            sq_badge_label: full.sq_badge_label,
+            is_verified: full.is_verified,
+          }
+        : null;
+      const store_summary = userIdToStore.get(sid) ?? null;
+      return { ...p, owner_summary, store_summary };
+    });
+
+    return { ...result, data };
+  }
+
   // ── Seller: own products ──────────────────────────────────────────────────
 
   async getMyProducts(sellerId: string, query: GetProductsQuery) {
@@ -150,12 +272,50 @@ export class ProductsService {
   // ── Create ────────────────────────────────────────────────────────────────
 
   async createProduct(sellerId: string, dto: CreateProductDto): Promise<ProductDocument> {
+    // ── JPS profile linkage guard ──────────────────────────────────────────
+    // Sellers must link a JPS profile (any status) before they can upload
+    // products. The link gives buyers a verifiable owner identity card on
+    // every product detail page.
+    const seller = await this.sellerModel
+      .findOne({ user_id: new Types.ObjectId(sellerId) })
+      .exec();
+    if (!seller) {
+      throw new NotFoundException('Seller profile not found — register as seller first');
+    }
+    if (!seller.jps_profile_id) {
+      throw new ConflictException({
+        error: 'JPS_PROFILE_REQUIRED',
+        message:
+          'You must link a JPS profile before uploading products. ' +
+          'Create one in JPS or attach an existing seller profile.',
+        next: '/dashboard/jps-profile',
+      });
+    }
+
     const product = new this.productModel({
       ...dto,
       seller_id: new Types.ObjectId(sellerId),
       sq_status: 'not_submitted' as SqStatus,
     });
     return product.save();
+  }
+
+  /**
+   * Hydrate a product (or list of products) with the linked seller's
+   * JPS profile public view, so buyers see "Owner: <name> · SQ5".
+   * Returns null when no profile is linked or JPS is unavailable.
+   */
+  async getOwnerForSeller(sellerUserId: string | Types.ObjectId): Promise<JpsProfilePublic | null> {
+    const userId = typeof sellerUserId === 'string'
+      ? new Types.ObjectId(sellerUserId)
+      : sellerUserId;
+    const seller = await this.sellerModel
+      .findOne({ user_id: userId })
+      .select('jps_profile_id')
+      .lean()
+      .exec();
+    if (!seller?.jps_profile_id) return null;
+    return this.jpsClient.getProfilePublic(seller.jps_profile_id);
   }
 
   // ── Update ────────────────────────────────────────────────────────────────

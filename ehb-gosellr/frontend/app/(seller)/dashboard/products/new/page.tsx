@@ -43,8 +43,29 @@ export default function NewProductPage() {
       toast({ title: 'Product created!', description: 'Now you can submit it for SQ approval.' });
       router.push(`/dashboard/products/${product._id}`);
     } catch (err: unknown) {
-      const e = err as { data?: { message?: string } };
-      toast({ title: 'Error', description: e?.data?.message ?? 'Failed to create product', variant: 'destructive' });
+      const e = err as {
+        status?: number;
+        data?: { error?: string; message?: string; next?: string };
+      };
+      // ── JPS profile guard ──
+      // Backend returns 409 with { error: 'JPS_PROFILE_REQUIRED', next: '/dashboard/jps-profile' }
+      // when the seller hasn't linked a JPS profile yet. Route them there.
+      if (e?.data?.error === 'JPS_PROFILE_REQUIRED') {
+        toast({
+          title: 'JPS profile required',
+          description:
+            e.data.message ??
+            'Link a JPS profile before uploading products.',
+          variant: 'destructive',
+        });
+        router.push(e.data.next ?? '/dashboard/jps-profile');
+        return;
+      }
+      toast({
+        title: 'Error',
+        description: e?.data?.message ?? 'Failed to create product',
+        variant: 'destructive',
+      });
     }
   };
 

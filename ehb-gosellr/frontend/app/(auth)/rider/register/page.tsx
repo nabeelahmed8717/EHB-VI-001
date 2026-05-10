@@ -209,15 +209,3 @@ export default function RiderRegisterPage() {
     </div>
   );
 }
-
-              <button type="submit" disabled={isCreatingRider}
-                className="w-full bg-warning-400 hover:bg-warning-500 text-warning-foreground rounded-pill py-3 font-semibold text-sm transition-colors disabled:opacity-50">
-                {isCreatingRider ? 'Creating profile…' : 'Become a Rider'}
-              </button>
-            </form>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
