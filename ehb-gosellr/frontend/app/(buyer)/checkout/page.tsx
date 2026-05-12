@@ -25,7 +25,14 @@ export default function CheckoutPage() {
     e.preventDefault();
     setError('');
     if (items.length === 0) { setError('Your cart is empty'); return; }
-    const sellerId = (items[0] as { seller_id?: string }).seller_id ?? '';
+    const sellerId = items[0].seller_id ?? '';
+    if (!sellerId) {
+      setError(
+        'Your cart contains items from before seller tracking was added. ' +
+        'Please remove and re-add them to continue.',
+      );
+      return;
+    }
     try {
       const order = await createOrder({
         seller_id: sellerId,

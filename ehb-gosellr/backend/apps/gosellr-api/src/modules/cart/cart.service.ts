@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Cart, CartDocument } from './cart.schema';
+import { Product, ProductDocument } from '../products/product.schema';
 
 export interface AddToCartDto {
   product_id: string;
@@ -15,6 +16,7 @@ export interface AddToCartDto {
 export class CartService {
   constructor(
     @InjectModel(Cart.name) private readonly cartModel: Model<CartDocument>,
+    @InjectModel(Product.name) private readonly productModel: Model<ProductDocument>,
   ) {}
 
   private recalcTotal(cart: CartDocument): void {
@@ -33,6 +35,20 @@ export class CartService {
   async addItem(userId: string, dto: AddToCartDto): Promise<CartDocument> {
     const cart = await this.getOrCreate(userId);
     const productObjectId = new Types.ObjectId(dto.product_id);
+
+    // Look up the product server-side so we record the authoritative seller_id
+    // (and prevent clients from spoofing seller/price). Required for checkout
+    // since an order can only target one seller — orders.createOrder reads
+    // seller_id off the cart item.
+    const product = await this.productModel
+      .findById(productObjectId)
+      .select('seller_id title price images')
+      .lean()
+      .exec();
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
     const existingIdx = cart.items.findIndex(
       (i) => i.product_id.toString() === dto.product_id,
     );
@@ -41,9 +57,14 @@ export class CartService {
       cart.items[existingIdx].quantity += dto.quantity;
       cart.items[existingIdx].subtotal =
         cart.items[existingIdx].unit_price * cart.items[existingIdx].quantity;
+      // Backfill seller_id on legacy items missing it
+      if (!cart.items[existingIdx].seller_id) {
+        cart.items[existingIdx].seller_id = product.seller_id;
+      }
     } else {
       cart.items.push({
         product_id: productObjectId,
+        seller_id: product.seller_id,
         product_name: dto.product_name,
         product_image_url: dto.product_image_url ?? null,
         unit_price: dto.unit_price,
@@ -90,6 +111,7 @@ export class CartService {
       user_id: cart.user_id.toString(),
       items: cart.items.map((i) => ({
         product_id: i.product_id.toString(),
+        seller_id: i.seller_id?.toString() ?? null,
         product_name: i.product_name,
         product_image_url: i.product_image_url,
         unit_price: i.unit_price,

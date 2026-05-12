@@ -49,6 +49,8 @@ export interface Order {
 
 export interface CartItem {
   product_id: string;
+  /** Seller (user_id) who owns this product — used by checkout to set order.seller_id */
+  seller_id: string | null;
   product_name: string;
   product_image_url: string | null;
   unit_price: number;
