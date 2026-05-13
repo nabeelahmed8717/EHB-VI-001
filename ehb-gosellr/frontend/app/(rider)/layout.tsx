@@ -7,16 +7,34 @@ import type { RootState } from '@/lib/store';
 import Link from 'next/link';
 import { LayoutDashboard, Bell, Clock, DollarSign, Truck, Loader2, ShieldCheck } from 'lucide-react';
 import { useGetRiderProfileQuery } from '@/lib/store/api/rider.api';
+import { useGetMyOrdersQuery } from '@/lib/store/api/orders.api';
+import { useGetPendingDeliveryRequestsQuery } from '@/lib/store/api/delivery-requests.api';
 import { RiderRequestToastListener } from '@/components/rider/RiderRequestToastListener';
 import { DashboardTopbar } from '@/components/layout/DashboardTopbar';
 
-const NAV = [
+type NavBadgeTone = 'accent' | 'warning' | 'destructive';
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  badgeKey?: 'requests' | 'active';
+  badgeTone?: NavBadgeTone;
+}
+
+const NAV: NavItem[] = [
   { href: '/dashboard/rider', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/rider/requests', label: 'Requests', icon: Bell },
-  { href: '/dashboard/rider/active', label: 'Active', icon: Clock },
+  { href: '/dashboard/rider/requests', label: 'Requests', icon: Bell, badgeKey: 'requests', badgeTone: 'destructive' },
+  { href: '/dashboard/rider/active', label: 'Active', icon: Clock, badgeKey: 'active', badgeTone: 'accent' },
   { href: '/dashboard/rider/history', label: 'History', icon: DollarSign },
   { href: '/dashboard/rider/jps-profile', label: 'JPS Profile', icon: ShieldCheck },
 ];
+
+const BADGE_TONE: Record<NavBadgeTone, string> = {
+  accent: 'bg-accent text-accent-foreground',
+  warning: 'bg-warning-500 text-white',
+  destructive: 'bg-destructive text-destructive-foreground',
+};
 
 /**
  * Rider layout guard. Mirrors the seller layout — access allowed when
@@ -34,6 +52,26 @@ export default function RiderLayout({ children }: { children: React.ReactNode })
   } = useGetRiderProfileQuery(undefined, {
     skip: !isHydrated || !isAuthenticated,
   });
+
+  // Live badge counts. RTK Query shares the cache with the Requests + Active
+  // pages, so this is essentially free after the first load. WS pushes
+  // invalidate the tags so badges refresh automatically.
+  const skipFetches = !isHydrated || !isAuthenticated || user?.role !== 'rider';
+  const { data: pendingRequests = [] } = useGetPendingDeliveryRequestsQuery(undefined, {
+    skip: skipFetches,
+  });
+  const { data: orders = [] } = useGetMyOrdersQuery(undefined, { skip: skipFetches });
+  const counts: Record<string, number> = {
+    requests: pendingRequests.length,
+    // "Active" = order assigned to me and not yet delivered/cancelled.
+    active: orders.filter(
+      (o) =>
+        o.rider_id != null &&
+        (o.status === 'ready_for_delivery'
+          || o.status === 'picked'
+          || o.status === 'out_for_delivery'),
+    ).length,
+  };
 
   const hasRiderProfile = !!profile;
   const allowed = user?.role === 'rider' || hasRiderProfile;
@@ -79,8 +117,9 @@ export default function RiderLayout({ children }: { children: React.ReactNode })
         </Link>
 
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {NAV.map(({ href, label, icon: Icon, badgeKey, badgeTone = 'accent' }) => {
             const active = pathname === href;
+            const count = badgeKey ? counts[badgeKey] ?? 0 : 0;
             return (
               <Link
                 key={href}
@@ -92,7 +131,14 @@ export default function RiderLayout({ children }: { children: React.ReactNode })
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                {label}
+                <span className="flex-1">{label}</span>
+                {count > 0 && (
+                  <span
+                    className={`min-w-[20px] h-5 px-1.5 rounded-pill text-[10px] font-bold flex items-center justify-center ${BADGE_TONE[badgeTone]}`}
+                  >
+                    {count > 99 ? '99+' : count}
+                  </span>
+                )}
               </Link>
             );
           })}

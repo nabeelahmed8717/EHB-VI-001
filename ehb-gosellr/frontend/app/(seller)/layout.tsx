@@ -9,18 +9,36 @@ import {
   LayoutDashboard, Package, ShoppingBag, Star, Settings, Store, Loader2, ShieldCheck,
 } from 'lucide-react';
 import { useGetSellerProfileQuery } from '@/lib/store/api/seller.api';
+import { useGetMyOrdersQuery } from '@/lib/store/api/orders.api';
 import { RoleSwitchModal } from '@/components/role-switch-modal';
 import { DashboardTopbar } from '@/components/layout/DashboardTopbar';
 import { useOrdersSocket } from '@/lib/hooks/useOrdersSocket';
 
-const NAV = [
+type NavBadgeTone = 'accent' | 'warning' | 'destructive';
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  /** Resolved at render time from a counts map keyed by href. */
+  badgeKey?: 'orders';
+  badgeTone?: NavBadgeTone;
+}
+
+const NAV: NavItem[] = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/products', label: 'Products', icon: Package },
   { href: '/dashboard/jps-profile', label: 'JPS Profile', icon: ShieldCheck },
-  { href: '/dashboard/orders', label: 'Orders', icon: ShoppingBag },
+  { href: '/dashboard/orders', label: 'Orders', icon: ShoppingBag, badgeKey: 'orders', badgeTone: 'accent' },
   { href: '/dashboard/sq-status', label: 'Trust Score', icon: Star },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
+
+const BADGE_TONE: Record<NavBadgeTone, string> = {
+  accent: 'bg-accent text-accent-foreground',
+  warning: 'bg-warning-500 text-white',
+  destructive: 'bg-destructive text-destructive-foreground',
+};
 
 /**
  * Seller layout guard.
@@ -49,6 +67,16 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   } = useGetSellerProfileQuery(undefined, {
     skip: !isHydrated || !isAuthenticated,
   });
+
+  // Live badge counts. Hits the same /orders/my cache the orders page uses,
+  // so this is free after the first page load.
+  const { data: orders = [] } = useGetMyOrdersQuery(undefined, {
+    skip: !isHydrated || !isAuthenticated || user?.role !== 'seller',
+  });
+  const counts: Record<string, number> = {
+    // Orders waiting on a seller action: confirm or mark-ready.
+    orders: orders.filter((o) => o.status === 'pending' || o.status === 'confirmed').length,
+  };
 
   const hasSellerProfile = !!profile;
   const allowed = user?.role === 'seller' || hasSellerProfile;
@@ -106,8 +134,9 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         </Link>
 
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {NAV.map(({ href, label, icon: Icon, badgeKey, badgeTone = 'accent' }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
+            const count = badgeKey ? counts[badgeKey] ?? 0 : 0;
             return (
               <Link
                 key={href}
@@ -119,7 +148,14 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                {label}
+                <span className="flex-1">{label}</span>
+                {count > 0 && (
+                  <span
+                    className={`min-w-[20px] h-5 px-1.5 rounded-pill text-[10px] font-bold flex items-center justify-center ${BADGE_TONE[badgeTone]}`}
+                  >
+                    {count > 99 ? '99+' : count}
+                  </span>
+                )}
               </Link>
             );
           })}
