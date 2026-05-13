@@ -18,6 +18,8 @@ import {
 } from './delivery-request.schema';
 import { OrdersService } from '../orders/orders.service';
 import { OrdersGateway } from '../orders/orders.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
+import type { NotificationType } from '../notifications/notification.schema';
 
 /**
  * Manages the seller → rider request/accept handshake that fronts the
@@ -53,7 +55,33 @@ export class DeliveryRequestsService implements OnModuleInit, OnModuleDestroy {
     private readonly requestModel: Model<DeliveryRequestDocument>,
     private readonly ordersService: OrdersService,
     private readonly ordersGateway: OrdersGateway,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  /**
+   * Same fire-and-forget pattern as OrdersService.notify — persist a
+   * notification row + push it over the WS, never throw.
+   */
+  private notify(
+    userId: string,
+    type: NotificationType,
+    title: string,
+    message: string,
+    link: string | null,
+    metadata: Record<string, unknown> = {},
+  ): void {
+    void this.notifications
+      .createSafe({ user_id: userId, type, title, message, link, metadata })
+      .then((doc) => {
+        if (doc) {
+          this.ordersGateway.emitNotificationToUser(
+            userId,
+            this.notifications.toPublic(doc),
+          );
+        }
+      })
+      .catch(() => undefined);
+  }
 
   // ── Lifecycle: periodic expiry sweep ───────────────────────────────────────
   onModuleInit() {
@@ -119,6 +147,18 @@ export class DeliveryRequestsService implements OnModuleInit, OnModuleDestroy {
     });
 
     this.emit('delivery_request:new', doc);
+
+    // Notify the rider that they have a pending request.
+    const shortId = params.orderId.slice(-8);
+    this.notify(
+      params.riderUserId,
+      'delivery_request:new',
+      'New delivery request',
+      `Order #${shortId} · PKR ${params.deliveryFee.toLocaleString()} fee · 60s to accept`,
+      `/dashboard/rider/requests`,
+      { order_id: params.orderId, request_id: doc._id?.toString() },
+    );
+
     return doc;
   }
 
@@ -134,6 +174,18 @@ export class DeliveryRequestsService implements OnModuleInit, OnModuleDestroy {
     req.responded_at = new Date();
     const saved = await req.save();
     this.emit('delivery_request:accepted', saved);
+
+    // Tell the seller their request was accepted.
+    const shortId = saved.order_id.toString().slice(-8);
+    this.notify(
+      saved.seller_id.toString(),
+      'delivery_request:accepted',
+      'Rider accepted',
+      `${saved.rider_display_name} accepted the delivery request for order #${shortId}.`,
+      `/dashboard/orders`,
+      { order_id: saved.order_id.toString(), request_id: saved._id?.toString() },
+    );
+
     return saved;
   }
 
@@ -148,6 +200,17 @@ export class DeliveryRequestsService implements OnModuleInit, OnModuleDestroy {
     req.reject_reason = reason ?? null;
     const saved = await req.save();
     this.emit('delivery_request:rejected', saved);
+
+    const shortId = saved.order_id.toString().slice(-8);
+    this.notify(
+      saved.seller_id.toString(),
+      'delivery_request:rejected',
+      'Rider declined',
+      `${saved.rider_display_name} declined order #${shortId}. Pick another rider.`,
+      `/dashboard/orders`,
+      { order_id: saved.order_id.toString(), request_id: saved._id?.toString() },
+    );
+
     return saved;
   }
 
@@ -164,6 +227,17 @@ export class DeliveryRequestsService implements OnModuleInit, OnModuleDestroy {
     req.responded_at = new Date();
     const saved = await req.save();
     this.emit('delivery_request:cancelled', saved);
+
+    const shortId = saved.order_id.toString().slice(-8);
+    this.notify(
+      saved.rider_user_id.toString(),
+      'delivery_request:cancelled',
+      'Request withdrawn',
+      `The seller cancelled their delivery request for order #${shortId}.`,
+      `/dashboard/rider/requests`,
+      { order_id: saved.order_id.toString(), request_id: saved._id?.toString() },
+    );
+
     return saved;
   }
 
@@ -231,6 +305,25 @@ export class DeliveryRequestsService implements OnModuleInit, OnModuleDestroy {
       try {
         await r.save();
         this.emit('delivery_request:expired', r);
+
+        // Inform both parties the window closed.
+        const shortId = r.order_id.toString().slice(-8);
+        this.notify(
+          r.seller_id.toString(),
+          'delivery_request:expired',
+          'Request expired',
+          `${r.rider_display_name} didn't respond to order #${shortId} in 60 seconds.`,
+          `/dashboard/orders`,
+          { order_id: r.order_id.toString(), request_id: r._id?.toString() },
+        );
+        this.notify(
+          r.rider_user_id.toString(),
+          'delivery_request:expired',
+          'Request missed',
+          `You didn't respond to order #${shortId} in 60 seconds.`,
+          `/dashboard/rider/requests`,
+          { order_id: r.order_id.toString(), request_id: r._id?.toString() },
+        );
       } catch (err) {
         this.logger.warn(`could not expire ${r._id?.toString()}: ${String(err)}`);
       }

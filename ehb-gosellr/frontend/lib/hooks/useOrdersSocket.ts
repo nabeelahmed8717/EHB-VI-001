@@ -24,6 +24,17 @@ interface DeliveryRequestPayload {
   expires_at: string;
 }
 
+interface NotificationPayload {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  link: string | null;
+  metadata: Record<string, unknown>;
+  read: boolean;
+  created_at: string;
+}
+
 interface UseOrdersSocketOptions {
   /** Called when a brand-new delivery request arrives in the rider's inbox. */
   onDeliveryRequestNew?: (p: DeliveryRequestPayload) => void;
@@ -31,6 +42,8 @@ interface UseOrdersSocketOptions {
   onDeliveryRequestEvent?: (event: DeliveryRequestEvent, p: DeliveryRequestPayload) => void;
   /** Called on every order:updated event. */
   onOrderUpdated?: (p: { order_id: string; status: string }) => void;
+  /** Called when a new notification lands in the bell. */
+  onNotification?: (p: NotificationPayload) => void;
 }
 
 /**
@@ -69,7 +82,10 @@ export function useOrdersSocket(opts: UseOrdersSocketOptions = {}) {
         socketRef.current = socket;
 
         socket.on('connect', () => {
-          socket.emit('join:user', user.id);
+          // Gateway's @MessageBody expects { user_id: string } — passing a
+          // bare string puts the client in `user:undefined` and no push ever
+          // arrives. This was the live-update bug.
+          socket.emit('join:user', { user_id: user.id });
         });
 
         const invalidateForRequest = (p: DeliveryRequestPayload) => {
@@ -109,6 +125,14 @@ export function useOrdersSocket(opts: UseOrdersSocketOptions = {}) {
             ]),
           );
           optsRef.current.onOrderUpdated?.(payload);
+        });
+
+        socket.on('notification:new', (payload: NotificationPayload) => {
+          // Refresh the bell badge and the inbox list on every arrival.
+          dispatch(
+            baseApi.util.invalidateTags(['Notification', 'NotificationCount']),
+          );
+          optsRef.current.onNotification?.(payload);
         });
       } catch {
         // socket.io-client missing — page falls back to manual refetch.

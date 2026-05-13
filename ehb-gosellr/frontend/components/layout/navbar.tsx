@@ -16,6 +16,8 @@ import { useGetSellerProfileQuery } from '@/lib/store/api/seller.api';
 import { useGetRiderProfileQuery } from '@/lib/store/api/rider.api';
 import type { RootState } from '@/lib/store';
 import { CategoriesMegaMenu } from './categories-mega-menu';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useOrdersSocket } from '@/lib/hooks/useOrdersSocket';
 
 const TOP_CATEGORIES: Array<{ label: string }> = [
   { label: 'Electronics' }, { label: 'Fashion' }, { label: "Women's" }, { label: "Kids' Fashion" },
@@ -39,6 +41,8 @@ export function Navbar() {
   const router = useRouter();
   const { user, isAuthenticated } = useSelector((s: RootState) => s.auth);
   const [logoutServer] = useLogoutServerMutation();
+  // Subscribe the buyer to live notification + order pushes.
+  useOrdersSocket();
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -91,6 +95,8 @@ export function Navbar() {
               <span className="block text-xs font-semibold text-foreground">Update Location</span>
             </span>
           </button>
+
+          {isAuthenticated && <NotificationBell size="sm" />}
 
           <Link href="/cart" className="relative flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-accent transition-colors" aria-label="Cart">
             <span className="relative">

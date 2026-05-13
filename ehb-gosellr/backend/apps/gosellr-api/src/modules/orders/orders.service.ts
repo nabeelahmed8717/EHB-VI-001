@@ -12,6 +12,8 @@ import { CartService } from '../cart/cart.service';
 import { JpsClientService } from '../jps-client/jps-client.service';
 import { UsersService } from '../users/users.service';
 import { RiderService } from '../rider/rider.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import type { NotificationType } from '../notifications/notification.schema';
 
 export interface CreateOrderDto {
   buyer_id: string;
@@ -55,7 +57,34 @@ export class OrdersService {
     private readonly jpsClient: JpsClientService,
     private readonly usersService: UsersService,
     private readonly riderService: RiderService,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  /**
+   * Fire-and-forget helper: persist a notification AND push it over the WS.
+   * Never throws — a failure to notify must not break the parent flow
+   * (order placement, status update, etc.).
+   */
+  private notify(
+    userId: string,
+    type: NotificationType,
+    title: string,
+    message: string,
+    link: string | null,
+    metadata: Record<string, unknown> = {},
+  ): void {
+    void this.notifications
+      .createSafe({ user_id: userId, type, title, message, link, metadata })
+      .then((doc) => {
+        if (doc) {
+          this.ordersGateway.emitNotificationToUser(
+            userId,
+            this.notifications.toPublic(doc),
+          );
+        }
+      })
+      .catch(() => undefined);
+  }
 
   /**
    * Returns the rider roster the seller's Assign Rider modal renders.
@@ -206,6 +235,26 @@ export class OrdersService {
     void this.cartService.clearCart(dto.buyer_id).catch(() => undefined);
     // Push real-time update
     this.emitUpdate(saved);
+
+    // Inform both parties via the notification inbox.
+    const shortId = saved._id.toString().slice(-8);
+    this.notify(
+      dto.buyer_id,
+      'order:created',
+      'Order placed',
+      `Your order #${shortId} (PKR ${total.toLocaleString()}) is awaiting seller confirmation.`,
+      `/orders/${saved._id.toString()}`,
+      { order_id: saved._id.toString(), total },
+    );
+    this.notify(
+      dto.seller_id,
+      'order:created',
+      'New order received',
+      `Order #${shortId} from a new buyer — review and confirm to start fulfilment.`,
+      `/dashboard/orders`,
+      { order_id: saved._id.toString(), total },
+    );
+
     return saved;
   }
 
@@ -283,6 +332,53 @@ export class OrdersService {
     order.status_history.push({ status: newStatus, timestamp: new Date(), note: note ?? null });
     const saved = await order.save();
     this.emitUpdate(saved);
+
+    // Fan out notifications per new status.
+    const shortId = saved._id.toString().slice(-8);
+    const link = `/orders/${saved._id.toString()}`;
+    switch (newStatus) {
+      case 'confirmed':
+        this.notify(buyerId, 'order:confirmed', 'Order confirmed',
+          `Seller has accepted order #${shortId}. They'll mark it ready for pickup shortly.`, link);
+        break;
+      case 'ready_for_delivery':
+        this.notify(buyerId, 'order:ready_for_delivery', 'Order packed',
+          `Order #${shortId} is ready for pickup — the seller will assign a rider.`, link);
+        break;
+      case 'picked':
+        this.notify(buyerId, 'order:picked', 'Order picked up',
+          `Your rider has picked up order #${shortId}. Headed to you next.`, link);
+        this.notify(sellerId, 'order:picked', 'Rider picked up',
+          `Rider has picked up order #${shortId}.`, '/dashboard/orders');
+        break;
+      case 'out_for_delivery':
+        this.notify(buyerId, 'order:out_for_delivery', 'Out for delivery',
+          `Order #${shortId} is on the way. Get ready to receive it.`, link);
+        break;
+      case 'delivered':
+        this.notify(buyerId, 'order:delivered', 'Delivered',
+          `Order #${shortId} has been delivered. Hope you love it!`, link);
+        this.notify(sellerId, 'order:delivered', 'Delivered',
+          `Order #${shortId} marked delivered by the rider.`, '/dashboard/orders');
+        if (riderId) {
+          this.notify(riderId, 'order:delivered', 'Delivery complete',
+            `Delivery fee credited for order #${shortId}.`, '/dashboard/rider/history');
+        }
+        break;
+      case 'cancelled':
+        this.notify(buyerId, 'order:cancelled', 'Order cancelled',
+          `Order #${shortId} was cancelled.`, link);
+        this.notify(sellerId, 'order:cancelled', 'Order cancelled',
+          `Order #${shortId} was cancelled.`, '/dashboard/orders');
+        if (riderId) {
+          this.notify(riderId, 'order:cancelled', 'Order cancelled',
+            `Order #${shortId} you were assigned to was cancelled.`, '/dashboard/rider');
+        }
+        break;
+      default:
+        break;
+    }
+
     return saved;
   }
 
@@ -315,6 +411,19 @@ export class OrdersService {
     });
     const saved = await order.save();
     this.emitUpdate(saved);
+
+    // Tell the buyer that someone is on the way (the seller already knows
+    // because they triggered the request that led to acceptance).
+    const shortId = saved._id.toString().slice(-8);
+    this.notify(
+      saved.buyer_id.toString(),
+      'order:rider_assigned',
+      'Rider assigned',
+      `A rider has been assigned to order #${shortId}.`,
+      `/orders/${saved._id.toString()}`,
+      { order_id: saved._id.toString(), rider_id: riderId },
+    );
+
     return saved;
   }
 

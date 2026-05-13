@@ -83,6 +83,20 @@ export class OrdersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Push a notification to a specific user's room. The client side listens
+   * to `notification:new` on the /orders namespace (same socket the rest of
+   * the live updates flow over) and invalidates the notifications RTK Query
+   * cache to refresh the bell + dropdown.
+   *
+   * Called by OrdersService and DeliveryRequestsService after they've
+   * persisted a notification row — kept as a thin pass-through so the
+   * gateway has no DB dependency.
+   */
+  emitNotificationToUser(userId: string, notification: unknown): void {
+    this.server.to(`user:${userId}`).emit('notification:new', notification);
+  }
+
+  /**
    * Push a delivery-request lifecycle event. Listeners are keyed off the
    * same user rooms used by order:updated — a client only needs to call
    * `join:user <userId>` once to receive everything addressed to them.

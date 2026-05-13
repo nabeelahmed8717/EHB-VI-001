@@ -2,16 +2,16 @@
 
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import type { RootState } from '@/lib/store';
 import Link from 'next/link';
 import {
-  LayoutDashboard, Package, ShoppingBag, Star, Settings, LogOut, Store, Loader2, Home, ShieldCheck,
+  LayoutDashboard, Package, ShoppingBag, Star, Settings, Store, Loader2, ShieldCheck,
 } from 'lucide-react';
-import { logout } from '@/lib/store/auth.slice';
-import { useLogoutServerMutation } from '@/lib/store/api/auth.api';
 import { useGetSellerProfileQuery } from '@/lib/store/api/seller.api';
 import { RoleSwitchModal } from '@/components/role-switch-modal';
+import { DashboardTopbar } from '@/components/layout/DashboardTopbar';
+import { useOrdersSocket } from '@/lib/hooks/useOrdersSocket';
 
 const NAV = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -37,9 +37,9 @@ const NAV = [
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const dispatch = useDispatch();
   const { isAuthenticated, isHydrated, user } = useSelector((s: RootState) => s.auth);
-  const [logoutServer] = useLogoutServerMutation();
+  // Subscribe to live order + delivery-request + notification updates.
+  useOrdersSocket();
 
   // Skip the seller-profile lookup if not even authenticated yet.
   const {
@@ -66,12 +66,6 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     isHydrated, isAuthenticated, allowed,
     profileLoading, profileFetching, router,
   ]);
-
-  async function handleLogout() {
-    await logoutServer().unwrap().catch(() => undefined);
-    dispatch(logout());
-    router.push('/');
-  }
 
   if (!isHydrated || !isAuthenticated) return null;
 
@@ -101,12 +95,17 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="flex min-h-screen bg-surface-alt">
+      {/* ── Sidebar (brand + nav only) ───────────────────────────────────── */}
       <aside className="w-60 bg-card border-r border-border flex flex-col">
-        <Link href="/" className="p-5 border-b border-border flex items-center gap-2 hover:bg-surface-alt/50 transition-colors">
+        <Link
+          href="/"
+          className="p-5 border-b border-border flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
           <Store className="w-5 h-5 text-accent" />
           <span className="font-bold text-foreground">Seller Hub</span>
         </Link>
-        <nav className="flex-1 p-3 space-y-0.5">
+
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
             return (
@@ -125,30 +124,15 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
             );
           })}
         </nav>
-        <div className="p-3 border-t border-border">
-          <div className="px-3 py-2 text-xs text-muted-foreground truncate">{user?.email}</div>
-          {profile?.business_name && (
-            <div className="px-3 pb-2 text-xs font-semibold text-foreground truncate">
-              {profile.business_name}
-            </div>
-          )}
-          <Link
-            href="/"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-surface-alt hover:text-foreground w-full transition-colors"
-          >
-            <Home className="w-4 h-4" /> Go to Main
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-surface-alt hover:text-foreground w-full transition-colors"
-          >
-            <LogOut className="w-4 h-4" /> Log out
-          </button>
-        </div>
       </aside>
-      <main className="flex-1 overflow-auto">
-        <div className="p-6 md:p-8">{children}</div>
-      </main>
+
+      {/* ── Right column: topbar + page content ──────────────────────────── */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        <DashboardTopbar subtitle={profile?.business_name ?? null} />
+        <main className="flex-1 overflow-auto">
+          <div className="p-6 md:p-8">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

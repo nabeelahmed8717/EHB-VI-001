@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EHB Technologies — User Journey & Platform Flow</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #131932;
+    --panel-2: #1a2244;
+    --border: #243056;
+    --ink: #e9eefc;
+    --ink-dim: #9aa6c8;
+    --ink-faint: #6b779b;
+
+    --c-identity: #5b8def;
+    --c-trust:    #f59e0b;
+    --c-skill:    #a78bfa;
+    --c-service:  #22c55e;
+    --c-gov:      #ef4444;
+    --c-support:  #06b6d4;
+    --c-discover: #94a3b8;
+
+    --c-buyer:    #38bdf8;
+    --c-seller:   #34d399;
+    --c-rider:    #fbbf24;
+    --c-jobseek:  #c084fc;
+    --c-frnchse:  #f472b6;
+
+    --shadow: 0 10px 30px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.25);
+    --radius: 14px;
+    --gap: 14px;
+
+    --mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); }
+  body { padding: 36px 28px 80px; }
+
+  .page-head {
+    max-width: 1360px; margin: 0 auto 28px;
+  }
+  .page-head h1 {
+    margin: 0 0 6px; font-size: 28px; letter-spacing: -0.02em;
+  }
+  .page-head .tagline {
+    color: var(--ink-dim); font-size: 14px; margin: 0;
+  }
+  .page-head .meta {
+    color: var(--ink-faint); font-size: 12px; margin-top: 8px; font-family: var(--mono);
+  }
+
+  .tabs {
+    max-width: 1360px; margin: 0 auto 18px;
+    display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 12px;
+  }
+  .tab {
+    background: var(--panel); color: var(--ink-dim);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 14px; cursor: pointer; font: 600 13px var(--sans);
+    transition: all .15s ease;
+  }
+  .tab:hover { color: var(--ink); border-color: #344166; }
+  .tab.active { background: var(--c-identity); color: white; border-color: var(--c-identity); }
+
+  section { max-width: 1360px; margin: 0 auto; display: none; }
+  section.active { display: block; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 22px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .legend-item {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--ink-dim);
+  }
+  .legend-dot {
+    width: 12px; height: 12px; border-radius: 3px;
+  }
+
+  /* ── Shared building blocks ───────────────────────────────────────────── */
+  .layer {
+    display: grid; gap: var(--gap);
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px;
+  }
+  .layer-title {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: .12em;
+    margin-bottom: 4px;
+  }
+  .layer-title::before {
+    content: ""; width: 4px; height: 14px; border-radius: 2px; background: var(--accent, var(--ink-dim));
+  }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 8px; border-radius: 999px; font-size: 11px;
+    background: rgba(255,255,255,.06); color: var(--ink-dim);
+    border: 1px solid var(--border);
+  }
+
+  .platform {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; position: relative; overflow: hidden;
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .platform:hover { transform: translateY(-1px); border-color: #2f3e72; }
+  .platform::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--accent, var(--ink-dim));
+  }
+  .platform h3 {
+    margin: 0 0 4px; font-size: 15px;
+  }
+  .platform .code {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-faint);
+  }
+  .platform p {
+    margin: 8px 0 0; font-size: 12.5px; color: var(--ink-dim); line-height: 1.5;
+  }
+
+  /* ── View 1: Architecture stack ────────────────────────────────────────── */
+  .stack { display: grid; gap: 18px; }
+
+  .stack-row {
+    display: grid; gap: var(--gap);
+    grid-template-columns: 200px 1fr;
+    align-items: stretch;
+  }
+  .stack-row .layer-header {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; display: flex; flex-direction: column; justify-content: center;
+    border-left: 4px solid var(--accent);
+  }
+  .stack-row .layer-header h2 {
+    margin: 0 0 4px; font-size: 16px;
+  }
+  .stack-row .layer-header .subtitle {
+    font-size: 12px; color: var(--ink-dim);
+  }
+  .stack-row .layer-body {
+    display: grid; gap: var(--gap);
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .arrow-down {
+    grid-column: 1 / -1; height: 22px;
+    background-image: linear-gradient(180deg, transparent 0, transparent 50%, var(--border) 50%, var(--border) 51%, transparent 51%);
+    position: relative;
+  }
+  .arrow-down::after {
+    content: ""; position: absolute; left: 50%; top: 100%;
+    transform: translate(-50%, -100%);
+    width: 0; height: 0;
+    border-left: 6px solid transparent; border-right: 6px solid transparent;
+    border-top: 8px solid var(--border);
+  }
+
+  /* ── View 2: User journey swim lanes ──────────────────────────────────── */
+  .journey { display: grid; gap: 16px; }
+
+  .swim {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px 18px;
+  }
+  .swim h3 {
+    margin: 0 0 12px; font-size: 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .swim h3 .role-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 999px; font-size: 12px;
+    background: rgba(255,255,255,.06); color: var(--ink); border: 1px solid var(--border);
+  }
+  .swim h3 .role-chip::before {
+    content: ""; width: 8px; height: 8px; border-radius: 999px; background: var(--accent);
+  }
+
+  .steps {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+  }
+  .step {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px; position: relative;
+  }
+  .step::after {
+    content: "›"; position: absolute; right: -14px; top: 50%; transform: translateY(-50%);
+    color: var(--ink-faint); font-size: 22px; line-height: 1; font-weight: 300;
+    z-index: 1;
+  }
+  .step:last-child::after { display: none; }
+  .step .num {
+    font-family: var(--mono); font-size: 10px; color: var(--ink-faint); letter-spacing: .08em;
+  }
+  .step .ttl {
+    font-weight: 600; font-size: 12.5px; margin-top: 2px; line-height: 1.3;
+  }
+  .step .meta {
+    margin-top: 6px; font-size: 10.5px; color: var(--ink-dim); line-height: 1.35;
+  }
+  .step .tag {
+    display: inline-block; margin-top: 6px; padding: 1px 6px; border-radius: 4px;
+    font-family: var(--mono); font-size: 9.5px;
+    background: rgba(91,141,239,.12); color: #b3cdff; border: 1px solid rgba(91,141,239,.3);
+  }
+
+  /* ── View 3: Trust pipeline ───────────────────────────────────────────── */
+  .pipeline-wrap {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 22px; margin-bottom: 22px;
+  }
+  .pipeline-wrap > h2 { margin: 0 0 6px; font-size: 18px; }
+  .pipeline-wrap > p  { margin: 0 0 22px; color: var(--ink-dim); font-size: 13px; }
+
+  .pipeline {
+    display: grid; grid-template-columns: repeat(5, 1fr) auto;
+    align-items: stretch; gap: 0;
+  }
+  .pipeline .gate {
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px; background: var(--panel-2);
+    position: relative;
+  }
+  .pipeline .gate + .gate { margin-left: 18px; }
+  .pipeline .gate::after {
+    content: "→"; position: absolute; right: -16px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-dim); font-size: 18px; font-weight: 700;
+    z-index: 1;
+  }
+  .pipeline .gate:last-of-type::after { display: none; }
+  .pipeline .gate .gn {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-faint);
+    letter-spacing: .12em;
+  }
+  .pipeline .gate .gt {
+    font-size: 17px; font-weight: 700; margin: 4px 0 6px; color: var(--ink);
+  }
+  .pipeline .gate .gq {
+    font-size: 12px; color: var(--ink-dim); line-height: 1.5;
+  }
+  .pipeline .gate.pss     { border-color: rgba(245,158,11,.5); }
+  .pipeline .gate.crb     { border-color: rgba(245,158,11,.5); }
+  .pipeline .gate.jps     { border-color: rgba(167,139,250,.5); }
+  .pipeline .gate.service { border-color: rgba(34,197,94,.5); }
+  .pipeline .gate.dmo     { border-color: rgba(239,68,68,.5); }
+
+  .pipeline .gate.pss .gn,     .pipeline .gate.crb .gn      { color: var(--c-trust); }
+  .pipeline .gate.jps .gn      { color: var(--c-skill); }
+  .pipeline .gate.service .gn  { color: var(--c-service); }
+  .pipeline .gate.dmo .gn      { color: var(--c-gov); }
+
+  .sq-table {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px;
+  }
+  .sq-table h2 { margin: 0 0 14px; font-size: 16px; }
+  .sq-grid {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .sq-cell {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .sq-cell .lvl {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--c-skill); color: white; font: 700 11px var(--mono);
+    border-radius: 6px; padding: 2px 8px; margin-right: 8px;
+  }
+  .sq-cell .lbl { font-weight: 600; font-size: 13px; }
+  .sq-cell .gates { margin-top: 6px; font-size: 11.5px; color: var(--ink-dim); line-height: 1.45; }
+
+  /* ── Footer ───────────────────────────────────────────────────────────── */
+  .foot {
+    max-width: 1360px; margin: 32px auto 0;
+    color: var(--ink-faint); font-size: 11.5px; line-height: 1.6;
+    border-top: 1px solid var(--border); padding-top: 16px;
+  }
+
+  /* ── Tight responsive tweaks (printable too) ──────────────────────────── */
+  @media (max-width: 980px) {
+    .stack-row { grid-template-columns: 1fr; }
+    .pipeline  { grid-template-columns: 1fr; gap: 14px; }
+    .pipeline .gate + .gate { margin-left: 0; }
+    .pipeline .gate::after  {
+      content: "↓"; right: auto; left: 50%; top: 100%;
+      transform: translate(-50%, -50%);
+    }
+    .step::after { display: none; }
+  }
+  @media print {
+    body { background: white; color: black; padding: 12px; }
+    .tabs { display: none; }
+    section { display: block !important; page-break-inside: avoid; margin-bottom: 24px; }
+    .layer, .swim, .pipeline-wrap, .sq-table { background: white; border-color: #ccc; }
+    .platform, .step, .pipeline .gate, .sq-cell { background: #f8f9fc; border-color: #ddd; color: #111; }
+    .platform p, .step .meta, .sq-cell .gates { color: #444; }
+    .layer-title, .step .num, .pipeline .gate .gn { color: #666; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>EHB Technologies — User Journey &amp; Platform Flow</h1>
+  <p class="tagline">Education · Health · Business — One Platform, 38 Industries, Infinite Trust.</p>
+  <p class="meta">Three views: <b>Architecture</b> · <b>User journeys</b> · <b>Trust pipeline</b></p>
+</div>
+
+<div class="tabs" role="tablist">
+  <button class="tab active" data-target="view-arch">Platform Architecture</button>
+  <button class="tab"        data-target="view-journey">User Journeys</button>
+  <button class="tab"        data-target="view-pipeline">Trust Pipeline + SQ</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     VIEW 1 — PLATFORM ARCHITECTURE STACK
+     ════════════════════════════════════════════════════════════════════════ -->
+<section id="view-arch" class="active">
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-discover)"></span>Discovery</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-identity)"></span>Identity</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-trust)"></span>Trust (PSS &amp; CRB)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-skill)"></span>Skills &amp; Jobs (JPS)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-service)"></span>Service Platforms</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-gov)"></span>Governance (DMO)</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-support)"></span>Support (Franchise &amp; Admin)</span>
+  </div>
+
+  <div class="stack">
+
+    <!-- L0 Discovery -->
+    <div class="stack-row" style="--accent: var(--c-discover);">
+      <div class="layer-header">
+        <h2>L0 · Discovery</h2>
+        <div class="subtitle">Marketing site — funnels users into registration. No business logic.</div>
+      </div>
+      <div class="layer-body">
+        <div class="platform" style="--accent: var(--c-discover);">
+          <h3>ehb-landing</h3>
+          <span class="code">Next.js · public</span>
+          <p>Marketing pages. No auth. Outbound links to ehb-main register and login flows. Funnel only.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down"></div>
+
+    <!-- L1 Identity -->
+    <div class="stack-row" style="--accent: var(--c-identity);">
+      <div class="layer-header">
+        <h2>L1 · Identity</h2>
+        <div class="subtitle">Single sign-on. Every sub-platform exchanges an ehb_token for its own JWT here.</div>
+      </div>
+      <div class="layer-body">
+        <div class="platform" style="--accent: var(--c-identity);">
+          <h3>ehb-main</h3>
+          <span class="code">NestJS · MongoDB · port 5000</span>
+          <p>Stores only <code>ehb_user_id</code>, email, full_name. Issues short-lived tokens. Email is the cross-platform join key.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down"></div>
+
+    <!-- L2 Trust -->
+    <div class="stack-row" style="--accent: var(--c-trust);">
+      <div class="layer-header">
+        <h2>L2 · Trust</h2>
+        <div class="subtitle">Verification engine + ongoing credential refills. Issues the SQ level every sub-platform consumes.</div>
+      </div>
+      <div class="layer-body">
+        <div class="platform" style="--accent: var(--c-trust);">
+          <h3>ehb-pss</h3>
+          <span class="code">PSS · port 3001</span>
+          <p>Personal Security Score. CNIC / NADRA / OTP / liveness / address / regulator lookups. Async — emits HMAC-signed webhooks back to the calling platform with the SQ decision.</p>
+        </div>
+        <div class="platform" style="--accent: var(--c-trust);">
+          <h3>CRB</h3>
+          <span class="code">Credential Refill Bench</span>
+          <p>Schedules per-industry refill cycles (license, certs, hygiene, CPD). Reminders, exams, QR-anchored certificates, auto-downgrade on missed refills.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down"></div>
+
+    <!-- L3 JPS -->
+    <div class="stack-row" style="--accent: var(--c-skill);">
+      <div class="layer-header">
+        <h2>L3 · Skills &amp; Jobs</h2>
+        <div class="subtitle">Canonical profile per (platform, role). The trust anchor service platforms render to end users.</div>
+      </div>
+      <div class="layer-body">
+        <div class="platform" style="--accent: var(--c-skill);">
+          <h3>ehb-jps</h3>
+          <span class="code">NestJS · port 3003</span>
+          <p>One JPS profile per (platform, role). Drives the public Owner card on every listing. Also: job postings, AI matching, contracts, salary disbursement, designation progression.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down"></div>
+
+    <!-- L4 Services -->
+    <div class="stack-row" style="--accent: var(--c-service);">
+      <div class="layer-header">
+        <h2>L4 · Services</h2>
+        <div class="subtitle">Consumer-facing storefronts. Each consumes identity, trust, and skill from L1–L3.</div>
+      </div>
+      <div class="layer-body">
+        <div class="platform" style="--accent: var(--c-service);">
+          <h3>ehb-gosellr</h3>
+          <span class="code">live · port 3002 (api) · 4002 (web)</span>
+          <p>SQ-verified marketplace. Roles: buyer, seller, rider. WebSocket-driven order tracking. Sellers must connect a JPS profile before listing.</p>
+        </div>
+        <div class="platform" style="--accent: var(--c-service); opacity:.78;">
+          <h3>HPS</h3>
+          <span class="code">planned · health</span>
+          <p>Hospital / doctor booking. PMDC license verification through PSS. Patient records owned by HPS.</p>
+        </div>
+        <div class="platform" style="--accent: var(--c-service); opacity:.78;">
+          <h3>OLS</h3>
+          <span class="code">planned · learning</span>
+          <p>Schools, tutoring, certifications. HEC + exam-board verification through PSS.</p>
+        </div>
+        <div class="platform" style="--accent: var(--c-service); opacity:.78;">
+          <h3>WMS</h3>
+          <span class="code">planned · workforce</span>
+          <p>Employer ↔ worker scheduling and payroll. Heavy JPS integration.</p>
+        </div>
+        <div class="platform" style="--accent: var(--c-service); opacity:.78;">
+          <h3>OBS</h3>
+          <span class="code">planned · business</span>
+          <p>Digital banking, SMB tooling. Heavy PSS KYB integration.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down"></div>
+
+    <!-- L5 Governance -->
+    <div class="stack-row" style="--accent: var(--c-gov);">
+      <div class="layer-header">
+        <h2>L5 · Governance</h2>
+        <div class="subtitle">Only body authorised to slash trust. Receives complaints, disputes, fraud, AML from every service.</div>
+      </div>
+      <div class="layer-body">
+        <div class="platform" style="--accent: var(--c-gov);">
+          <h3>DMO</h3>
+          <span class="code">Decentralized Management &amp; Oversight</span>
+          <p>7-tier escalation queue. AI auto-decisions for low risk; human officers for medium/high. Outputs: SQ downgrade, account freeze, ban, refund order, regional kill-switch. Immutable audit log.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-down"></div>
+
+    <!-- L6 Support -->
+    <div class="stack-row" style="--accent: var(--c-support);">
+      <div class="layer-header">
+        <h2>L6 · Support &amp; Distribution</h2>
+        <div class="subtitle">The physical-world layer plus the internal cockpit.</div>
+      </div>
+      <div class="layer-body">
+        <div class="platform" style="--accent: var(--c-support);">
+          <h3>Franchise System</h3>
+          <span class="code">regional</span>
+          <p>Physical verification visits, regional dispute resolution, revenue share on every order/contract/booking in their territory. Themselves SQ-gated.</p>
+        </div>
+        <div class="platform" style="--accent: var(--c-support);">
+          <h3>Admin Panel</h3>
+          <span class="code">internal cockpit</span>
+          <p>Auto-extends per industry. Officer queue, CRUD viewers, permission matrix, audit trail, KPI dashboards.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     VIEW 2 — USER JOURNEY SWIMLANES
+     ════════════════════════════════════════════════════════════════════════ -->
+<section id="view-journey">
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-buyer)"></span>Buyer</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-seller)"></span>Seller</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-rider)"></span>Rider</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-jobseek)"></span>Job seeker</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--c-frnchse)"></span>Franchise operator</span>
+    <span class="legend-item" style="margin-left:auto; color: var(--ink-faint);">Tags indicate the sub-platform each step lives on.</span>
+  </div>
+
+  <div class="journey">
+
+    <!-- Buyer -->
+    <div class="swim" style="--accent: var(--c-buyer);">
+      <h3><span class="role-chip">Buyer</span><span style="color:var(--ink-dim); font-weight:400; font-size:12px;">Discover → buy → track</span></h3>
+      <div class="steps">
+        <div class="step"><div class="num">01</div><div class="ttl">Discover EHB</div><div class="meta">Lands on ehb-landing or a direct gosellr link.</div><span class="tag">ehb-landing</span></div>
+        <div class="step"><div class="num">02</div><div class="ttl">Register via SSO</div><div class="meta">Email + OTP. Gets an ehb_user_id.</div><span class="tag">ehb-main</span></div>
+        <div class="step"><div class="num">03</div><div class="ttl">Browse products</div><div class="meta">Only SQ-approved listings are visible.</div><span class="tag">gosellr</span></div>
+        <div class="step"><div class="num">04</div><div class="ttl">Cart &amp; checkout</div><div class="meta">Address, payment, place order.</div><span class="tag">gosellr</span></div>
+        <div class="step"><div class="num">05</div><div class="ttl">Live order tracking</div><div class="meta">WS push: pending → confirmed → ready → picked → delivered.</div><span class="tag">gosellr (WS)</span></div>
+        <div class="step"><div class="num">06</div><div class="ttl">Rate &amp; dispute</div><div class="meta">If something's wrong → DMO complaint flow.</div><span class="tag">DMO</span></div>
+      </div>
+    </div>
+
+    <!-- Seller -->
+    <div class="swim" style="--accent: var(--c-seller);">
+      <h3><span class="role-chip">Seller</span><span style="color:var(--ink-dim); font-weight:400; font-size:12px;">Register → verify → connect JPS → list → fulfil</span></h3>
+      <div class="steps">
+        <div class="step"><div class="num">01</div><div class="ttl">Register as seller</div><div class="meta">Business name, type, category.</div><span class="tag">gosellr</span></div>
+        <div class="step"><div class="num">02</div><div class="ttl">PSS verification</div><div class="meta">CNIC, address, business reg, bank. Async, webhook back.</div><span class="tag">PSS</span></div>
+        <div class="step"><div class="num">03</div><div class="ttl">Connect JPS profile</div><div class="meta">Attach existing or deep-link to JPS to create one.</div><span class="tag">JPS</span></div>
+        <div class="step"><div class="num">04</div><div class="ttl">SQ level set</div><div class="meta">PSS webhook → seller dashboard shows badge.</div><span class="tag">PSS → gosellr</span></div>
+        <div class="step"><div class="num">05</div><div class="ttl">Upload products</div><div class="meta">Each product also routed through PSS for approval.</div><span class="tag">gosellr → PSS</span></div>
+        <div class="step"><div class="num">06</div><div class="ttl">Receive orders</div><div class="meta">Confirm → Ready for delivery → Assign rider.</div><span class="tag">gosellr</span></div>
+        <div class="step"><div class="num">07</div><div class="ttl">Pick rider</div><div class="meta">Modal: JPS-verified + Connected riders only, online-first.</div><span class="tag">gosellr + JPS</span></div>
+        <div class="step"><div class="num">08</div><div class="ttl">Refill credentials</div><div class="meta">CRB reminders for license, tax, hygiene certs.</div><span class="tag">CRB</span></div>
+      </div>
+    </div>
+
+    <!-- Rider -->
+    <div class="swim" style="--accent: var(--c-rider);">
+      <h3><span class="role-chip">Rider</span><span style="color:var(--ink-dim); font-weight:400; font-size:12px;">Register → verify → connect JPS → online → deliver</span></h3>
+      <div class="steps">
+        <div class="step"><div class="num">01</div><div class="ttl">Register as rider</div><div class="meta">CNIC, vehicle, license plate, zone.</div><span class="tag">gosellr</span></div>
+        <div class="step"><div class="num">02</div><div class="ttl">PSS verification</div><div class="meta">Identity, vehicle docs, driving license.</div><span class="tag">PSS</span></div>
+        <div class="step"><div class="num">03</div><div class="ttl">Connect JPS profile</div><div class="meta">Without this, no seller can ever see them.</div><span class="tag">JPS</span></div>
+        <div class="step"><div class="num">04</div><div class="ttl">Go online</div><div class="meta">Toggle availability. Appears in seller modal.</div><span class="tag">gosellr</span></div>
+        <div class="step"><div class="num">05</div><div class="ttl">Receive request</div><div class="meta">Toast + Requests inbox with a 60s countdown.</div><span class="tag">gosellr (WS)</span></div>
+        <div class="step"><div class="num">06</div><div class="ttl">Accept</div><div class="meta">Order locked to them. Status stays ready_for_delivery.</div><span class="tag">gosellr</span></div>
+        <div class="step"><div class="num">07</div><div class="ttl">Picked → Out → Delivered</div><div class="meta">Manual transitions from the Active page.</div><span class="tag">gosellr</span></div>
+        <div class="step"><div class="num">08</div><div class="ttl">Fee credited</div><div class="meta">Per-delivery fee credits the rider wallet.</div><span class="tag">gosellr</span></div>
+      </div>
+    </div>
+
+    <!-- Job seeker -->
+    <div class="swim" style="--accent: var(--c-jobseek);">
+      <h3><span class="role-chip">Job seeker</span><span style="color:var(--ink-dim); font-weight:400; font-size:12px;">Register → profile per role → apply → contract</span></h3>
+      <div class="steps">
+        <div class="step"><div class="num">01</div><div class="ttl">Register on JPS</div><div class="meta">Via ehb-main SSO.</div><span class="tag">ehb-main → JPS</span></div>
+        <div class="step"><div class="num">02</div><div class="ttl">Create profile</div><div class="meta">One per (platform, role): seller, rider, doctor, teacher, freelancer…</div><span class="tag">JPS</span></div>
+        <div class="step"><div class="num">03</div><div class="ttl">Submit for verification</div><div class="meta">Identity + skill evidence sent to PSS.</div><span class="tag">JPS → PSS</span></div>
+        <div class="step"><div class="num">04</div><div class="ttl">Apply to jobs</div><div class="meta">AI ranks: STL &gt; skills &gt; CRB &gt; experience &gt; location.</div><span class="tag">JPS</span></div>
+        <div class="step"><div class="num">05</div><div class="ttl">Interview &amp; contract</div><div class="meta">Template-driven contract, signed in-app.</div><span class="tag">JPS</span></div>
+        <div class="step"><div class="num">06</div><div class="ttl">Work + salary</div><div class="meta">Work logs, GPS proof, wallet disbursement.</div><span class="tag">JPS</span></div>
+        <div class="step"><div class="num">07</div><div class="ttl">Promotion</div><div class="meta">Junior → Expert when SQ + CRB thresholds met.</div><span class="tag">JPS + CRB</span></div>
+      </div>
+    </div>
+
+    <!-- Franchise operator -->
+    <div class="swim" style="--accent: var(--c-frnchse);">
+      <h3><span class="role-chip">Franchise operator</span><span style="color:var(--ink-dim); font-weight:400; font-size:12px;">Apply → physical KYB → granted region → earn share</span></h3>
+      <div class="steps">
+        <div class="step"><div class="num">01</div><div class="ttl">Apply</div><div class="meta">Franchise application + business credentials.</div><span class="tag">Franchise</span></div>
+        <div class="step"><div class="num">02</div><div class="ttl">Physical KYB</div><div class="meta">EHB officer visits, verifies office and capacity.</div><span class="tag">PSS</span></div>
+        <div class="step"><div class="num">03</div><div class="ttl">Region granted</div><div class="meta">Territory, revenue share %, officer accounts.</div><span class="tag">Admin Panel</span></div>
+        <div class="step"><div class="num">04</div><div class="ttl">Run PSS visits</div><div class="meta">Physically verifies sellers/professionals SQ5+ in region.</div><span class="tag">PSS + Franchise</span></div>
+        <div class="step"><div class="num">05</div><div class="ttl">Resolve DMO escalations</div><div class="meta">Mid-tier complaints route to franchise officer queue.</div><span class="tag">DMO</span></div>
+        <div class="step"><div class="num">06</div><div class="ttl">Earn share</div><div class="meta">Cut of every order / contract / booking in territory.</div><span class="tag">All services → Franchise wallet</span></div>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     VIEW 3 — TRUST PIPELINE + SQ TABLE
+     ════════════════════════════════════════════════════════════════════════ -->
+<section id="view-pipeline">
+
+  <div class="pipeline-wrap">
+    <h2>The Universal Trust Pipeline</h2>
+    <p>Every action in EHB — buying, listing, accepting, posting, treating, teaching — passes through these five gates in order. The gate that rejects a request names itself, so the user always sees an exact path to remediation.</p>
+
+    <div class="pipeline">
+      <div class="gate pss">
+        <div class="gn">GATE 1</div>
+        <div class="gt">PSS</div>
+        <div class="gq">Is this person who they claim to be, at the confidence level this action requires?</div>
+      </div>
+      <div class="gate crb">
+        <div class="gn">GATE 2</div>
+        <div class="gt">CRB</div>
+        <div class="gq">Are their credentials currently fresh, or has a refill cycle expired?</div>
+      </div>
+      <div class="gate jps">
+        <div class="gn">GATE 3</div>
+        <div class="gt">JPS</div>
+        <div class="gq">Are they listed as performing this role on this platform, with the right skills?</div>
+      </div>
+      <div class="gate service">
+        <div class="gn">GATE 4</div>
+        <div class="gt">Service</div>
+        <div class="gq">Has the sub-platform's own business logic accepted the request?</div>
+      </div>
+      <div class="gate dmo">
+        <div class="gn">GATE 5</div>
+        <div class="gt">DMO</div>
+        <div class="gq">Are there any open disputes, bans, or freezes against them?</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sq-table">
+    <h2>SQ Level — the universal trust score</h2>
+    <div class="sq-grid">
+      <div class="sq-cell"><span class="lvl">SQ0</span><span class="lbl">Unverified</span><div class="gates">View-only across all platforms.</div></div>
+      <div class="sq-cell"><span class="lvl">SQ1</span><span class="lbl">Basic Verified</span><div class="gates">Email + OTP confirmed. Can buy, browse, view jobs.</div></div>
+      <div class="sq-cell"><span class="lvl">SQ2</span><span class="lbl">Compliance Verified</span><div class="gates">CNIC + NADRA match. List small-ticket items, take part-time gigs.</div></div>
+      <div class="sq-cell"><span class="lvl">SQ3</span><span class="lbl">Financially Verified</span><div class="gates">Bank/IBAN validated. Take payments, withdraw to bank.</div></div>
+      <div class="sq-cell"><span class="lvl">SQ5</span><span class="lbl">Professional Verified</span><div class="gates">Business reg + physical franchise visit. Run a store, hire staff.</div></div>
+      <div class="sq-cell"><span class="lvl">SQ7</span><span class="lbl">Expert Verified</span><div class="gates">Regulator-licensed (PMDC / ICAP / HEC etc). Operate as a licensed professional.</div></div>
+      <div class="sq-cell"><span class="lvl">SQ10</span><span class="lbl">Elite Certified</span><div class="gates">Multi-year track record + audited. Run a franchise, certify others.</div></div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="foot">
+  EHB Technologies (Pvt.) Ltd. — Founder Muhammad Rafi. Document and diagrams generated from the live codebase architecture in <code>EHB-V1-001</code>. Use the tabs above to switch views; the page also prints cleanly to PDF (browser print → save as PDF) with all three sections expanded.
+</div>
+
+<script>
+  (function () {
+    var tabs = document.querySelectorAll('.tab');
+    var sections = document.querySelectorAll('section');
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () {
+        tabs.forEach(function (x) { x.classList.remove('active'); });
+        sections.forEach(function (s) { s.classList.remove('active'); });
+        t.classList.add('active');
+        var sec = document.getElementById(t.getAttribute('data-target'));
+        if (sec) sec.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+  }());
+</script>
+
+</body>
+</html>
