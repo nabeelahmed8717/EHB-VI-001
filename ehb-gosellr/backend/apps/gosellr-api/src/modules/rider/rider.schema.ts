@@ -84,6 +84,28 @@ export class Rider {
   // ── Status ────────────────────────────────────────────────────────────────
   @Prop({ type: Boolean, default: true })
   is_active: boolean;
+
+  // ── JPS profile linkage ────────────────────────────────────────────────────
+  // Mirrors the seller link. Required before a seller can send this rider a
+  // delivery request (the Assign Rider modal filters to riders who have a
+  // JPS profile linked AND status=approved on JPS).
+  //
+  // Stores ONLY the JPS profile id — display_name / bio / sq_level are
+  // fetched from JPS on demand. Partial unique index below prevents two
+  // gosellr Rider rows from claiming the same JPS profile.
+
+  @Prop({ type: String, default: null })
+  jps_profile_id: string | null;
+
+  @Prop({ type: Date, default: null })
+  jps_profile_linked_at: Date | null;
 }
 
 export const RiderSchema = SchemaFactory.createForClass(Rider);
+
+// Prevent two GoSellr riders from claiming the same JPS profile.
+// Partial filter so multiple riders without a linked profile remain valid.
+RiderSchema.index(
+  { jps_profile_id: 1 },
+  { unique: true, partialFilterExpression: { jps_profile_id: { $type: 'string' } } },
+);

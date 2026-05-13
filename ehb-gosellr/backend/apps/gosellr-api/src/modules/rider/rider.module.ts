@@ -4,6 +4,7 @@ import { Rider, RiderSchema } from './rider.schema';
 import { RiderService } from './rider.service';
 import { RiderController } from './rider.controller';
 import { PssClientModule } from '../pss-client/pss-client.module';
+import { JpsClientModule } from '../jps-client/jps-client.module';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 
@@ -11,6 +12,7 @@ import { UsersModule } from '../users/users.module';
   imports: [
     MongooseModule.forFeature([{ name: Rider.name, schema: RiderSchema }]),
     PssClientModule,
+    JpsClientModule,
     AuthModule,
     UsersModule,
   ],

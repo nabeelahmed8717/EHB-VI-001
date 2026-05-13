@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Request,
   UseGuards,
@@ -99,6 +100,13 @@ class SetAvailabilityDto {
   availability: RiderAvailability;
 }
 
+class AttachJpsProfileDto {
+  @ApiProperty({ example: '672a5f8b1c1f4d2c3a8b9d01' })
+  @IsString()
+  @IsNotEmpty()
+  jps_profile_id: string;
+}
+
 interface AuthRequest extends Request {
   user: UserDocument;
 }
@@ -164,5 +172,66 @@ export class RiderController {
   async getStats(@Request() req: AuthRequest) {
     const userId = (req.user._id as unknown as { toString(): string }).toString();
     return this.riderService.getStats(userId);
+  }
+
+  // ── JPS profile linkage ────────────────────────────────────────────────────
+  // Mirror of the seller routes at /seller/jps-profile/*. Required step before
+  // sellers can see this rider in the Assign Rider modal.
+
+  @Get('jps-profile/eligible')
+  @ApiOperation({ summary: 'List my JPS profiles eligible for GoSellr rider linkage' })
+  @ApiResponse({ status: 200, description: 'List returned' })
+  async listEligibleJpsProfiles(@Request() req: AuthRequest) {
+    const userId = (req.user._id as unknown as { toString(): string }).toString();
+    const email = (req.user.email ?? '').toLowerCase();
+    return this.riderService.listEligibleJpsProfiles(userId, email);
+  }
+
+  @Get('jps-profile')
+  @ApiOperation({ summary: 'Get the JPS profile currently linked to this rider account' })
+  @ApiResponse({ status: 200, description: 'Linked profile or null' })
+  async getLinkedJpsProfile(@Request() req: AuthRequest) {
+    const userId = (req.user._id as unknown as { toString(): string }).toString();
+    const email = (req.user.email ?? '').toLowerCase();
+    return this.riderService.getLinkedJpsProfile(userId, email);
+  }
+
+  @Post('jps-profile/attach')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Attach an existing JPS profile (must be platform=gosellr role=rider, owned by you)' })
+  @ApiResponse({ status: 200, description: 'Attached' })
+  @ApiResponse({ status: 400, description: 'Profile is wrong platform/role' })
+  @ApiResponse({ status: 404, description: 'JPS profile not found or not yours' })
+  @ApiResponse({ status: 409, description: 'Profile already linked to another GoSellr rider' })
+  async attachJpsProfile(
+    @Request() req: AuthRequest,
+    @Body() dto: AttachJpsProfileDto,
+  ) {
+    const userId = (req.user._id as unknown as { toString(): string }).toString();
+    const email = (req.user.email ?? '').toLowerCase();
+    return this.riderService.attachJpsProfile(userId, email, dto.jps_profile_id);
+  }
+
+  @Post('jps-profile/return')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Deep-link return from JPS — auto-attaches the rider\'s newest unlinked gosellr+rider profile',
+  })
+  @ApiResponse({ status: 200, description: 'Newly created JPS profile attached' })
+  @ApiResponse({ status: 404, description: 'No eligible profile found in JPS' })
+  async jpsReturnAutoAttach(@Request() req: AuthRequest) {
+    const userId = (req.user._id as unknown as { toString(): string }).toString();
+    const email = (req.user.email ?? '').toLowerCase();
+    return this.riderService.autoAttachLatestJpsProfile(userId, email);
+  }
+
+  @Delete('jps-profile')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unlink the current JPS profile (blocked while on an active delivery)' })
+  @ApiResponse({ status: 200, description: 'Unlinked' })
+  @ApiResponse({ status: 409, description: 'Cannot unlink during active delivery' })
+  async unlinkJpsProfile(@Request() req: AuthRequest) {
+    const userId = (req.user._id as unknown as { toString(): string }).toString();
+    return this.riderService.unlinkJpsProfile(userId);
   }
 }

@@ -93,12 +93,22 @@ export class OrderDeliveryRequestsController {
     }
     const sellerId = (req.user._id as unknown as { toString(): string }).toString();
 
-    // Re-validate the rider is real, eligible, and matches the JPS profile.
-    // The frontend hands us both ids — we trust neither blindly.
+    // Re-validate the rider is real, eligible, Connected on gosellr, and
+    // approved on JPS. The frontend hands us both ids — we trust neither
+    // blindly and re-check every link in the chain.
     const rider = await this.usersService.findById(dto.rider_user_id);
     if (!rider) throw new NotFoundException('Rider user not found');
     if (rider.role !== 'rider') throw new ForbiddenException('Target user is not a rider');
 
+    // 1. Gosellr-side: the rider must have run the Connect flow.
+    const localRider = await this.riderService.findByUserId(dto.rider_user_id);
+    if (!localRider || localRider.jps_profile_id !== dto.rider_jps_profile_id) {
+      throw new ForbiddenException(
+        'Rider has not connected their JPS profile on GoSellr yet',
+      );
+    }
+
+    // 2. JPS-side: the profile must currently be SQ-approved.
     const jpsRoster = await this.jpsClient.listRoster({
       platform: 'gosellr',
       role: 'rider',

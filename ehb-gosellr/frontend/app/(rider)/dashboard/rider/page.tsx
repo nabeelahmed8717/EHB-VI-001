@@ -1,16 +1,23 @@
 'use client';
 
-import { useGetRiderStatsQuery, useSetRiderAvailabilityMutation } from '@/lib/store/api/rider.api';
+import Link from 'next/link';
+import {
+  useGetRiderStatsQuery,
+  useSetRiderAvailabilityMutation,
+  useGetRiderProfileQuery,
+} from '@/lib/store/api/rider.api';
 import { useGetMyOrdersQuery } from '@/lib/store/api/orders.api';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/lib/store';
-import { Truck, Package, DollarSign, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Truck, Package, DollarSign, ToggleLeft, ToggleRight, ShieldAlert } from 'lucide-react';
 
 export default function RiderDashboardPage() {
   const user = useSelector((s: RootState) => s.auth.user);
   const { data: stats, refetch } = useGetRiderStatsQuery();
   const { data: orders = [] } = useGetMyOrdersQuery();
+  const { data: rider } = useGetRiderProfileQuery();
   const [setAvailability, { isLoading }] = useSetRiderAvailabilityMutation();
+  const isJpsLinked = !!rider?.jps_profile_id;
 
   const isOnline = stats?.availability === 'online';
   const delivered = orders.filter((o) => o.status === 'delivered');
@@ -36,6 +43,22 @@ export default function RiderDashboardPage() {
           {isOnline ? 'Go offline' : 'Go online'}
         </button>
       </div>
+
+      {!isJpsLinked && (
+        <Link
+          href="/dashboard/rider/jps-profile"
+          className="flex items-start gap-3 bg-orange-50 border border-orange-200 rounded-xl p-4 hover:bg-orange-100/60 transition-colors"
+        >
+          <ShieldAlert className="w-5 h-5 text-orange-700 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-orange-900">Connect your JPS profile</p>
+            <p className="text-xs text-orange-800 mt-0.5">
+              Sellers can&apos;t send you delivery requests until you link a JPS profile.
+              Click here to attach an existing one or create a new one.
+            </p>
+          </div>
+        </Link>
+      )}
 
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-card rounded-xl border border-border shadow-card p-4">

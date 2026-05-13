@@ -68,15 +68,21 @@ export class JpsClientService {
 
   /**
    * List the JPS profiles owned by the user with the given email,
-   * filtered to (platform=gosellr, role=seller). Service-key auth.
+   * filtered to (platform=gosellr, role=<role>). Service-key auth.
+   *
+   * The role defaults to "seller" so existing call-sites (the seller attach
+   * flow) keep working unchanged. The rider attach flow passes role="rider".
    */
-  async listEligibleByEmail(email: string): Promise<JpsProfileFull[]> {
+  async listEligibleByEmail(
+    email: string,
+    role: string = 'seller',
+  ): Promise<JpsProfileFull[]> {
     if (!email) {
       this.logger.warn('[svc-lookup] called with empty email — returning []');
       return [];
     }
     this.logger.log(
-      `[svc-lookup] GET ${this.jpsUrl}/profiles/by-email/lookup?email=${email}&platform=gosellr&role=seller`,
+      `[svc-lookup] GET ${this.jpsUrl}/profiles/by-email/lookup?email=${email}&platform=gosellr&role=${role}`,
     );
     try {
       const response = await firstValueFrom(
@@ -87,7 +93,7 @@ export class JpsClientService {
             params: {
               email,
               platform: 'gosellr',
-              role: 'seller',
+              role,
             },
           },
         ),
@@ -98,7 +104,7 @@ export class JpsClientService {
     } catch (err: unknown) {
       const e = err as { response?: { status?: number; data?: unknown } };
       this.logger.error(
-        `listEligibleByEmail(${email}) failed: status=${e.response?.status} ` +
+        `listEligibleByEmail(${email}, role=${role}) failed: status=${e.response?.status} ` +
         `data=${JSON.stringify(e.response?.data)} ${String(err)}`,
       );
       return [];

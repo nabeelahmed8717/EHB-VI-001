@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '@/lib/store';
 import Link from 'next/link';
-import { LayoutDashboard, Bell, Clock, DollarSign, LogOut, Truck, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Bell, Clock, DollarSign, LogOut, Truck, Loader2, ShieldCheck } from 'lucide-react';
 import { logout } from '@/lib/store/auth.slice';
 import { useLogoutServerMutation } from '@/lib/store/api/auth.api';
 import { useGetRiderProfileQuery } from '@/lib/store/api/rider.api';
@@ -16,6 +16,7 @@ const NAV = [
   { href: '/dashboard/rider/requests', label: 'Requests', icon: Bell },
   { href: '/dashboard/rider/active', label: 'Active', icon: Clock },
   { href: '/dashboard/rider/history', label: 'History', icon: DollarSign },
+  { href: '/dashboard/rider/jps-profile', label: 'JPS Profile', icon: ShieldCheck },
 ];
 
 /**

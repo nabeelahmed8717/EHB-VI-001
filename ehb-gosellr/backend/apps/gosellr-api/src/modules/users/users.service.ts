@@ -31,6 +31,15 @@ export class UsersService {
   }
 
   /**
+   * Batch fetch by _id. Used by the Assign Rider modal to attach owner
+   * info to rows already filtered down by jps_profile_id.
+   */
+  async findManyByIds(ids: string[]): Promise<UserDocument[]> {
+    if (!ids?.length) return [];
+    return this.userModel.find({ _id: { $in: ids } }).exec();
+  }
+
+  /**
    * Batch fetch by email. Used by the Assign Rider modal to resolve a list
    * of JPS profile owner emails to local gosellr User records in one query.
    */

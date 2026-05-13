@@ -90,17 +90,35 @@ export class OrdersService {
     });
     if (roster.length === 0) return [];
 
-    // Bulk-resolve gosellr users by email, then local Rider rows by user_id.
-    const emails = roster.map((r) => r.owner_email).filter((e): e is string => !!e);
-    const users = await this.usersService.findManyByEmails(emails);
-    const userByEmail = new Map(users.map((u) => [u.email.toLowerCase(), u]));
+    // ── Join strategy ────────────────────────────────────────────────────
+    // The rider must have BOTH (a) a SQ-approved JPS profile AND (b) clicked
+    // "Connect" on their gosellr dashboard so that their gosellr Rider row
+    // carries the JPS profile id.
+    //
+    // We bind on jps_profile_id (strong link) rather than email (weak link)
+    // because a person can have a JPS profile they haven't yet attached to
+    // their delivery account, and email matching would surface those riders
+    // even though they haven't accepted the gosellr terms.
 
-    const riderUserIds = users
-      .filter((u) => u.role === 'rider')
-      .map((u) => (u._id as unknown as { toString(): string }).toString());
-    const riderProfiles = await this.riderService.findManyByUserIds(riderUserIds);
-    const riderByUserId = new Map(
-      riderProfiles.map((r) => [r.user_id.toString(), r]),
+    const jpsIds = roster
+      .map((j) => ((j as unknown as { _id?: string; id?: string })._id
+        ?? (j as unknown as { _id?: string; id?: string }).id) as string | undefined)
+      .filter((id): id is string => !!id);
+
+    const linkedRiders = await this.riderService.findManyByJpsProfileIds(jpsIds);
+    if (linkedRiders.length === 0) return [];
+
+    const riderByJpsId = new Map(
+      linkedRiders
+        .filter((r) => r.jps_profile_id)
+        .map((r) => [r.jps_profile_id as string, r]),
+    );
+
+    // Also need the User row per rider (for display_name fallback + email).
+    const userIds = linkedRiders.map((r) => r.user_id.toString());
+    const users = await this.usersService.findManyByIds(userIds);
+    const userById = new Map(
+      users.map((u) => [(u._id as unknown as { toString(): string }).toString(), u]),
     );
 
     const out: Array<{
@@ -117,27 +135,27 @@ export class OrdersService {
     }> = [];
 
     for (const j of roster) {
-      if (!j.owner_email) continue;
-      const user = userByEmail.get(j.owner_email.toLowerCase());
-      if (!user || user.role !== 'rider') continue; // No gosellr account, or wrong role.
-
-      const userId = (user._id as unknown as { toString(): string }).toString();
-      const localRider = riderByUserId.get(userId);
+      const jpsId = ((j as unknown as { _id?: string; id?: string })._id
+        ?? (j as unknown as { _id?: string; id?: string }).id) as string | undefined;
+      if (!jpsId) continue;
+      const localRider = riderByJpsId.get(jpsId);
+      if (!localRider) continue; // Not connected on gosellr — hide.
+      const user = userById.get(localRider.user_id.toString());
+      if (!user || user.role !== 'rider') continue;
 
       out.push({
-        jps_profile_id: ((j as unknown as { _id?: string; id?: string })._id
-          ?? (j as unknown as { _id?: string; id?: string }).id) as string,
-        rider_user_id: userId,
+        jps_profile_id: jpsId,
+        rider_user_id: localRider.user_id.toString(),
         display_name: j.display_name,
         bio: j.bio ?? '',
         sq_level: j.sq_level ?? null,
         sq_badge_label:
           (j as unknown as { sq_badge_label?: string | null }).sq_badge_label ?? null,
         is_verified: j.status === 'approved' && j.sq_level !== null,
-        availability: (localRider?.availability ?? 'offline') as
+        availability: localRider.availability as
           | 'online' | 'offline' | 'on_delivery',
-        availability_zone: localRider?.availability_zone ?? null,
-        vehicle_type: localRider?.vehicle_type ?? null,
+        availability_zone: localRider.availability_zone ?? null,
+        vehicle_type: localRider.vehicle_type ?? null,
       });
     }
 
