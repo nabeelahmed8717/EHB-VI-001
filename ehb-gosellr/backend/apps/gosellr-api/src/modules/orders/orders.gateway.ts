@@ -81,4 +81,46 @@ export class OrdersGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(`user:${payload.rider_id}`).emit('order:updated', payload);
     }
   }
+
+  /**
+   * Push a delivery-request lifecycle event. Listeners are keyed off the
+   * same user rooms used by order:updated — a client only needs to call
+   * `join:user <userId>` once to receive everything addressed to them.
+   *
+   *   new       → rider room (their inbox + toast updates)
+   *   accepted  → seller + rider rooms (seller chip flips, rider's pending list clears)
+   *   rejected  → seller room
+   *   expired   → both rooms
+   *   cancelled → rider room
+   *
+   * Also broadcasts to the order room so the order-detail page reacts live.
+   */
+  emitDeliveryRequest(
+    event:
+      | 'delivery_request:new'
+      | 'delivery_request:accepted'
+      | 'delivery_request:rejected'
+      | 'delivery_request:expired'
+      | 'delivery_request:cancelled',
+    payload: {
+      id: string;
+      order_id: string;
+      seller_id: string;
+      rider_user_id: string;
+      status: string;
+      [k: string]: unknown;
+    },
+  ): void {
+    const toSeller = ['delivery_request:accepted', 'delivery_request:rejected', 'delivery_request:expired']
+      .includes(event);
+    const toRider = ['delivery_request:new', 'delivery_request:accepted', 'delivery_request:expired', 'delivery_request:cancelled']
+      .includes(event);
+    if (toSeller) {
+      this.server.to(`user:${payload.seller_id}`).emit(event, payload);
+    }
+    if (toRider) {
+      this.server.to(`user:${payload.rider_user_id}`).emit(event, payload);
+    }
+    this.server.to(`order:${payload.order_id}`).emit(event, payload);
+  }
 }

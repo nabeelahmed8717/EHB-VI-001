@@ -130,10 +130,6 @@ export const ordersApi = baseApi.injectEndpoints({
       query: () => '/orders/my',
       providesTags: ['Order'],
     }),
-    getAvailableOrders: build.query<Order[], void>({
-      query: () => '/orders/available',
-      providesTags: ['Order'],
-    }),
     getOrder: build.query<Order, string>({
       query: (id) => `/orders/${id}`,
       providesTags: (result, error, id) => [{ type: 'Order', id }],
@@ -141,14 +137,6 @@ export const ordersApi = baseApi.injectEndpoints({
     updateOrderStatus: build.mutation<Order, { id: string } & UpdateStatusBody>({
       query: ({ id, ...body }) => ({ url: `/orders/${id}/status`, method: 'PATCH', body }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Order', id }, 'Order'],
-    }),
-    assignRider: build.mutation<Order, { id: string; rider_id: string }>({
-      query: ({ id, rider_id }) => ({
-        url: `/orders/${id}/assign-rider`,
-        method: 'PATCH',
-        body: { rider_id },
-      }),
-      invalidatesTags: ['Order'],
     }),
   }),
   overrideExisting: false,
@@ -162,8 +150,6 @@ export const {
   useClearCartMutation,
   useCreateOrderMutation,
   useGetMyOrdersQuery,
-  useGetAvailableOrdersQuery,
   useGetOrderQuery,
   useUpdateOrderStatusMutation,
-  useAssignRiderMutation,
 } = ordersApi;

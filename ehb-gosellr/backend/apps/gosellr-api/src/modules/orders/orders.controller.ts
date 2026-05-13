@@ -127,13 +127,6 @@ class UpdateStatusDto {
   note?: string;
 }
 
-class AssignRiderDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  rider_id: string;
-}
-
 interface AuthRequest extends Request {
   user: UserDocument;
 }
@@ -170,15 +163,9 @@ export class OrdersController {
     return orders.map((o) => this.ordersService.toPublic(o));
   }
 
-  @Get('available')
-  @ApiOperation({ summary: 'List orders available for pickup (riders only)' })
-  async getAvailableOrders(@Request() req: AuthRequest) {
-    if (req.user.role !== 'rider') {
-      throw new ForbiddenException('Only riders can view available deliveries');
-    }
-    const orders = await this.ordersService.findAvailableForRiders();
-    return orders.map((o) => this.ordersService.toPublic(o));
-  }
+  // ── /orders/available has been removed. Riders no longer pull from a shared
+  //    pool — they only act on delivery requests addressed to them.
+  //    See: GET /delivery-requests/pending
 
   @Get(':id')
   @ApiOperation({ summary: 'Get order by ID' })
@@ -201,18 +188,31 @@ export class OrdersController {
     return this.ordersService.toPublic(order);
   }
 
-  @Patch(':id/assign-rider')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Assign a rider to an order (seller or rider self-assign)' })
-  async assignRider(
-    @Request() req: AuthRequest,
-    @Param('id') id: string,
-    @Body() dto: AssignRiderDto,
-  ) {
-    if (req.user.role !== 'seller' && req.user.role !== 'rider') {
-      throw new ForbiddenException('Only sellers or riders can assign a rider');
+  // ── /assign-rider has been removed in favour of the request/accept flow.
+  //    Riders can no longer self-assign; sellers send a delivery-request and
+  //    the order's rider_id is set only when the rider accepts.
+  //    See: POST /orders/:orderId/delivery-requests
+  //         POST /delivery-requests/:id/accept
+
+  @Get(':id/available-riders')
+  @ApiOperation({
+    summary: 'List riders eligible to deliver this order (seller only)',
+    description:
+      'Pulls SQ-approved riders from JPS (platform=gosellr, role=rider) and ' +
+      'enriches each one with the local availability state (online/offline/' +
+      'on_delivery) joined by email. Hides riders that have no JPS approval. ' +
+      'Sorted online-first, then by SQ level.',
+  })
+  async availableRiders(@Request() req: AuthRequest, @Param('id') id: string) {
+    if (req.user.role !== 'seller') {
+      throw new ForbiddenException('Only sellers can list assignable riders');
     }
-    const order = await this.ordersService.assignRider(id, dto.rider_id);
-    return this.ordersService.toPublic(order);
+    const order = await this.ordersService.findById(id);
+    if (!order) throw new NotFoundException('Order not found');
+    const sellerId = (req.user._id as unknown as { toString(): string }).toString();
+    if (order.seller_id.toString() !== sellerId) {
+      throw new ForbiddenException('Not your order');
+    }
+    return this.ordersService.listAvailableRidersForSeller();
   }
 }

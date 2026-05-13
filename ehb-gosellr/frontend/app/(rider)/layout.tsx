@@ -5,14 +5,15 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '@/lib/store';
 import Link from 'next/link';
-import { LayoutDashboard, MapPin, Clock, DollarSign, LogOut, Truck, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Bell, Clock, DollarSign, LogOut, Truck, Loader2 } from 'lucide-react';
 import { logout } from '@/lib/store/auth.slice';
 import { useLogoutServerMutation } from '@/lib/store/api/auth.api';
 import { useGetRiderProfileQuery } from '@/lib/store/api/rider.api';
+import { RiderRequestToastListener } from '@/components/rider/RiderRequestToastListener';
 
 const NAV = [
   { href: '/dashboard/rider', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/rider/available', label: 'Available', icon: MapPin },
+  { href: '/dashboard/rider/requests', label: 'Requests', icon: Bell },
   { href: '/dashboard/rider/active', label: 'Active', icon: Clock },
   { href: '/dashboard/rider/history', label: 'History', icon: DollarSign },
 ];
@@ -72,6 +73,8 @@ export default function RiderLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex min-h-screen bg-surface-alt">
+      {/* Globally listens for delivery_request:new events and pops a toast */}
+      <RiderRequestToastListener />
       <aside className="w-60 bg-card border-r border-border flex flex-col">
         <Link href="/" className="p-5 border-b border-border flex items-center gap-2 hover:bg-surface-alt/50 transition-colors">
           <Truck className="w-5 h-5 text-accent" />

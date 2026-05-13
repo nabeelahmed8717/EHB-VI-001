@@ -35,6 +35,17 @@ export class RiderService {
     private readonly pssClient: PssClientService,
   ) {}
 
+  /**
+   * Batch fetch local rider profiles for a set of gosellr user_ids.
+   * Used by the Assign Rider modal to attach presence/availability to
+   * the JPS-verified rider roster.
+   */
+  async findManyByUserIds(userIds: string[]): Promise<RiderDocument[]> {
+    if (!userIds?.length) return [];
+    const objectIds = userIds.map((id) => new Types.ObjectId(id));
+    return this.riderModel.find({ user_id: { $in: objectIds } }).exec();
+  }
+
   async create(dto: CreateRiderDto): Promise<RiderDocument> {
     const existing = await this.riderModel.findOne({
       user_id: new Types.ObjectId(dto.user_id),

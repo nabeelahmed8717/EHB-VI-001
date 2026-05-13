@@ -5,12 +5,17 @@ import type { Order } from '@/lib/store/api/orders.api';
 import { MapPin, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 
+// The rider drives the order from acceptance → delivered via these manual transitions.
+// ready_for_delivery is included because that is the state of an order the rider
+// just ACCEPTED via the delivery request — they still need to physically pick it up.
 const RIDER_NEXT: Record<string, string | null> = {
+  ready_for_delivery: 'picked',
   picked: 'out_for_delivery',
   out_for_delivery: 'delivered',
 };
 
 const RIDER_NEXT_LABEL: Record<string, string> = {
+  picked: 'Mark picked',
   out_for_delivery: 'Mark out for delivery',
   delivered: 'Mark delivered',
 };
@@ -20,7 +25,16 @@ export default function ActiveDeliveryPage() {
   const [updateStatus] = useUpdateOrderStatusMutation();
   const [busy, setBusy] = useState<string | null>(null);
 
-  const active = orders.filter((o) => o.status === 'picked' || o.status === 'out_for_delivery');
+  // Active = order is assigned to me AND has not yet been delivered or cancelled.
+  // Includes ready_for_delivery once the rider has accepted (rider_id !== null);
+  // doesn't include unassigned ready_for_delivery orders (those are someone else's).
+  const active = orders.filter(
+    (o) =>
+      o.rider_id != null &&
+      (o.status === 'ready_for_delivery'
+        || o.status === 'picked'
+        || o.status === 'out_for_delivery'),
+  );
 
   async function advance(order: Order) {
     const next = RIDER_NEXT[order.status];
@@ -37,7 +51,7 @@ export default function ActiveDeliveryPage() {
       {active.length === 0 ? (
         <div className="bg-white rounded-xl border p-10 text-center text-muted-foreground">
           <CheckCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No active deliveries. Check available orders.</p>
+          <p className="text-sm">No active deliveries. Check your pending requests inbox.</p>
         </div>
       ) : (
         <div className="space-y-4">

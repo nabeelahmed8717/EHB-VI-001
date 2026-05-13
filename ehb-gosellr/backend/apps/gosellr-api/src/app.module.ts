@@ -12,6 +12,7 @@ import { SellerModule } from './modules/seller/seller.module';
 import { RiderModule } from './modules/rider/rider.module';
 import { CartModule } from './modules/cart/cart.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { DeliveryRequestsModule } from './modules/delivery-requests/delivery-requests.module';
 import { HomeModule } from './modules/home/home.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 
@@ -35,6 +36,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module';
     RiderModule,
     CartModule,
     OrdersModule,
+    DeliveryRequestsModule,
     HomeModule,
     WishlistModule,
   ],

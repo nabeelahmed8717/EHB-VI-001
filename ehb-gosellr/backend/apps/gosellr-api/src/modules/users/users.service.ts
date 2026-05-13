@@ -30,6 +30,16 @@ export class UsersService {
     return this.userModel.findOne({ ehb_user_id: ehbUserId }).exec();
   }
 
+  /**
+   * Batch fetch by email. Used by the Assign Rider modal to resolve a list
+   * of JPS profile owner emails to local gosellr User records in one query.
+   */
+  async findManyByEmails(emails: string[]): Promise<UserDocument[]> {
+    if (!emails?.length) return [];
+    const normalized = emails.map((e) => e.toLowerCase().trim());
+    return this.userModel.find({ email: { $in: normalized } }).exec();
+  }
+
   async createFromEhb(dto: {
     ehb_user_id: string;
     email: string;

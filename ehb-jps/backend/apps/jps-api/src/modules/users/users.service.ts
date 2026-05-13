@@ -20,6 +20,15 @@ export class UsersService {
   }
 
   /**
+   * Batch fetch — used by service-to-service roster lookups (e.g. the
+   * Assign Rider modal in GoSellr) to attach owner emails to profiles.
+   */
+  async findManyByIds(ids: string[]): Promise<UserDocument[]> {
+    if (!ids?.length) return [];
+    return this.userModel.find({ _id: { $in: ids } }).exec();
+  }
+
+  /**
    * Find-or-create a JPS user from EHB identity.
    * Called on every EHB SSO callback.
    */

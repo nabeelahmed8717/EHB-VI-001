@@ -70,6 +70,38 @@ export class ProfilesPublicController {
     return this.profilesService.findEligibleByEmail(email, platform, role);
   }
 
+  // ── Roster lookup by (platform, role, status) ──────────────────────────────
+  // Route uses 2 path segments so it can't be matched by `:id`-prefixed routes.
+  @Get('roster/lookup')
+  @ApiOperation({
+    summary: 'Service-to-service roster lookup by platform/role',
+    description:
+      'Lists profiles for a given (platform, role). Defaults to status=approved. ' +
+      'Each entry includes owner_email + owner_full_name so the caller can join ' +
+      'against its own local user tables (e.g. to attach presence/availability). ' +
+      'Excludes soft-deleted. Used by GoSellr\'s "Assign Rider" flow.',
+  })
+  @ApiHeader({ name: 'x-service-key', required: true })
+  @ApiHeader({ name: 'x-service-id', required: false })
+  @ApiQuery({ name: 'platform', required: true, example: 'gosellr' })
+  @ApiQuery({ name: 'role', required: true, example: 'rider' })
+  @ApiQuery({ name: 'status', required: false, example: 'approved' })
+  @ApiQuery({ name: 'limit', required: false, example: 200 })
+  async serviceLookup(
+    @Query('platform') platform: string,
+    @Query('role') role: string,
+    @Query('status') status?: string,
+    @Query('limit') limit?: string,
+  ) {
+    if (!platform || !role) {
+      throw new BadRequestException('platform and role query params are required');
+    }
+    return this.profilesService.serviceLookup(platform, role, {
+      status,
+      limit: limit ? Number(limit) : undefined,
+    });
+  }
+
   @Get(':id/owned-by')
   @ApiOperation({
     summary: 'Fetch a single profile if and only if it is owned by the given email',

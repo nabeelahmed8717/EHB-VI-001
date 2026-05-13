@@ -106,6 +106,51 @@ export class JpsClientService {
   }
 
   /**
+   * Roster lookup: list SQ-approved profiles for a given (platform, role)
+   * on JPS. Each entry is enriched with `owner_email` + `owner_full_name`
+   * so we can join against our local `users`/`riders` tables. Service-key auth.
+   *
+   * Used by the Assign Rider flow to enumerate gosellr riders verified by JPS.
+   * Defaults to status=approved, limit=200. Not cached — the seller modal
+   * is rare enough that staleness matters more than throughput.
+   */
+  async listRoster(opts: {
+    platform: string;
+    role: string;
+    status?: string;
+    limit?: number;
+  }): Promise<Array<JpsProfileFull & { owner_email: string | null; owner_full_name: string | null }>> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<Array<JpsProfileFull & { owner_email: string | null; owner_full_name: string | null }>>(
+          `${this.jpsUrl}/profiles/roster/lookup`,
+          {
+            headers: this.serviceHeaders,
+            params: {
+              platform: opts.platform,
+              role: opts.role,
+              status: opts.status ?? 'approved',
+              limit: opts.limit ?? 200,
+            },
+          },
+        ),
+      );
+      const profiles = response.data ?? [];
+      this.logger.log(
+        `[roster] JPS returned ${profiles.length} ${opts.role}(s) on ${opts.platform}`,
+      );
+      return profiles;
+    } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: unknown } };
+      this.logger.error(
+        `listRoster(${opts.platform}/${opts.role}) failed: ` +
+        `status=${e.response?.status} ${String(err)}`,
+      );
+      return [];
+    }
+  }
+
+  /**
    * Fetch a SINGLE profile by id, but only when the supplied email is the
    * owner. Service-key auth. Used by the GoSellr attach flow to validate
    * ownership server-side before writing the link.

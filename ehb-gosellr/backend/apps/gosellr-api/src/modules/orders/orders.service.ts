@@ -9,6 +9,9 @@ import { Model, Types } from 'mongoose';
 import { Order, OrderDocument, OrderStatus } from './order.schema';
 import { OrdersGateway } from './orders.gateway';
 import { CartService } from '../cart/cart.service';
+import { JpsClientService } from '../jps-client/jps-client.service';
+import { UsersService } from '../users/users.service';
+import { RiderService } from '../rider/rider.service';
 
 export interface CreateOrderDto {
   buyer_id: string;
@@ -49,7 +52,105 @@ export class OrdersService {
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     private readonly ordersGateway: OrdersGateway,
     private readonly cartService: CartService,
+    private readonly jpsClient: JpsClientService,
+    private readonly usersService: UsersService,
+    private readonly riderService: RiderService,
   ) {}
+
+  /**
+   * Returns the rider roster the seller's Assign Rider modal renders.
+   *
+   * Source of truth:
+   *   - JPS  →  who is SQ-approved on the gosellr platform (display, badge)
+   *   - local Rider table  →  who is online right now (presence, zone)
+   *
+   * Join key is the rider's email (same EHB identity on both sides). Any
+   * JPS profile whose owning email has no matching gosellr User is hidden
+   * (they have no account here to receive the assignment). Any gosellr rider
+   * with no JPS approval is also hidden — the user explicitly asked for that.
+   *
+   * Sorted: online first, then by SQ level desc.
+   */
+  async listAvailableRidersForSeller(): Promise<Array<{
+    jps_profile_id: string;
+    rider_user_id: string;
+    display_name: string;
+    bio: string;
+    sq_level: number | null;
+    sq_badge_label: string | null;
+    is_verified: boolean;
+    availability: 'online' | 'offline' | 'on_delivery';
+    availability_zone: string | null;
+    vehicle_type: string | null;
+  }>> {
+    const roster = await this.jpsClient.listRoster({
+      platform: 'gosellr',
+      role: 'rider',
+      status: 'approved',
+    });
+    if (roster.length === 0) return [];
+
+    // Bulk-resolve gosellr users by email, then local Rider rows by user_id.
+    const emails = roster.map((r) => r.owner_email).filter((e): e is string => !!e);
+    const users = await this.usersService.findManyByEmails(emails);
+    const userByEmail = new Map(users.map((u) => [u.email.toLowerCase(), u]));
+
+    const riderUserIds = users
+      .filter((u) => u.role === 'rider')
+      .map((u) => (u._id as unknown as { toString(): string }).toString());
+    const riderProfiles = await this.riderService.findManyByUserIds(riderUserIds);
+    const riderByUserId = new Map(
+      riderProfiles.map((r) => [r.user_id.toString(), r]),
+    );
+
+    const out: Array<{
+      jps_profile_id: string;
+      rider_user_id: string;
+      display_name: string;
+      bio: string;
+      sq_level: number | null;
+      sq_badge_label: string | null;
+      is_verified: boolean;
+      availability: 'online' | 'offline' | 'on_delivery';
+      availability_zone: string | null;
+      vehicle_type: string | null;
+    }> = [];
+
+    for (const j of roster) {
+      if (!j.owner_email) continue;
+      const user = userByEmail.get(j.owner_email.toLowerCase());
+      if (!user || user.role !== 'rider') continue; // No gosellr account, or wrong role.
+
+      const userId = (user._id as unknown as { toString(): string }).toString();
+      const localRider = riderByUserId.get(userId);
+
+      out.push({
+        jps_profile_id: ((j as unknown as { _id?: string; id?: string })._id
+          ?? (j as unknown as { _id?: string; id?: string }).id) as string,
+        rider_user_id: userId,
+        display_name: j.display_name,
+        bio: j.bio ?? '',
+        sq_level: j.sq_level ?? null,
+        sq_badge_label:
+          (j as unknown as { sq_badge_label?: string | null }).sq_badge_label ?? null,
+        is_verified: j.status === 'approved' && j.sq_level !== null,
+        availability: (localRider?.availability ?? 'offline') as
+          | 'online' | 'offline' | 'on_delivery',
+        availability_zone: localRider?.availability_zone ?? null,
+        vehicle_type: localRider?.vehicle_type ?? null,
+      });
+    }
+
+    // Sort: online first, then on_delivery, then offline. Within each
+    // bucket, higher SQ level first.
+    const bucketRank = { online: 0, on_delivery: 1, offline: 2 } as const;
+    out.sort((a, b) => {
+      const ba = bucketRank[a.availability] - bucketRank[b.availability];
+      if (ba !== 0) return ba;
+      return (b.sq_level ?? 0) - (a.sq_level ?? 0);
+    });
+    return out;
+  }
 
   async create(dto: CreateOrderDto): Promise<OrderDocument> {
     const subtotal = dto.items.reduce((s, i) => s + i.subtotal, 0);
@@ -167,13 +268,33 @@ export class OrdersService {
     return saved;
   }
 
-  async assignRider(orderId: string, riderId: string): Promise<OrderDocument> {
+  /**
+   * Internal assignment — only called by DeliveryRequestsService after a
+   * rider accepts a pending request. There is intentionally NO public
+   * controller route that maps to this anymore; riders cannot self-assign,
+   * and sellers must go through the request/accept handshake.
+   */
+  async assignRiderInternal(
+    orderId: string,
+    riderId: string,
+    note?: string,
+  ): Promise<OrderDocument> {
     const order = await this.findById(orderId);
     if (!order) throw new NotFoundException('Order not found');
     if (order.status !== 'ready_for_delivery') {
       throw new BadRequestException('Order must be ready_for_delivery before assigning a rider');
     }
+    if (order.rider_id) {
+      throw new BadRequestException('Order already has a rider assigned');
+    }
     order.rider_id = new Types.ObjectId(riderId);
+    // Note the assignment in status_history for auditability without
+    // changing the status enum value.
+    order.status_history.push({
+      status: order.status,
+      timestamp: new Date(),
+      note: note ?? 'Rider assigned',
+    });
     const saved = await order.save();
     this.emitUpdate(saved);
     return saved;

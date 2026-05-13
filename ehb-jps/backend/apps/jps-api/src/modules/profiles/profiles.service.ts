@@ -141,6 +141,53 @@ export class ProfilesService {
   }
 
   /**
+   * Service-to-service roster lookup: list profiles for a given (platform,
+   * role) — by default only those that are SQ-approved. Each entry includes
+   * the owning user's email + full_name so the caller can join against its
+   * own local user/role tables (presence, vehicle, zone, etc.).
+   *
+   * Used by GoSellr's "Assign Rider" modal. Service-key auth at controller.
+   */
+  async serviceLookup(
+    platform: string,
+    role: string,
+    opts: { status?: string; limit?: number } = {},
+  ): Promise<Array<Record<string, unknown>>> {
+    const status = opts.status ?? 'approved';
+    const limit = Math.min(opts.limit ?? 200, 500);
+
+    const profiles = await this.profileModel
+      .find({ platform, role, status, deleted_at: null })
+      .sort({ sq_level: -1, created_at: -1 })
+      .limit(limit)
+      .lean()
+      .exec();
+
+    if (profiles.length === 0) return [];
+
+    const userIds = Array.from(new Set(profiles.map((p) => p.user_id).filter(Boolean)));
+    const users = await this.usersService.findManyByIds(userIds);
+    const ownerByUserId = new Map<string, { email: string; full_name: string }>();
+    for (const u of users) {
+      ownerByUserId.set(
+        (u._id as unknown as { toString(): string }).toString(),
+        { email: u.email, full_name: u.full_name },
+      );
+    }
+
+    return profiles.map((p) => {
+      const { user_id, deleted_at: _d, pss_request_id: _r, ...safe } = p;
+      void _d; void _r;
+      const owner = ownerByUserId.get(user_id) ?? null;
+      return {
+        ...safe,
+        owner_email: owner?.email ?? null,
+        owner_full_name: owner?.full_name ?? null,
+      };
+    });
+  }
+
+  /**
    * Service-to-service lookup: fetch a single profile by id, but ONLY when
    * the supplied email matches the profile's owning user. Used when GoSellr
    * needs the full owner view of a JPS profile during the attach flow.
