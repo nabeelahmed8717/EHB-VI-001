@@ -149,7 +149,7 @@ export default function RiderJpsProfilePage() {
 
   if (riderLoading) {
     return (
-      <div className="max-w-2xl space-y-4">
+      <div className="max-w-2xl mx-auto space-y-4">
         <Skeleton className="h-10 w-64" />
         <Skeleton className="h-40 w-full" />
       </div>
@@ -157,7 +157,7 @@ export default function RiderJpsProfilePage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-extrabold text-foreground flex items-center gap-2">
           <ShieldCheck className="w-6 h-6 text-accent" />
